@@ -1,0 +1,675 @@
+= Daily AI Kata Tasks
+Dzmitry Marudau <d.marudau@gmail.com>
+1.0, October 16, 2025: Initial version
+:toc:
+:icons: font
+:url-quickref: https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/
+
+== RULES
+
+* Track your daily kata progress. Mark each completed task with an [x].
+* Each day, pick one Kata task from the list and complete it in 15–20 minutes.
+** If it takes longer, don’t grind. Reflect, retry tomorrow, or ask a colleague.
+** If you completed it much faster and still hungry - don’t go to the next task, experiment with different output formats , different prompts.
+* Do a little everyday - better than a lot rarely.
+
+=== TASKS
+---
+=== Launch the Repo
+
+*Task*: Launch a repo you’ve never seen before using only GenAI guidance.
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] You should get the project running locally without reading README.md—only by asking the coding agent step by step.
+
+*Micro Skills Learned*: 
+
+- Launching unfamiliar code
+
+---
+=== Repository Structure Insight
+
+*Task*: Ask AI to explain the purpose of each top-level directory.
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] Markdown summary listing 3–5 folders with descriptions, generated based on code layout and file types.
+
+*Micro Skills Learned*: 
+
+- Codebase overview from structure
+
+---
+=== User Flow Component Tracing
+
+*Task*: Map files/functions used in one core feature (e.g. login).
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] Identify all relevant files, classes, and functions for a user flow using GenAI.
+
+*Micro Skills Learned*: 
+
+- Tracing logic across files
+
+---
+=== Generate Basic Test Skeleton
+
+*Task*: Create a test file skeleton (e.g. Jest, Pytest) for a selected component.
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] AI generates runnable boilerplate test file structure with placeholders.
+
+*Micro Skills Learned*: 
+
+- Prompting test boilerplate
+
+---
+=== Feature Test Strategy Proposal
+
+*Task*: Ask AI to propose test strategy + tech stack for a feature.
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] Structured output explaining test types (unit, integration, E2E) and matching tools.
+
+*Micro Skills Learned*: 
+
+- Testing strategy generation
+
+---
+=== Code Refinement by Prompt
+
+*Task*: Take 1 file of your choice. Use Agent to analyze the flaws of that. Do the refactoring by the agent for the flaws of your choice
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] Cleaner, modernized version of the snippet with better naming, structure, or performance.
+
+*Micro Skills Learned*: 
+
+- Code refactoring via prompt
+
+---
+=== AI-Guided Bug Fix
+
+*Task*: Broke intentionally part of the code. Use agent and the runtime and or compile time logs to fix it
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] Identify and fix a logic error (e.g., off-by-one, null check) using agent assistance.
+
+*Micro Skills Learned*: 
+
+- Error identification + fix
+
+---
+=== Comment Enhancement
+
+*Task*: Ask AI to improve or add missing comments to existing code.
+
+*Input*: Sample code repo
+
+*Goals*:
+
+- [ ] Updated code section with better inline and block comments that improve readability and clarity.
+
+*Micro Skills Learned*: 
+
+- Commenting via LLM
+
+---
+=== Create Your Own Repo (with Agent)
+
+*Task*: Ask AI to scaffold a new repo for a simple app (e.g., todo, scraper). Figure out some simple idea and create some simple requirements for app. Let it include at least one non-trivial part (e.g. 3d visualization of a cosmic flight simulation to mars inside of solar system )
+
+*Input*: New repo scaffolded by AI
+
+*Goals*:
+
+- [ ] AI generates a project structure from scratch (e.g., main.py, tests/, requirements.txt) and you initialize it locally.
+
+*Micro Skills Learned*: 
+
+- Generative repo scaffolding
+
+---
+=== AI-Written PR Description
+
+*Task*: Simulate a PR for your new feature and let AI write the PR description.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] AI generates a well-structured summary with testing instructions and changelog.
+
+*Micro Skills Learned*: 
+
+- AI for documentation
+
+---
+=== AI Pair Programming Drill
+
+*Task*: Choose one NFR to improve (performance, readability, …) - work with agent until happy on the improvements
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] You and AI alternate control while writing/refining code until you achieve a working solution.
+
+*Micro Skills Learned*: 
+
+- Interactive AI co-coding
+
+---
+=== Define Engineering Norms
+
+*Task*: Manually create a tech practices file to guide your AI agent on how some of your component works (style, tools, conventions, etc.)
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Try at least 2 versions of the file. Then ask agent to implement a button component based on your rules. Evaluate effectiveness.
+
+*Micro Skills Learned*: 
+
+- Defining codebase context for AI
+
+---
+=== Create New Screen
+
+*Task*: Create a new page or screen (e.g., Settings) in your app using your AI assistant.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] A working new UI screen integrated into routing/navigation of the existing repo, with meaningful content and a basic layout.
+
+*Micro Skills Learned*: 
+
+- Multi-file feature generation
+
+---
+=== Visual Redesign via DIAL GPT-4o
+
+*Task*: Use DIAL GPT-4o to propose a better UI version of one of your screens. Implement the new version guided by its response.
+
+*Input*: Your repo + GPT-4o
+
+*Goals*:
+
+- [ ] Ask DIAL to assess your screen visually and suggest an improved layout. Implement that using GenAI guidance.
+
+*Micro Skills Learned*: 
+
+- Human-AI visual feedback loop
+
+---
+=== Script: Most Changed Files
+
+*Task*: Ask agent to generate a script that identifies the most frequently changed files in your repo (using Git history).
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Script analyzes git logs and outputs a ranked list of high-churn files.
+
+*Micro Skills Learned*: 
+
+- Prompting for automation scripting
+
+---
+=== UI Template Prompt Generator
+
+*Task*: Use your last “create screen” experience to craft a prompt template to be reused.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Create new_screen_template.md and test it by generating another screen. Save both template and result in repo.
+
+*Micro Skills Learned*: 
+
+- Prompt design + reuse
+
+---
+=== AI-Generated engineeringpractices.md
+
+*Task*: Ask AI to analyze your repo and generate a tech summary (style guide, naming, stack).
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Add engineeringpractices.md and userflows.md based on AI analysis of real codebase.
+
+*Micro Skills Learned*: 
+
+- Reverse-engineered codebase docs
+
+---
+=== New Tech: Define DB Layer
+
+*Task*: Introduce DB to your app. Define schema for a feature. Describe it in datastructure.md.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Define 3–4 data structures (e.g. User, Item) and ask AI to generate folder structure and starter models/configs.
+
+*Micro Skills Learned*: 
+
+- Data layer setup with LLM
+
+---
+=== Tech Migration: Local DB → MongoDB
+
+*Task*: Migrate your current feature or app from in-memory/local storage to local MongoDB.
+
+*Input*: Your repo + MongoDB install
+
+*Goals*:
+
+- [ ] Agent should generate new config, update access layers, and help you rewire flows to use MongoDB.
+
+*Micro Skills Learned*: 
+
+- LLM-assisted data tech migration
+
+---
+=== Script: Mock Config Generator
+
+*Task*: Ask AI to generate a script that can emit mock configuration or simulation parameters (e.g., planets, systems).
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Script should generate JSON or .env-style mock config for some realistic use-case (e.g., space sim, city sim).
+
+*Micro Skills Learned*: 
+
+- Structured data generation via AI
+
+---
+=== Web Scraping: Real Data Collector
+
+*Task*: Ask AI to find a real public data source (HTML/table). Write a script to parse it and save structured output.
+
+*Input*: Public webpage URL
+
+*Goals*:
+
+- [ ] Script crawls HTML page (e.g., real-time weather, asteroid data) and stores result as structured file (e.g., CSV or JSON).
+
+*Micro Skills Learned*: 
+
+- AI-directed integration with the web
+
+---
+=== MCP: Integrate External Context
+
+*Task*: Connect your IDE to an MCP server (e.g., Weather MCP). Use it to enrich agent responses.
+
+*Input*: IDE with MCP (Cursor, Copilot)
+
+*Goals*:
+
+- [ ] IDE context is augmented with real-world data (e.g., weather). Try asking about your code “in the context of rain.”
+
+*Micro Skills Learned*: 
+
+- External context via MCP
+
+---
+=== MCP + Project Tool Integration
+
+*Task*: Connect your agent to an external planning tool (e.g., Notion, JIRA). Generate requirements docs from there.
+
+*Input*: IDE + JIRA or Notion API
+
+*Goals*:
+
+- [ ] Use MCP interface to pull real task or doc data. Generate specs or code based on those sources.
+
+*Micro Skills Learned*: 
+
+- Code ↔ Planning tool via MCP
+
+---
+=== Use Playwright MCP for Automation
+
+*Task*: Automate interaction with your UI using Playwright MCP and your agent.
+
+*Input*: Your UI app + Playwright agent
+
+*Goals*:
+
+- [ ] Agent runs a test or automation on your app using Playwright protocol.
+
+*Micro Skills Learned*: 
+
+- UI automation with MCP agents
+
+---
+=== Postman API Collection Creation
+
+*Task*: Use AI to help you document your API using Postman collections.
+
+*Input*: Your API
+
+*Goals*:
+
+- [ ] Agent generates a complete Postman collection with request/response samples.
+
+*Micro Skills Learned*: 
+
+- API testing integration with AI
+
+---
+=== Auth Flow: Day 1 - Registration
+
+*Task*: Implement registration flow with code agent help. Define auth model + endpoints.
+
+*Input*: Your API
+
+*Goals*:
+
+- [ ] New POST /register endpoint with request validation and response schema.
+
+*Micro Skills Learned*: 
+
+- Auth fundamentals
+
+---
+=== Auth Flow: Day 2 - Login + Session
+
+*Task*: Implement login logic + basic session/token handling.
+
+*Input*: Your API
+
+*Goals*:
+
+- [ ] POST /login, JWT or session token generation, integrated into app.
+
+*Micro Skills Learned*: 
+
+- Token-based auth flow
+
+---
+=== Auth Flow: Day 3 - Protected Route
+
+*Task*: Add a protected route requiring auth + implement access guard.
+
+*Input*: Your API
+
+*Goals*:
+
+- [ ] A GET route returning data only for authenticated users with valid token.
+
+*Micro Skills Learned*: 
+
+- Access control pattern
+
+---
+=== Error Policy: Define and Enforce
+
+*Task*: Create .md doc for your API error handling policies. Implement it in routes.
+
+*Input*: Your API
+
+*Goals*:
+
+- [ ] Clear documented strategy in .md and usage across routes (e.g., standard JSON error format, error codes).
+
+*Micro Skills Learned*: 
+
+- Standardizing error flows
+
+---
+=== Review Day: Engineering Audit
+
+*Task*: Ask your agent to review 10 random files for alignment with engineeringpractices.md.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Agent points out non-compliance, anti-patterns, and missing parts in the engineering practices.
+
+*Micro Skills Learned*: 
+
+- Automated engineering audit
+
+---
+=== API Addition End-to-End (1st run)
+
+*Task*: Create a new POST API endpoint (e.g., add a project). Cover it with docs, tests, comments.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] One well-structured feature with full best-practice stack (doc, tests, examples). Repeat for next 2 tasks.
+
+*Micro Skills Learned*: 
+
+- High-quality feature delivery
+
+---
+=== API Addition End-to-End (2nd run)
+
+*Task*: Repeat previous API pattern on new endpoint. Compare vs. previous one and improve.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Improved quality or speed vs. previous run.
+
+*Micro Skills Learned*: 
+
+- Repeatable GenAI-driven quality
+
+---
+=== API Addition End-to-End (3rd run)
+
+*Task*: One more round to increase fluency. Choose a slightly harder route with 2 data types involved.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Full stack endpoint generated using AI assistance with clear validation and structure.
+
+*Micro Skills Learned*: 
+
+- Scale complexity confidently
+
+---
+=== UI Screen Addition x3
+
+*Task*: Add 3 new screens using template prompts + agent pair programming.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Apply screen template or ask agent to scaffold full screen with tests and doc where applicable.
+
+*Micro Skills Learned*: 
+
+- UI generation pipeline
+
+---
+=== Dockerize the App
+
+*Task*: Create a Dockerfile for your project with agent help.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Dockerfile builds, exposes proper port, and runs the app.
+
+*Micro Skills Learned*: 
+
+- Containerization via AI
+
+---
+=== Run on Local Kubernetes
+
+*Task*: Setup k3d/minikube kind cluster. Deploy app inside of it with agent’s help.
+
+*Input*: Your app + k8s tooling
+
+*Goals*:
+
+- [ ] App runs on local k8s, with deployment YAMLs generated by agent (or Helm optionally).
+
+*Micro Skills Learned*: 
+
+- Infra setup and deployment guidance
+
+---
+=== E2E Feature Spec with Agent QA
+
+*Task*: Create new app feature idea. Write spec. Ask agent what is missing or contradicting in requirements vs. code.
+
+*Input*: New idea
+
+*Goals*:
+
+- [ ] Flow: generate spec → agent inspects spec/code → fix gaps.
+
+*Micro Skills Learned*: 
+
+- AI for requirements validation
+
+---
+=== Edge Case Generator for Testing
+
+*Task*: Ask AI to generate edge cases for one of your endpoints or screen logic.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Agent provides 5+ non-obvious edge cases, and optionally test stubs.
+
+*Micro Skills Learned*: 
+
+- Edge detection with GenAI
+
+---
+=== Legacy Upgrade Refactor
+
+*Task*: Rewrite your backend in newer (or older) language version. Let agent identify version-specific differences.
+
+*Input*: Your API
+
+*Goals*:
+
+- [ ] Migrated backend to modern language version, with notes on deprecated APIs or syntax changes.
+
+*Micro Skills Learned*: 
+
+- Migration with GenAI
+
+---
+=== Security Review
+
+*Task*: Ask AI to analyze backend auth flow and look for vulnerabilities.
+
+*Input*: Your repo
+
+*Goals*:
+
+- [ ] Generate security_review.md with LLM guidance. Address at least 1 found issue.
+
+*Micro Skills Learned*: 
+
+- Prompted security audit
+
+---
+=== New Sample App: AI Video Agent
+
+*Task*: Create a new app (e.g., Streamlit or React) that captures webcam feed and runs DIAL-based inference via snapshots.
+
+*Input*: New unfamiliar repo
+
+*Goals*:
+
+- [ ] App takes webcam frames, passes to DIAL, returns insight. All prompting + coding via agent only.
+
+*Micro Skills Learned*: 
+
+- Complex vision pipeline via GenAI
+
+---
+=== Add AI Agent Inside App
+
+*Task*: Create/use small agent embedded in your new app (e.g., chat-based prompt, analysis helper).
+
+*Input*: Previous app
+
+*Goals*:
+
+- [ ] Working embedded agent that interacts with your app or user flow.
+
+*Micro Skills Learned*: 
+
+- Embedding autonomous GenAI components
+
+---
+=== Build Supporting Tool (Search Helper)
+
+*Task*: Implement or integrate a search API for object detection, comparison, or enrichment in your AI-driven app.
+
+*Input*: Previous app
+
+*Goals*:
+
+- [ ] Tool connects to web API or local DB, retrieves info about detected objects (e.g., planet metadata).
+
+*Micro Skills Learned*: 
+
+- Combining search + AI flow
+
+---
+=== Figma to code
+
+*Task*: Use Figma API to get images of your design, and convert it to requirements or code, by using visual LLMs.
+
+*Input*: Previous app, fake or real Figma design
+
+*Goals*:
+
+- [ ] Build a seamless integration of external data with the codebase
+
+*Micro Skills Learned*: 
+
+- External sources to code
