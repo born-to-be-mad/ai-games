@@ -1,0 +1,33 @@
+= README
+Firstname Lastname <author@asciidoctor.org>
+3.0, July 29, 2022: AsciiDoc article template
+:toc:
+:icons: font
+:url-quickref: https://docs.asciidoctor.org/asciidoc/latest/syntax-quick-reference/
+
+
+== How to run
+
+See https://google.github.io/adk-docs/get-started/java/#java-quickstart-for-adk[Java Quickstart for ADK]
+
+=== Run with command-line interface
+
+Run your agent with the command-line interface `AgentCliRunner` class using the following Maven command:
+
+```bash
+# Remember to load keys and settings: source .env OR env.bat
+mvn compile exec:java -Dexec.mainClass="com.example.agent.AgentCliRunner"
+```
+
+
+=== Run with web interface¶
+
+
+Run your agent with the ADK web interface using the following Maven command:
+
+```bash
+# Remember to load keys and settings: source .env OR env.bat
+mvn compile exec:java \
+    -Dexec.mainClass="com.google.adk.web.AdkWebServer" \
+    -Dexec.args="--adk.agents.source-dir=target --server.port=8000"
+```
