@@ -32,3 +32,13 @@ out/
 
 ### Mac Os ###
 .DS_Store
+
+
+### AI tools ###
+.claude
+claude.md
+gemini.md
+codex.md
+aider.md
+qodo.md
+warp.md
