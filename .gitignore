@@ -35,7 +35,7 @@ out/
 
 
 ### AI tools ###
-.claude
+.claude/
 claude.md
 gemini.md
 codex.md
