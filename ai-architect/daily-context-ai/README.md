@@ -6,85 +6,137 @@ An AI-powered agent orchestrator application that answers questions about curren
 
 Daily Context AI uses the Orchestrator-Workers pattern to intelligently route user queries to specialized agents:
 - **Weather Agent**: Queries multiple weather providers (Open-Meteo, WeatherAPI, OpenWeatherMap)
-- **News Agent**: Aggregates news from multiple sources (TheNews API, GNews.io, NewsAPI)
+- **News Agent**: Aggregates news from multiple sources (TheNewsAPI, GNews.io, NewsAPI)
 
 ## Features
 
-- Multi-provider weather information (configurable)
-- Multi-source news aggregation (configurable)
-- AI Provider flexibility (Ollama, OpenAI, Anthropic)
+- Multi-provider weather information (configurable per request)
+- Multi-source news aggregation (configurable per request)
+- AI provider flexibility (Ollama, OpenAI, Anthropic)
 - Conversation history with H2 database persistence
 - React web interface
 - Docker Compose deployment
 
 ## Technology Stack
 
-- **Java**: 25
-- **Spring Boot**: 4.0.3
-- **Spring AI**: 1.1.2
-- **Gradle**: 9.2.1
-- **H2 Database**: File-based
-- **React**: Frontend
-- **Docker Compose**: Deployment
+| Layer | Technology |
+|---|---|
+| Language | Java 25 |
+| Framework | Spring Boot 4.0.3 |
+| AI | Spring AI 1.1.2 |
+| Build | Gradle 9.2.1 |
+| Database | H2 (file-based) |
+| MCP Servers | Python 3.12, `mcp>=1.8.0` |
+| Frontend | React |
+| Deployment | Docker Compose |
 
 ## Architecture
 
 ### Modules
-- `orchestrator-core` - Core domain logic, JPA entities, AI providers
-- `orchestrator-web` - REST API, web controllers
-- `orchestrator-mcp` - MCP client integrations
-- `orchestrator-frontend` - React web UI
+
+| Module | Responsibility |
+|---|---|
+| `orchestrator-core` | Domain entities, JPA repositories, AI provider config |
+| `orchestrator-mcp` | MCP client wrappers, tool callback providers |
+| `orchestrator-web` | Spring Boot application, REST API, web controllers |
+| `orchestrator-frontend` | React web UI |
 
 ### Ports
-- **8080** - Spring Boot Application
-- **8101** - Open-Meteo MCP Server
-- **8103** - WeatherAPI MCP Server
-- **8104** - OpenWeatherMap MCP Server
-- **8102** - News Aggregator MCP Server
-- **11434** - Ollama
+
+| Port | Service |
+|---|---|
+| 8080 | Spring Boot Application |
+| 8101 | Open-Meteo MCP Server |
+| 8102 | News Aggregator MCP Server |
+| 8103 | WeatherAPI MCP Server |
+| 8104 | OpenWeatherMap MCP Server |
+| 11434 | Ollama |
 
 ## Dependencies
 
-### Spring AI Model Starters (New Naming Convention)
-Spring AI 1.1.2 uses updated artifact names:
-- `spring-ai-starter-model-ollama`
-- `spring-ai-starter-model-openai`
-- `spring-ai-starter-model-anthropic`
+### Spring AI Starters
 
-### Key Libraries
-- Spring Boot Starter Web
-- Spring Boot Starter Data JPA
-- Spring Boot Starter Validation
-- Spring Boot Starter WebFlux (for MCP)
-- H2 Database
-- Jackson Databind
+Spring AI 1.1.2 uses updated artifact naming (`spring-ai-starter-*`):
+
+| Artifact | Purpose |
+|---|---|
+| `spring-ai-starter-model-ollama` | Ollama chat model |
+| `spring-ai-starter-model-openai` | OpenAI chat model |
+| `spring-ai-starter-model-anthropic` | Anthropic chat model |
+| `spring-ai-starter-mcp-client` | MCP client (Streamable HTTP transport) |
+
+### Other Key Libraries
+
+- `spring-boot-starter-web` — REST API
+- `spring-boot-starter-data-jpa` — persistence
+- `spring-boot-starter-webflux` — reactive HTTP (required by MCP client)
+- `spring-boot-starter-validation` — bean validation
+- `h2` — embedded database
+- `jackson-databind` — JSON serialization
+
+## Setup
+
+### 1. Environment variables
+
+```bash
+cp .env.example .env
+# Fill in API keys for the providers you want to use
+```
+
+Required keys per service:
+
+| Variable | Service | Required |
+|---|---|---|
+| `WEATHERAPI_KEY` | WeatherAPI MCP server | Optional |
+| `OPENWEATHERMAP_KEY` | OpenWeatherMap MCP server | Optional |
+| `THENEWSAPI_KEY` | News Aggregator (TheNewsAPI) | Optional |
+| `GNEWS_KEY` | News Aggregator (GNews) | Optional |
+| `NEWSAPI_KEY` | News Aggregator (NewsAPI) | Optional |
+| `OPENAI_API_KEY` | Spring Boot app (OpenAI provider) | Optional |
+| `ANTHROPIC_API_KEY` | Spring Boot app (Anthropic provider) | Optional |
+
+Open-Meteo requires no key. Ollama runs locally. At least one news key needed for news results.
+
+### 2. Start MCP servers
+
+```bash
+# Weather servers (Open-Meteo, WeatherAPI, OpenWeatherMap)
+docker compose -f docker-compose-mcp-weather.yml up --build -d
+
+# News server (TheNewsAPI, GNews, NewsAPI)
+docker compose -f docker-compose-mcp-news.yml up --build -d
+
+# Verify all 4 containers are running
+docker ps
+```
 
 ## Building
 
 ```bash
-# Build the project
 ./gradlew build
+
+# Skip tests
+./gradlew build -x test
 
 # Clean build
 ./gradlew clean build
-
-# Build without tests
-./gradlew build -x test
 ```
 
 ## Running
+
+MCP servers must be running before starting the application (see Setup above).
 
 ```bash
 # Run the application
 ./gradlew :orchestrator-web:bootRun
 
-# Or run the JAR after building
+# Or run the JAR
 java -jar orchestrator-web/build/libs/orchestrator-web-0.0.1-SNAPSHOT.jar
 ```
 
 ## AI Providers
 
-Active provider is controlled by `ai.provider.active` in `application.yml` or overridden per request.
+Active provider is controlled by `ai.provider.active` in `application.yml`.
 
 | Provider | Default | Enable via |
 |---|---|---|
@@ -108,8 +160,6 @@ ai:
   provider:
     active: openai  # ollama | openai | anthropic
 ```
-
-Or pass `provider` field in the chat request to override per call (Phase 8).
 
 ## Database
 
@@ -138,7 +188,7 @@ H2 file-based database, persisted at `./data/orchestrator`.
 | Column | Type | Notes |
 |---|---|---|
 | id | UUID | PK, auto-generated |
-|conversation_id | UUID | FK to conversations |
+| conversation_id | UUID | FK to conversations |
 | role | VARCHAR | USER / ASSISTANT / SYSTEM |
 | content | TEXT | message body |
 | timestamp | TIMESTAMP | message time |
@@ -163,42 +213,22 @@ Standalone Python MCP servers using **Streamable HTTP transport** (`mcp>=1.8.0`)
 
 `get_all_news(query, count, sources)` — `sources` is comma-separated: `thenewsapi,gnews,newsapi` or `all`.
 
-All servers return a descriptive error string when the API key is missing — no crash.
-
-### Starting MCP Servers
-
-```bash
-# Copy and fill in API keys
-cp .env.example .env
-
-# Start weather servers
-docker compose -f docker-compose-mcp-weather.yml up --build -d
-
-# Start news server
-docker compose -f docker-compose-mcp-news.yml up --build -d
-
-# Check containers
-docker ps
-
-# Check logs
-docker logs weather-mcp-openmeteo
-docker logs news-mcp
-```
+All servers return a descriptive message when an API key is missing — no crash.
 
 ### Testing MCP Servers
 
 ```bash
-# List tools (Open-Meteo — no key required)
+# List tools — Open-Meteo (no key required)
 curl -s -X POST http://localhost:8101/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 
-# Call a tool
+# Call a weather tool
 curl -s -X POST http://localhost:8101/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_current_weather","arguments":{"location":"London"}}}'
 
-# Test news server (requires at least one key in .env)
+# List tools — News server
 curl -s -X POST http://localhost:8102/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
@@ -211,38 +241,61 @@ docker compose -f docker-compose-mcp-weather.yml down
 docker compose -f docker-compose-mcp-news.yml down
 ```
 
+## MCP Client Configuration
+
+Spring AI connects to MCP servers via `spring.ai.mcp.client.streamable-http.connections` in `application.yml`:
+
+```yaml
+spring:
+  ai:
+    mcp:
+      client:
+        enabled: true
+        type: SYNC
+        request-timeout: 30s
+        streamable-http:
+          connections:
+            weather-openmeteo:
+              url: http://localhost:8101
+            weather-weatherapi:
+              url: http://localhost:8103
+            weather-openweathermap:
+              url: http://localhost:8104
+            news-aggregator:
+              url: http://localhost:8102
+```
+
+`WeatherMcpClient` and `NewsMcpClient` in `orchestrator-mcp` wrap the auto-configured `McpSyncClient` beans and expose `getToolCallbacks()` for use in agents.
+
 ## Project Status
 
 **Phase 1: Project Foundation** ✅ Complete
 - Multi-module Gradle structure with Java 25
 - Spring Boot 4.0.3 + Spring AI 1.1.2 configured
 - Package structure: `ai.architect.orchestrator`
-- AI Providers configured: Ollama (default), OpenAI, Anthropic
-- Build verified and working
+- AI providers configured: Ollama (default), OpenAI, Anthropic
+- Build verified: `BUILD SUCCESSFUL`
 
 **Phase 2: Core Domain & H2 Integration** ✅ Complete
-- `Conversation` and `Message` JPA entities created
+- `Conversation` and `Message` JPA entities (UUID PKs)
 - `MessageRole` enum: USER / ASSISTANT / SYSTEM
-- `ConversationRepository` and `MessageRepository` with custom query methods
-- H2 file-based database configured (`./data/orchestrator`)
-- H2 console enabled at `/h2-console`
-- Build verified and working
+- `ConversationRepository` / `MessageRepository` with custom query methods
+- H2 file-based database at `./data/orchestrator`, console at `/h2-console`
+- Build verified: `BUILD SUCCESSFUL`
 
 **Phase 3: AI Provider Configuration** ✅ Complete
-- `AiProviderProperties` — `@ConfigurationProperties("ai.provider")`, active provider switchable via config
+- `AiProviderProperties` — `@ConfigurationProperties("ai.provider")`, runtime provider switching
 - `OllamaConfig` / `OpenAiConfig` / `AnthropicConfig` — conditional `@Configuration` per provider
-- `ChatClientFactory` — injects `List<ChatModel>`, resolves provider by class name at startup
-- `ProviderConfigService` — `getChatClient()` (active provider), `getChatClient(String)` (per-request override), `getAvailableProviders()`
-- Ollama enabled by default (`llama3.2` @ `localhost:11434`)
-- OpenAI / Anthropic enabled via `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` env vars
-- Build verified and working
+- `ChatClientFactory` — resolves active `ChatModel` by class name at startup
+- `ProviderConfigService` — `getChatClient()`, `getChatClient(String)`, `getAvailableProviders()`
+- Build verified: `BUILD SUCCESSFUL`
 
 **Phase 4: Weather MCP Servers** ✅ Complete
-- `docker/weather-mcp-openmeteo` — Open-Meteo, no key, ports 8101; geocoding → current + forecast
+- `docker/weather-mcp-openmeteo` — Open-Meteo, no key, port 8101; geocoding → current weather + forecast
 - `docker/weather-mcp-weatherapi` — WeatherAPI, `WEATHERAPI_KEY`, port 8103
 - `docker/weather-mcp-openweathermap` — OpenWeatherMap, `OPENWEATHERMAP_KEY`, port 8104; geocodes via `/geo/1.0/direct`
-- All use Streamable HTTP transport (`mcp>=1.8.0`), Python 3.12-slim Docker images
-- `docker-compose-mcp-weather.yml` — builds and starts all 3 weather servers on `daily-context-network`
+- All: Python 3.12-slim, Streamable HTTP transport, `mcp>=1.8.0`, `httpx>=0.27.0`
+- `docker-compose-mcp-weather.yml` — builds and starts all 3 servers on `daily-context-network`
 
 **Phase 5: News MCP Server** ✅ Complete
 - `docker/news-mcp` — aggregates TheNewsAPI, GNews, NewsAPI; port 8102
@@ -254,11 +307,11 @@ docker compose -f docker-compose-mcp-news.yml down
 **Phase 6: MCP Client Integration** ✅ Complete
 - `spring-ai-starter-mcp-client` added to `orchestrator-mcp/build.gradle`
 - `orchestrator-mcp` added as dependency to `orchestrator-web`
-- `application.yml` — 4 MCP connections via `spring.ai.mcp.client.streamable-http.connections` (SYNC, 30s timeout)
-- `WeatherMcpClientConfig.java` — `@Bean SyncMcpToolCallbackProvider weatherToolCallbackProvider()` (filters 3 weather clients by server name)
-- `NewsMcpClientConfig.java` — `@Bean SyncMcpToolCallbackProvider newsToolCallbackProvider()` (filters news-aggregator client)
-- `WeatherMcpClient.java` — `@Component`; `getToolCallbacks()` / `getToolCallbacks(Set<String> providers)` / `getConnectedProviders()`
-- `NewsMcpClient.java` — `@Component`; `getToolCallbacks()` / `isConnected()`
+- `application.yml` — 4 Streamable HTTP connections (SYNC mode, 30s timeout)
+- `WeatherMcpClientConfig` — `@Bean weatherToolCallbackProvider()` (3 weather clients)
+- `NewsMcpClientConfig` — `@Bean newsToolCallbackProvider()` (news-aggregator client)
+- `WeatherMcpClient` — `@Component`; `getToolCallbacks()`, `getToolCallbacks(Set<String>)`, `getConnectedProviders()`
+- `NewsMcpClient` — `@Component`; `getToolCallbacks()`, `isConnected()`
 - Build verified: `BUILD SUCCESSFUL`
 
 **Next Phase:** Phase 7 — Agent Implementation (Orchestrator-Workers)
