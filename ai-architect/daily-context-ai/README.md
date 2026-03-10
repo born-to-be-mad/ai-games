@@ -251,12 +251,21 @@ docker compose -f docker-compose-mcp-news.yml down
 - `docker-compose-mcp-news.yml` — builds and starts news server on `daily-context-network`
 - `.env.example` — template for all 7 API keys
 
-**Next Phase:** Phase 6 — MCP Client Integration (Spring AI connects to MCP servers)
+**Phase 6: MCP Client Integration** ✅ Complete
+- `spring-ai-starter-mcp-client` added to `orchestrator-mcp/build.gradle`
+- `orchestrator-mcp` added as dependency to `orchestrator-web`
+- `application.yml` — 4 MCP connections via `spring.ai.mcp.client.streamable-http.connections` (SYNC, 30s timeout)
+- `WeatherMcpClientConfig.java` — `@Bean SyncMcpToolCallbackProvider weatherToolCallbackProvider()` (filters 3 weather clients by server name)
+- `NewsMcpClientConfig.java` — `@Bean SyncMcpToolCallbackProvider newsToolCallbackProvider()` (filters news-aggregator client)
+- `WeatherMcpClient.java` — `@Component`; `getToolCallbacks()` / `getToolCallbacks(Set<String> providers)` / `getConnectedProviders()`
+- `NewsMcpClient.java` — `@Component`; `getToolCallbacks()` / `isConnected()`
+- Build verified: `BUILD SUCCESSFUL`
+
+**Next Phase:** Phase 7 — Agent Implementation (Orchestrator-Workers)
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 6: MCP Client Integration
 - Phase 7: Agent Implementation (Orchestrator-Workers)
 - Phase 8: REST API Implementation
 - Phase 9: React Frontend

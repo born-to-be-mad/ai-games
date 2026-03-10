@@ -32,6 +32,22 @@ spring:
       api-key: ${ANTHROPIC_API_KEY:}
       chat:
         model: claude-sonnet-4-6
+    # MCP Clients — Streamable HTTP transport
+    mcp:
+      client:
+        enabled: true
+        type: SYNC
+        request-timeout: 30s
+        streamable-http:
+          connections:
+            weather-openmeteo:
+              url: http://localhost:8101
+            weather-weatherapi:
+              url: http://localhost:8103
+            weather-openweathermap:
+              url: http://localhost:8104
+            news-aggregator:
+              url: http://localhost:8102
 
 # Active AI provider: ollama | openai | anthropic
 ai:

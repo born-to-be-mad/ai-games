@@ -10,6 +10,9 @@ dependencies {
     // Dependency on orchestrator-core
     implementation project(':orchestrator-core')
 
+    // Dependency on orchestrator-mcp (MCP client integration)
+    implementation project(':orchestrator-mcp')
+
     // Spring Boot Web
     implementation 'org.springframework.boot:spring-boot-starter-web'
 }

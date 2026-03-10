@@ -15,10 +15,9 @@ dependencies {
     // Dependency on orchestrator-core
     implementation project(':orchestrator-core')
 
-    // Spring AI MCP Client (when available in stable version)
-    // Note: MCP support might need milestone/snapshot version
-    // implementation 'org.springframework.ai:spring-ai-mcp-client-spring-boot-starter'
+    // Spring AI MCP Client (Streamable HTTP transport, Spring AI 1.1.2)
+    implementation 'org.springframework.ai:spring-ai-starter-mcp-client'
 
-    // Spring WebFlux (for async MCP communication)
+    // Spring WebFlux — required by MCP client for reactive HTTP transport
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
