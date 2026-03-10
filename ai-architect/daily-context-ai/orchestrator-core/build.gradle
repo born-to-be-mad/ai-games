@@ -1,5 +1,6 @@
 plugins {
     id 'org.springframework.boot' version '4.0.3'
+    id 'java-library'
 }
 
 // This is a library module, not an application
@@ -12,10 +13,11 @@ jar {
 }
 
 dependencies {
-    // Spring AI Model Providers (using new artifact naming convention)
-    implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
-    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
-    implementation 'org.springframework.ai:spring-ai-starter-model-anthropic'
+    // Spring AI Model Providers — exposed as api so consumers (orchestrator-web) see ChatClient,
+    // BeanOutputConverter, ToolCallback and other Spring AI types without re-declaring them
+    api 'org.springframework.ai:spring-ai-starter-model-ollama'
+    api 'org.springframework.ai:spring-ai-starter-model-openai'
+    api 'org.springframework.ai:spring-ai-starter-model-anthropic'
 
     // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'

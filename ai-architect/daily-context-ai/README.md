@@ -24,7 +24,7 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 | Language | Java 25 |
 | Framework | Spring Boot 4.0.3 |
 | AI | Spring AI 1.1.2 |
-| Build | Gradle 9.2.1 |
+| Build | Gradle 9.2.1 + `java-library` |
 | Database | H2 (file-based) |
 | MCP Servers | Python 3.12, `mcp>=1.8.0` |
 | Frontend | React |
@@ -32,13 +32,35 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 
 ## Architecture
 
+### Orchestrator-Workers Pattern
+
+```
+User Query
+    │
+    ▼
+OrchestratorService        ← LLM classifies intent → QueryIntent record
+    │
+    ├── virtual thread ──► WeatherAgent ──► Weather MCP tools (openmeteo / weatherapi / owm)
+    │
+    └── virtual thread ──► NewsAgent    ──► News MCP tools (thenewsapi / gnews / newsapi)
+    │
+    ▼
+AgentCoordinationService   ← collects List<AgentResult>
+    │
+    ▼
+OrchestratorService        ← LLM synthesizes final markdown response
+```
+
+Both agents run in parallel via `CompletableFuture.supplyAsync` on a `newVirtualThreadPerTaskExecutor`.
+Tomcat and Spring's async executor also use virtual threads (`spring.threads.virtual.enabled=true`).
+
 ### Modules
 
 | Module | Responsibility |
 |---|---|
-| `orchestrator-core` | Domain entities, JPA repositories, AI provider config |
-| `orchestrator-mcp` | MCP client wrappers, tool callback providers |
-| `orchestrator-web` | Spring Boot application, REST API, web controllers |
+| `orchestrator-core` | Domain entities, JPA repositories, AI provider config, domain records, virtual thread config |
+| `orchestrator-mcp` | MCP client wrappers (`WeatherMcpClient`, `NewsMcpClient`), `SyncMcpToolCallbackProvider` beans |
+| `orchestrator-web` | Spring Boot app, agents (`WeatherAgent`, `NewsAgent`), orchestrator service, REST API |
 | `orchestrator-frontend` | React web UI |
 
 ### Ports
@@ -305,21 +327,30 @@ spring:
 - `.env.example` — template for all 7 API keys
 
 **Phase 6: MCP Client Integration** ✅ Complete
-- `spring-ai-starter-mcp-client` added to `orchestrator-mcp/build.gradle`
-- `orchestrator-mcp` added as dependency to `orchestrator-web`
+- `orchestrator-core` and `orchestrator-mcp` promoted to `java-library`; Spring AI starters and MCP client exposed as `api` so types (`ChatClient`, `BeanOutputConverter`, `ToolCallback`) are visible to `orchestrator-web`
+- Lombok added to root `subprojects` block (`compileOnly` + `annotationProcessor`, version managed by Spring Boot BOM)
 - `application.yml` — 4 Streamable HTTP connections (SYNC mode, 30s timeout)
-- `WeatherMcpClientConfig` — `@Bean weatherToolCallbackProvider()` (3 weather clients)
-- `NewsMcpClientConfig` — `@Bean newsToolCallbackProvider()` (news-aggregator client)
-- `WeatherMcpClient` — `@Component`; `getToolCallbacks()`, `getToolCallbacks(Set<String>)`, `getConnectedProviders()`
-- `NewsMcpClient` — `@Component`; `getToolCallbacks()`, `isConnected()`
+- `WeatherMcpClientConfig` / `NewsMcpClientConfig` — `@Configuration @RequiredArgsConstructor`; `SyncMcpToolCallbackProvider.builder()`
+- `WeatherMcpClient` / `NewsMcpClient` — `@Component @Slf4j`; `getToolCallbacks()`, `isConnected()`
+- Refactors: `AiProviderProperties` → record; entities → Lombok; services → `@RequiredArgsConstructor`
 - Build verified: `BUILD SUCCESSFUL`
 
-**Next Phase:** Phase 7 — Agent Implementation (Orchestrator-Workers)
+**Phase 7: Agent Implementation** ✅ Complete
+- `spring.threads.virtual.enabled: true` — virtual threads for Tomcat + Spring async executor
+- `VirtualThreadConfig` — `@Bean Executor virtualThreadExecutor()` = `Executors.newVirtualThreadPerTaskExecutor()`
+- `QueryIntent` record — `needsWeather`, `needsNews`, `location`, `newsQuery`
+- `AgentResult` record — `agentName`, `content`, `success`, `errorMessage`; `success()` / `failure()` factory methods
+- `AgentCoordinationService` — `runParallel()` submits tasks via `CompletableFuture.supplyAsync` on virtual thread executor
+- `WeatherAgent` — `@Component @Slf4j @RequiredArgsConstructor`; calls weather MCP tools through `ChatClient`
+- `NewsAgent` — `@Component @Slf4j @RequiredArgsConstructor`; calls news MCP tools through `ChatClient`
+- `OrchestratorService` — `BeanOutputConverter<QueryIntent>` intent analysis → parallel agent dispatch → LLM synthesis
+- Build verified: `BUILD SUCCESSFUL`
+
+**Next Phase:** Phase 8 — REST API
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 7: Agent Implementation (Orchestrator-Workers)
 - Phase 8: REST API Implementation
 - Phase 9: React Frontend
 - Phase 10: Docker Compose Integration

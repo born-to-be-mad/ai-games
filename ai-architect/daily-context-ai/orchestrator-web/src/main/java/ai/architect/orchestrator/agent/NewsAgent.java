@@ -1,0 +1,81 @@
+package ai.architect.orchestrator.agent;
+
+import ai.architect.orchestrator.mcp.client.NewsMcpClient;
+import ai.architect.orchestrator.service.ProviderConfigService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Worker agent that searches news across multiple sources and returns a synthesized summary.
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class NewsAgent {
+
+    private static final String SYSTEM_PROMPT = """
+            You are a news assistant. Use the available tools to retrieve the latest news
+            articles relevant to the user's query. Summarize the most important findings
+            concisely. Cite article titles when referencing specific stories.
+            If multiple sources return overlapping articles, deduplicate before summarizing.
+            """;
+
+    private static final Set<String> ALL_SOURCES = Set.of("thenewsapi", "gnews", "newsapi");
+
+    private final NewsMcpClient newsMcpClient;
+    private final ProviderConfigService providerConfigService;
+
+    /**
+     * Executes a news search query.
+     *
+     * @param query     natural-language news question (e.g. "Latest AI breakthroughs")
+     * @param sources   subset of source names ("thenewsapi", "gnews", "newsapi");
+     *                  empty set means all connected sources
+     * @param aiProvider optional AI provider override; null uses the active default
+     */
+    @SuppressWarnings("varargs")
+    public AgentResult execute(String query, Set<String> sources, String aiProvider) {
+        try {
+            if (!newsMcpClient.isConnected()) {
+                return AgentResult.failure("news",
+                        "News MCP server not connected. Ensure the news-mcp container is running on port 8102.");
+            }
+
+            List<ToolCallback> callbacks = newsMcpClient.getToolCallbacks();
+            if (callbacks.isEmpty()) {
+                return AgentResult.failure("news", "No news tools available.");
+            }
+
+            String sourcesParam = sources.isEmpty()
+                    ? "all"
+                    : sources.stream()
+                            .filter(ALL_SOURCES::contains)
+                            .collect(Collectors.joining(","));
+
+            String userPrompt = query + "\nSources to use: " + sourcesParam;
+
+            log.debug("News agent executing query='{}' sources={}", query, sourcesParam);
+
+            ChatClient chatClient = providerConfigService.getChatClient(aiProvider);
+            ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
+            String result = chatClient.prompt()
+                    .system(SYSTEM_PROMPT)
+                    .user(userPrompt)
+                    .tools((Object[]) tools)
+                    .call()
+                    .content();
+
+            return AgentResult.success("news", result);
+        } catch (Exception e) {
+            log.error("News agent failed for query='{}': {}", query, e.getMessage(), e);
+            return AgentResult.failure("news", e.getMessage());
+        }
+    }
+}

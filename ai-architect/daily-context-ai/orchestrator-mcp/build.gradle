@@ -1,5 +1,6 @@
 plugins {
     id 'org.springframework.boot' version '4.0.3'
+    id 'java-library'
 }
 
 // This is a library module, not an application
@@ -12,11 +13,11 @@ jar {
 }
 
 dependencies {
-    // Dependency on orchestrator-core
-    implementation project(':orchestrator-core')
+    // Dependency on orchestrator-core — api so consumers inherit Spring AI types transitively
+    api project(':orchestrator-core')
 
-    // Spring AI MCP Client (Streamable HTTP transport, Spring AI 1.1.2)
-    implementation 'org.springframework.ai:spring-ai-starter-mcp-client'
+    // Spring AI MCP Client — api so WeatherMcpClient/NewsMcpClient types are visible to consumers
+    api 'org.springframework.ai:spring-ai-starter-mcp-client'
 
     // Spring WebFlux — required by MCP client for reactive HTTP transport
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
