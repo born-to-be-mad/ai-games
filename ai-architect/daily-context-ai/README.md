@@ -19,13 +19,13 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 
 ## Technology Stack
 
-- **Java 25**
-- **Spring Boot 3.4.1**
-- **Spring AI 1.0.0-M4**
-- **Gradle 9.2**
-- **H2 Database** (file-based)
-- **React** (frontend)
-- **Docker Compose**
+- **Java**: 25
+- **Spring Boot**: 4.0.3
+- **Spring AI**: 1.1.2
+- **Gradle**: 9.2.1
+- **H2 Database**: File-based
+- **React**: Frontend
+- **Docker Compose**: Deployment
 
 ## Architecture
 
@@ -43,30 +43,108 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 - **8102** - News Aggregator MCP Server
 - **11434** - Ollama
 
+## Dependencies
+
+### Spring AI Model Starters (New Naming Convention)
+Spring AI 1.1.2 uses updated artifact names:
+- `spring-ai-starter-model-ollama`
+- `spring-ai-starter-model-openai`
+- `spring-ai-starter-model-anthropic`
+
+### Key Libraries
+- Spring Boot Starter Web
+- Spring Boot Starter Data JPA
+- Spring Boot Starter Validation
+- Spring Boot Starter WebFlux (for MCP)
+- H2 Database
+- Jackson Databind
+
 ## Building
 
 ```bash
+# Build the project
 ./gradlew build
+
+# Clean build
+./gradlew clean build
+
+# Build without tests
+./gradlew build -x test
 ```
 
 ## Running
 
 ```bash
+# Run the application
 ./gradlew :orchestrator-web:bootRun
+
+# Or run the JAR after building
+java -jar orchestrator-web/build/libs/orchestrator-web-0.0.1-SNAPSHOT.jar
 ```
+
+## Database
+
+H2 file-based database, persisted at `./data/orchestrator`.
+
+| Property | Value |
+|---|---|
+| Console URL | http://localhost:8080/h2-console |
+| JDBC URL | `jdbc:h2:file:./data/orchestrator` |
+| Username | `sa` |
+| Password | _(empty)_ |
+
+### Schema
+
+**conversations**
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID | PK, auto-generated |
+| timestamp | TIMESTAMP | conversation start time |
+| user_id | VARCHAR | optional |
+| topic | VARCHAR | optional |
+
+**messages**
+
+| Column | Type | Notes |
+|---|---|---|
+| id | UUID | PK, auto-generated |
+|conversation_id | UUID | FK to conversations |
+| role | VARCHAR | USER / ASSISTANT / SYSTEM |
+| content | TEXT | message body |
+| timestamp | TIMESTAMP | message time |
 
 ## Project Status
 
 **Phase 1: Project Foundation** ✅ Complete
-- Multi-module Gradle structure
-- Spring Boot configuration
-- Basic application skeleton
+- Multi-module Gradle structure with Java 25
+- Spring Boot 4.0.3 + Spring AI 1.1.2 configured
+- Package structure: `ai.architect.orchestrator`
+- AI Providers configured: Ollama (default), OpenAI, Anthropic
+- Build verified and working
 
-**Next Phases:**
-- Phase 2: Core Domain & H2 Integration
+**Phase 2: Core Domain & H2 Integration** ✅ Complete
+- `Conversation` and `Message` JPA entities created
+- `MessageRole` enum: USER / ASSISTANT / SYSTEM
+- `ConversationRepository` and `MessageRepository` with custom query methods
+- H2 file-based database configured (`./data/orchestrator`)
+- H2 console enabled at `/h2-console`
+- Build verified and working
+
+**Next Phase:** Phase 3 - AI Provider Configuration
+
+For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
+
+**Upcoming Phases:**
 - Phase 3: AI Provider Configuration
-- Phase 4-5: MCP Server Setup
-- Phase 6-12: Agent Implementation, REST API, Frontend, Docker Compose
+- Phase 4-5: MCP Server Setup (Weather + News)
+- Phase 6: MCP Client Integration
+- Phase 7: Agent Implementation (Orchestrator-Workers)
+- Phase 8: REST API Implementation
+- Phase 9: React Frontend
+- Phase 10: Docker Compose Integration
+- Phase 11: Testing & Documentation
+- Phase 12: Enhancements (Optional)
 
 ## License
 
