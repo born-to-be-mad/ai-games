@@ -17,6 +17,26 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: llama3.2
+    # OpenAI — set OPENAI_API_KEY env var to enable
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        model: gpt-4o-mini
+    # Anthropic — set ANTHROPIC_API_KEY env var to enable
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        model: claude-sonnet-4-6
+
+# Active AI provider: ollama | openai | anthropic
+ai:
+  provider:
+    active: ollama
 
 server:
   port: 8080

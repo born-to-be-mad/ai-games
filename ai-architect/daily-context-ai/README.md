@@ -82,6 +82,35 @@ Spring AI 1.1.2 uses updated artifact names:
 java -jar orchestrator-web/build/libs/orchestrator-web-0.0.1-SNAPSHOT.jar
 ```
 
+## AI Providers
+
+Active provider is controlled by `ai.provider.active` in `application.yml` or overridden per request.
+
+| Provider | Default | Enable via |
+|---|---|---|
+| Ollama | yes | runs locally on `localhost:11434` |
+| OpenAI | no | set `OPENAI_API_KEY` env var |
+| Anthropic | no | set `ANTHROPIC_API_KEY` env var |
+
+### Default models
+
+| Provider | Model |
+|---|---|
+| Ollama | `llama3.2` |
+| OpenAI | `gpt-4o-mini` |
+| Anthropic | `claude-sonnet-4-6` |
+
+### Switching providers
+
+```yaml
+# application.yml
+ai:
+  provider:
+    active: openai  # ollama | openai | anthropic
+```
+
+Or pass `provider` field in the chat request to override per call (Phase 8).
+
 ## Database
 
 H2 file-based database, persisted at `./data/orchestrator`.
@@ -131,12 +160,20 @@ H2 file-based database, persisted at `./data/orchestrator`.
 - H2 console enabled at `/h2-console`
 - Build verified and working
 
-**Next Phase:** Phase 3 - AI Provider Configuration
+**Phase 3: AI Provider Configuration** ✅ Complete
+- `AiProviderProperties` — `@ConfigurationProperties("ai.provider")`, active provider switchable via config
+- `OllamaConfig` / `OpenAiConfig` / `AnthropicConfig` — conditional `@Configuration` per provider
+- `ChatClientFactory` — injects `List<ChatModel>`, resolves provider by class name at startup
+- `ProviderConfigService` — `getChatClient()` (active provider), `getChatClient(String)` (per-request override), `getAvailableProviders()`
+- Ollama enabled by default (`llama3.2` @ `localhost:11434`)
+- OpenAI / Anthropic enabled via `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` env vars
+- Build verified and working
+
+**Next Phase:** Phase 4 & 5 - MCP Server Setup (Weather + News)
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 3: AI Provider Configuration
 - Phase 4-5: MCP Server Setup (Weather + News)
 - Phase 6: MCP Client Integration
 - Phase 7: Agent Implementation (Orchestrator-Workers)
