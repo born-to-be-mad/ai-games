@@ -1,0 +1,15 @@
+plugins {
+    id 'org.springframework.boot' version '3.4.1'
+}
+
+springBoot {
+    mainClass = 'ai.architect.orchestrator.web.Application'
+}
+
+dependencies {
+    // Dependency on orchestrator-core
+    implementation project(':orchestrator-core')
+
+    // Spring Boot Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+}

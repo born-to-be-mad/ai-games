@@ -1,0 +1,24 @@
+plugins {
+    id 'org.springframework.boot' version '3.4.1'
+}
+
+// This is a library module, not an application
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}
+
+dependencies {
+    // Dependency on orchestrator-core
+    implementation project(':orchestrator-core')
+
+    // Spring AI MCP Client (when available in stable version)
+    // Note: MCP support might need milestone/snapshot version
+    // implementation 'org.springframework.ai:spring-ai-mcp-client-spring-boot-starter'
+
+    // Spring WebFlux (for async MCP communication)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+}

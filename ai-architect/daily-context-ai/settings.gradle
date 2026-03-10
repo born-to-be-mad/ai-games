@@ -1,0 +1,5 @@
+rootProject.name = 'daily-context-ai'
+
+include 'orchestrator-core'
+include 'orchestrator-web'
+include 'orchestrator-mcp'
