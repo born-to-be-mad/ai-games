@@ -332,7 +332,7 @@ spring:
 - `application.yml` — 4 Streamable HTTP connections (SYNC mode, 30s timeout)
 - `WeatherMcpClientConfig` / `NewsMcpClientConfig` — `@Configuration @RequiredArgsConstructor`; `SyncMcpToolCallbackProvider.builder()`
 - `WeatherMcpClient` / `NewsMcpClient` — `@Component @Slf4j`; `getToolCallbacks()`, `isConnected()`
-- Refactors: `AiProviderProperties` → record; entities → Lombok; services → `@RequiredArgsConstructor`
+- Refactors: `AiProviderProperties` → record (no `@Component`); entities → Lombok; services → `@RequiredArgsConstructor`
 - Build verified: `BUILD SUCCESSFUL`
 
 **Phase 7: Agent Implementation** ✅ Complete
@@ -341,9 +341,11 @@ spring:
 - `QueryIntent` record — `needsWeather`, `needsNews`, `location`, `newsQuery`
 - `AgentResult` record — `agentName`, `content`, `success`, `errorMessage`; `success()` / `failure()` factory methods
 - `AgentCoordinationService` — `runParallel()` submits tasks via `CompletableFuture.supplyAsync` on virtual thread executor
-- `WeatherAgent` — `@Component @Slf4j @RequiredArgsConstructor`; calls weather MCP tools through `ChatClient`
-- `NewsAgent` — `@Component @Slf4j @RequiredArgsConstructor`; calls news MCP tools through `ChatClient`
+- `WeatherAgent` / `NewsAgent` — `@Component @Slf4j @RequiredArgsConstructor`; system prompt injected via `AgentProperties`
 - `OrchestratorService` — `BeanOutputConverter<QueryIntent>` intent analysis → parallel agent dispatch → LLM synthesis
+- `AgentProperties` record — `@ConfigurationProperties("agent")`; nested `Weather` / `News` records with `systemPrompt`; prompts externalised to `application.yml`
+- `AiProviderProperties` — `@Component` removed; registered via `@ConfigurationPropertiesScan` on `Application`
+- `ProviderConfigService` — single `@Getter ChatClient chatClient` field; built eagerly at startup from the active provider
 - Build verified: `BUILD SUCCESSFUL`
 
 **Next Phase:** Phase 8 — REST API

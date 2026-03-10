@@ -41,15 +41,13 @@ public class OrchestratorService {
      * @param userQuery        the user's natural-language question
      * @param weatherProviders optional subset of weather providers to use (empty = all)
      * @param newsSources      optional subset of news sources to use (empty = all)
-     * @param aiProvider       optional AI provider override (null = active default)
      * @return synthesized natural-language answer
      */
     public String process(String userQuery,
                           Set<String> weatherProviders,
-                          Set<String> newsSources,
-                          String aiProvider) {
+                          Set<String> newsSources) {
 
-        ChatClient chatClient = providerConfigService.getChatClient(aiProvider);
+        ChatClient chatClient = providerConfigService.getChatClient();
 
         // Step 1 — Intent analysis
         QueryIntent intent = analyzeIntent(userQuery, chatClient);
@@ -74,12 +72,12 @@ public class OrchestratorService {
             String weatherQuery = intent.location().isBlank()
                     ? userQuery
                     : "Current weather and forecast for: " + intent.location();
-            tasks.add(() -> weatherAgent.execute(weatherQuery, weatherProviders, aiProvider));
+            tasks.add(() -> weatherAgent.execute(weatherQuery, weatherProviders));
         }
 
         if (intent.needsNews()) {
             String newsQuery = intent.newsQuery().isBlank() ? userQuery : intent.newsQuery();
-            tasks.add(() -> newsAgent.execute(newsQuery, newsSources, aiProvider));
+            tasks.add(() -> newsAgent.execute(newsQuery, newsSources));
         }
 
         // Step 4 — Run agents in parallel on virtual threads

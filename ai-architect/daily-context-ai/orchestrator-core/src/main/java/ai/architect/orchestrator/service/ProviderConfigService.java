@@ -1,33 +1,18 @@
 package ai.architect.orchestrator.service;
 
 import ai.architect.orchestrator.config.AiProviderProperties;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
+@Getter
 @Service
-@RequiredArgsConstructor
 public class ProviderConfigService {
 
-    private final AiProviderProperties properties;
-    private final ChatClientFactory chatClientFactory;
+    private final ChatClient chatClient;
 
-    public ChatClient getChatClient() {
-        return getChatClient(properties.active());
+    public ProviderConfigService(AiProviderProperties properties, ChatClientFactory chatClientFactory) {
+        this.chatClient = chatClientFactory.createChatClient(properties.active());
     }
 
-    public ChatClient getChatClient(String provider) {
-        String resolved = provider != null ? provider.toLowerCase() : properties.active();
-        return chatClientFactory.createChatClient(resolved);
-    }
-
-    public String getActiveProvider() {
-        return properties.active();
-    }
-
-    public List<String> getAvailableProviders() {
-        return chatClientFactory.getAvailableProviders();
-    }
 }

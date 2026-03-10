@@ -1,5 +1,6 @@
 package ai.architect.orchestrator.agent;
 
+import ai.architect.orchestrator.config.AgentProperties;
 import ai.architect.orchestrator.mcp.client.NewsMcpClient;
 import ai.architect.orchestrator.service.ProviderConfigService;
 import lombok.RequiredArgsConstructor;
@@ -20,28 +21,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NewsAgent {
 
-    private static final String SYSTEM_PROMPT = """
-            You are a news assistant. Use the available tools to retrieve the latest news
-            articles relevant to the user's query. Summarize the most important findings
-            concisely. Cite article titles when referencing specific stories.
-            If multiple sources return overlapping articles, deduplicate before summarizing.
-            """;
-
     private static final Set<String> ALL_SOURCES = Set.of("thenewsapi", "gnews", "newsapi");
 
     private final NewsMcpClient newsMcpClient;
     private final ProviderConfigService providerConfigService;
+    private final AgentProperties agentProperties;
 
     /**
      * Executes a news search query.
      *
-     * @param query     natural-language news question (e.g. "Latest AI breakthroughs")
-     * @param sources   subset of source names ("thenewsapi", "gnews", "newsapi");
-     *                  empty set means all connected sources
-     * @param aiProvider optional AI provider override; null uses the active default
+     * @param query      natural-language news question (e.g. "Latest AI breakthroughs")
+     * @param sources    subset of source names ("thenewsapi", "gnews", "newsapi");
+     *                   empty set means all connected sources
      */
     @SuppressWarnings("varargs")
-    public AgentResult execute(String query, Set<String> sources, String aiProvider) {
+    public AgentResult execute(String query, Set<String> sources) {
         try {
             if (!newsMcpClient.isConnected()) {
                 return AgentResult.failure("news",
@@ -63,10 +57,10 @@ public class NewsAgent {
 
             log.debug("News agent executing query='{}' sources={}", query, sourcesParam);
 
-            ChatClient chatClient = providerConfigService.getChatClient(aiProvider);
+            ChatClient chatClient = providerConfigService.getChatClient();
             ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
             String result = chatClient.prompt()
-                    .system(SYSTEM_PROMPT)
+                    .system(agentProperties.news().systemPrompt())
                     .user(userPrompt)
                     .tools((Object[]) tools)
                     .call()

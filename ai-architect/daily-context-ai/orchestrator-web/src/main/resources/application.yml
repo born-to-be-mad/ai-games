@@ -57,5 +57,19 @@ ai:
   provider:
     active: ollama
 
+# Agent system prompts — override here without recompiling
+agent:
+  weather:
+    system-prompt: >-
+      You are a weather assistant. Use the available tools to retrieve accurate,
+      up-to-date weather information. Prefer metric units. Be concise and factual.
+      If multiple providers return data, synthesize them into a single clear answer.
+  news:
+    system-prompt: >-
+      You are a news assistant. Use the available tools to retrieve the latest news
+      articles relevant to the user's query. Summarize the most important findings
+      concisely. Cite article titles when referencing specific stories.
+      If multiple sources return overlapping articles, deduplicate before summarizing.
+
 server:
   port: 8080

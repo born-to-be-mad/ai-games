@@ -1,5 +1,6 @@
 package ai.architect.orchestrator.agent;
 
+import ai.architect.orchestrator.config.AgentProperties;
 import ai.architect.orchestrator.mcp.client.WeatherMcpClient;
 import ai.architect.orchestrator.service.ProviderConfigService;
 import lombok.RequiredArgsConstructor;
@@ -21,25 +22,19 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class WeatherAgent {
 
-    private static final String SYSTEM_PROMPT = """
-            You are a weather assistant. Use the available tools to retrieve accurate,
-            up-to-date weather information. Prefer metric units. Be concise and factual.
-            If multiple providers return data, synthesize them into a single clear answer.
-            """;
-
     private final WeatherMcpClient weatherMcpClient;
     private final ProviderConfigService providerConfigService;
+    private final AgentProperties agentProperties;
 
     /**
      * Executes a weather query against the given set of providers.
      *
-     * @param query     natural-language weather question (e.g. "Weather in London?")
-     * @param providers subset of provider names ("openmeteo", "weatherapi", "openweathermap");
-     *                  empty set means all connected providers
-     * @param aiProvider optional AI provider override; null uses the active default
+     * @param query      natural-language weather question (e.g. "Weather in London?")
+     * @param providers  subset of provider names ("openmeteo", "weatherapi", "openweathermap");
+     *                   empty set means all connected providers
      */
     @SuppressWarnings("varargs")
-    public AgentResult execute(String query, Set<String> providers, String aiProvider) {
+    public AgentResult execute(String query, Set<String> providers) {
         try {
             List<ToolCallback> callbacks = providers.isEmpty()
                     ? weatherMcpClient.getToolCallbacks()
@@ -52,10 +47,10 @@ public class WeatherAgent {
 
             log.debug("Weather agent executing query='{}' providers={}", query, providers);
 
-            ChatClient chatClient = providerConfigService.getChatClient(aiProvider);
+            ChatClient chatClient = providerConfigService.getChatClient();
             ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
             String result = chatClient.prompt()
-                    .system(SYSTEM_PROMPT)
+                    .system(agentProperties.weather().systemPrompt())
                     .user(query)
                     .tools((Object[]) tools)
                     .call()

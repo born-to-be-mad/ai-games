@@ -2,6 +2,7 @@ package ai.architect.orchestrator.web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Daily Context AI - Agent Orchestrator Application
@@ -10,8 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * using agent orchestrators and MCP servers for Open-Meteo and News APIs.
  */
 @SpringBootApplication(scanBasePackages = "ai.architect.orchestrator")
+@ConfigurationPropertiesScan("ai.architect.orchestrator")
 public class Application {
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(Application.class, args);
     }
 }
