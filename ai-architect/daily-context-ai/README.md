@@ -143,6 +143,74 @@ H2 file-based database, persisted at `./data/orchestrator`.
 | content | TEXT | message body |
 | timestamp | TIMESTAMP | message time |
 
+## MCP Servers
+
+Standalone Python MCP servers using **Streamable HTTP transport** (`mcp>=1.8.0`). Spring AI connects to each at `http://localhost:<port>/mcp`.
+
+### Weather Servers
+
+| Server | Port | API Key | Tools |
+|---|---|---|---|
+| Open-Meteo | 8101 | None | `get_current_weather`, `get_weather_forecast` |
+| WeatherAPI | 8103 | `WEATHERAPI_KEY` | `get_current_weather`, `get_weather_forecast` |
+| OpenWeatherMap | 8104 | `OPENWEATHERMAP_KEY` | `get_current_weather`, `get_weather_forecast` |
+
+### News Server
+
+| Server | Port | API Keys | Tools |
+|---|---|---|---|
+| News Aggregator | 8102 | `THENEWSAPI_KEY`, `GNEWS_KEY`, `NEWSAPI_KEY` | `get_news_thenewsapi`, `get_news_gnews`, `get_news_newsapi`, `get_all_news` |
+
+`get_all_news(query, count, sources)` — `sources` is comma-separated: `thenewsapi,gnews,newsapi` or `all`.
+
+All servers return a descriptive error string when the API key is missing — no crash.
+
+### Starting MCP Servers
+
+```bash
+# Copy and fill in API keys
+cp .env.example .env
+
+# Start weather servers
+docker compose -f docker-compose-mcp-weather.yml up --build -d
+
+# Start news server
+docker compose -f docker-compose-mcp-news.yml up --build -d
+
+# Check containers
+docker ps
+
+# Check logs
+docker logs weather-mcp-openmeteo
+docker logs news-mcp
+```
+
+### Testing MCP Servers
+
+```bash
+# List tools (Open-Meteo — no key required)
+curl -s -X POST http://localhost:8101/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Call a tool
+curl -s -X POST http://localhost:8101/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_current_weather","arguments":{"location":"London"}}}'
+
+# Test news server (requires at least one key in .env)
+curl -s -X POST http://localhost:8102/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+### Stopping MCP Servers
+
+```bash
+docker compose -f docker-compose-mcp-weather.yml down
+docker compose -f docker-compose-mcp-news.yml down
+```
+
 ## Project Status
 
 **Phase 1: Project Foundation** ✅ Complete
@@ -169,12 +237,25 @@ H2 file-based database, persisted at `./data/orchestrator`.
 - OpenAI / Anthropic enabled via `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` env vars
 - Build verified and working
 
-**Next Phase:** Phase 4 & 5 - MCP Server Setup (Weather + News)
+**Phase 4: Weather MCP Servers** ✅ Complete
+- `docker/weather-mcp-openmeteo` — Open-Meteo, no key, ports 8101; geocoding → current + forecast
+- `docker/weather-mcp-weatherapi` — WeatherAPI, `WEATHERAPI_KEY`, port 8103
+- `docker/weather-mcp-openweathermap` — OpenWeatherMap, `OPENWEATHERMAP_KEY`, port 8104; geocodes via `/geo/1.0/direct`
+- All use Streamable HTTP transport (`mcp>=1.8.0`), Python 3.12-slim Docker images
+- `docker-compose-mcp-weather.yml` — builds and starts all 3 weather servers on `daily-context-network`
+
+**Phase 5: News MCP Server** ✅ Complete
+- `docker/news-mcp` — aggregates TheNewsAPI, GNews, NewsAPI; port 8102
+- Tools: `get_news_thenewsapi`, `get_news_gnews`, `get_news_newsapi`, `get_all_news`
+- `get_all_news` dispatches to selected sources via comma-separated `sources` param
+- `docker-compose-mcp-news.yml` — builds and starts news server on `daily-context-network`
+- `.env.example` — template for all 7 API keys
+
+**Next Phase:** Phase 6 — MCP Client Integration (Spring AI connects to MCP servers)
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 4-5: MCP Server Setup (Weather + News)
 - Phase 6: MCP Client Integration
 - Phase 7: Agent Implementation (Orchestrator-Workers)
 - Phase 8: REST API Implementation

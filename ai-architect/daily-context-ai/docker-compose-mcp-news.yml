@@ -1,0 +1,21 @@
+name: daily-context-news
+
+services:
+  news-mcp:
+    build:
+      context: ./docker/news-mcp
+    container_name: news-mcp
+    ports:
+      - "8102:8080"
+    environment:
+      - THENEWSAPI_KEY=${THENEWSAPI_KEY:-}
+      - GNEWS_KEY=${GNEWS_KEY:-}
+      - NEWSAPI_KEY=${NEWSAPI_KEY:-}
+    restart: unless-stopped
+    networks:
+      - daily-context-network
+
+networks:
+  daily-context-network:
+    name: daily-context-network
+    driver: bridge
