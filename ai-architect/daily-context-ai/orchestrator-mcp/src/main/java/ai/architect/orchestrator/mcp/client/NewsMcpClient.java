@@ -1,8 +1,7 @@
 package ai.architect.orchestrator.mcp.client;
 
 import io.modelcontextprotocol.client.McpSyncClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.mcp.McpToolUtils;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
@@ -14,10 +13,9 @@ import java.util.List;
  * (TheNewsAPI, GNews, NewsAPI).
  * Use {@link #getToolCallbacks()} to get all news tools for passing to a ChatClient.
  */
+@Slf4j
 @Component
 public class NewsMcpClient {
-
-    private static final Logger log = LoggerFactory.getLogger(NewsMcpClient.class);
 
     private static final String SERVER_NAME = "news-aggregator";
 

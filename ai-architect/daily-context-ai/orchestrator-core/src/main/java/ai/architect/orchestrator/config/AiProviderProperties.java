@@ -5,10 +5,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @ConfigurationProperties(prefix = "ai.provider")
-public class AiProviderProperties {
+public record AiProviderProperties(String active) {
 
-    private String active = "ollama";
-
-    public String getActive() { return active; }
-    public void setActive(String active) { this.active = active; }
+    public AiProviderProperties {
+        if (active == null || active.isBlank()) {
+            active = "ollama";
+        }
+    }
 }

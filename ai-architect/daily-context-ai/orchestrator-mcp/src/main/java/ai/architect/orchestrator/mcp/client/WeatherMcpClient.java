@@ -1,8 +1,7 @@
 package ai.architect.orchestrator.mcp.client;
 
 import io.modelcontextprotocol.client.McpSyncClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.mcp.McpToolUtils;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
@@ -17,10 +16,9 @@ import java.util.stream.Collectors;
  * Use {@link #getToolCallbacks()} to get all weather tools for passing to a ChatClient,
  * or {@link #getToolCallbacks(Set)} to select tools from specific providers.
  */
+@Slf4j
 @Component
 public class WeatherMcpClient {
-
-    private static final Logger log = LoggerFactory.getLogger(WeatherMcpClient.class);
 
     private static final Map<String, String> SERVER_NAME_TO_PROVIDER = Map.of(
             "weather-openmeteo", "openmeteo",

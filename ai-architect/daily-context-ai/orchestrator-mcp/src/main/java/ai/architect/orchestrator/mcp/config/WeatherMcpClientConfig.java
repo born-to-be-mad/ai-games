@@ -1,6 +1,7 @@
 package ai.architect.orchestrator.mcp.config;
 
 import io.modelcontextprotocol.client.McpSyncClient;
+import lombok.RequiredArgsConstructor;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 
 @Configuration
+@RequiredArgsConstructor
 public class WeatherMcpClientConfig {
 
     private static final Set<String> WEATHER_SERVER_NAMES = Set.of(
@@ -18,10 +20,6 @@ public class WeatherMcpClientConfig {
     );
 
     private final List<McpSyncClient> mcpSyncClients;
-
-    public WeatherMcpClientConfig(List<McpSyncClient> mcpSyncClients) {
-        this.mcpSyncClients = mcpSyncClients;
-    }
 
     @Bean
     public SyncMcpToolCallbackProvider weatherToolCallbackProvider() {

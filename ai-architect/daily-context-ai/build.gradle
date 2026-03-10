@@ -37,6 +37,10 @@ subprojects {
         implementation 'org.slf4j:slf4j-api'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         testImplementation 'org.junit.jupiter:junit-jupiter'
+
+        // Lombok — version managed by Spring Boot BOM
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
     }
 
     tasks.named('test') {

@@ -8,11 +8,22 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "messages")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Message {
 
     @Id
@@ -29,25 +40,7 @@ public class Message {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Builder.Default
     @Column(nullable = false)
-    private LocalDateTime timestamp;
-
-    public Message() {
-        this.timestamp = LocalDateTime.now();
-    }
-
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-
-    public UUID getConversationId() { return conversationId; }
-    public void setConversationId(UUID conversationId) { this.conversationId = conversationId; }
-
-    public MessageRole getRole() { return role; }
-    public void setRole(MessageRole role) { this.role = role; }
-
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
-
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    private LocalDateTime timestamp = LocalDateTime.now();
 }
