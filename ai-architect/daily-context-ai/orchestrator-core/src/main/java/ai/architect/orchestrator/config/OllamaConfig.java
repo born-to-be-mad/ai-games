@@ -19,5 +19,5 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(name = "spring.ai.ollama.base-url")
 public class OllamaConfig {
-    // Spring AI auto-configures OllamaChatModel — no manual bean creation needed.
+    // Spring AI autoconfigures OllamaChatModel — no manual bean creation needed.
 }

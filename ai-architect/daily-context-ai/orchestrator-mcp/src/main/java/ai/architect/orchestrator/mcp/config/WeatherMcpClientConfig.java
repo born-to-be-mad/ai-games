@@ -2,7 +2,6 @@ package ai.architect.orchestrator.mcp.config;
 
 import io.modelcontextprotocol.client.McpSyncClient;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,14 +17,19 @@ public class WeatherMcpClientConfig {
             "weather-openweathermap"
     );
 
-    @Autowired
-    private List<McpSyncClient> mcpSyncClients;
+    private final List<McpSyncClient> mcpSyncClients;
+
+    public WeatherMcpClientConfig(List<McpSyncClient> mcpSyncClients) {
+        this.mcpSyncClients = mcpSyncClients;
+    }
 
     @Bean
     public SyncMcpToolCallbackProvider weatherToolCallbackProvider() {
         List<McpSyncClient> weatherClients = mcpSyncClients.stream()
                 .filter(c -> WEATHER_SERVER_NAMES.contains(c.getServerInfo().name()))
                 .toList();
-        return new SyncMcpToolCallbackProvider(weatherClients);
+        return SyncMcpToolCallbackProvider.builder()
+                .mcpClients(weatherClients)
+                .build();
     }
 }

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Anthropic provider configuration.
  *
- * Spring AI auto-configures AnthropicChatModel when an API key is present.
+ * Spring AI autoconfigures AnthropicChatModel when an API key is present.
  * Configure via application.yml or environment variable:
  *
  * spring:
@@ -19,5 +19,5 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(name = "spring.ai.anthropic.api-key")
 public class AnthropicConfig {
-    // Spring AI auto-configures AnthropicChatModel — no manual bean creation needed.
+    // Spring AI autoconfigures AnthropicChatModel — no manual bean creation needed.
 }

@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * OpenAI provider configuration.
  *
- * Spring AI auto-configures OpenAiChatModel when an API key is present.
+ * Spring AI autoconfigures OpenAiChatModel when an API key is present.
  * Configure via application.yml or environment variable:
  *
  * spring:
