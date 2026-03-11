@@ -148,12 +148,27 @@ docker ps
 
 MCP servers must be running before starting the application (see Setup above).
 
+### Backend
+
 ```bash
 # Run the application
 ./gradlew :orchestrator-web:bootRun
 
 # Or run the JAR
 java -jar orchestrator-web/build/libs/orchestrator-web-0.0.1-SNAPSHOT.jar
+```
+
+### Frontend
+
+```bash
+cd orchestrator-frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start dev server — opens http://localhost:3000
+# API requests are proxied to http://localhost:8080
+npm start
 ```
 
 ## AI Providers
@@ -289,6 +304,38 @@ spring:
 
 `WeatherMcpClient` and `NewsMcpClient` in `orchestrator-mcp` wrap the auto-configured `McpSyncClient` beans and expose `getToolCallbacks()` for use in agents.
 
+## Frontend
+
+React 18 single-page app (`orchestrator-frontend/`). Communicates with the backend via `proxy: http://localhost:8080` — no CORS setup needed in development.
+
+### Layout
+
+```
+┌─────────────────┬──────────────────────────────────────┐
+│  Daily Context  │  Messages (USER / ASSISTANT bubbles)  │
+│  AI             │                                       │
+│  [+ New Chat]   │                                       │
+│                 │                                       │
+│  Topic 1        ├───────────────────────────────────────┤
+│  Topic 2        │  Weather: □ openmeteo □ weatherapi    │
+│  …              │  News:    □ thenewsapi □ gnews        │
+│                 │  ┌──────────────────────┐  [Send]     │
+│  Providers: …   │  │  Ask something…      │             │
+└─────────────────┴──┴──────────────────────┴─────────────┘
+```
+
+- Sidebar: conversation list (topic + date), delete button, available AI providers shown as info
+- Messages: USER bubbles right (blue), ASSISTANT bubbles left (gray, `white-space: pre-wrap`)
+- Filters: unchecked = use all providers/sources; check to restrict the request
+- Enter sends, Shift+Enter inserts newline
+
+### Production build
+
+```bash
+cd orchestrator-frontend && npm run build
+# Output in orchestrator-frontend/build/ — served by Nginx in Docker (Phase 10)
+```
+
 ## REST API
 
 | Method | Path | Description |
@@ -412,12 +459,20 @@ curl -s http://localhost:8080/api/config/providers
 - Logging added to `ConversationService`, `AgentCoordinationService`, `OrchestratorService`
 - Build verified: `BUILD SUCCESSFUL`
 
-**Next Phase:** Phase 9 — React Frontend
+**Phase 9: React Frontend** ✅ Complete
+- 2-column layout: dark sidebar (conversation history) + main chat area
+- `ConversationHistory` — New Chat button, conversation list with topic + date, delete per conversation, AI providers info in footer
+- `ChatInterface` — scrollable message history, textarea input (Enter sends), weather/news provider checkboxes, loading state
+- `ResponseDisplay` — USER bubbles (right, blue) + ASSISTANT bubbles (left, gray, `white-space: pre-wrap`)
+- `ApiService` — axios wrappers for all 5 REST endpoints; dev proxy to `localhost:8080`
+- Error banner on failed requests; optimistic user-message append while waiting for response
+- Build verified: `Compiled successfully`
+
+**Next Phase:** Phase 10 — Docker Compose Integration
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 9: React Frontend
 - Phase 10: Docker Compose Integration
 - Phase 11: Testing & Documentation
 - Phase 12: Enhancements (Optional)
