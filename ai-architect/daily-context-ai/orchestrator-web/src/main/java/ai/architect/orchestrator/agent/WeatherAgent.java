@@ -42,7 +42,6 @@ public class WeatherAgent {
      * @param providers  subset of provider names ("openmeteo", "weatherapi", "openweathermap");
      *                   empty set means all connected providers
      */
-    @SuppressWarnings("varargs")
     @Cacheable(value = "weather",
                key = "#query + '_' + #providers.toString() + '_' + @providerConfigService.activeProvider",
                unless = "!#result.success()")
@@ -67,7 +66,7 @@ public class WeatherAgent {
         String result = chatClient.prompt()
                 .system(agentProperties.weather().systemPrompt())
                 .user(query)
-                .tools((Object[]) tools)
+                .toolCallbacks(tools)
                 .call()
                 .content();
 

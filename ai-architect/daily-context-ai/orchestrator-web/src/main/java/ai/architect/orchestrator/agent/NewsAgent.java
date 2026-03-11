@@ -43,7 +43,6 @@ public class NewsAgent {
      * @param sources  subset of source names ("thenewsapi", "gnews", "newsapi");
      *                 empty set means all connected sources
      */
-    @SuppressWarnings("varargs")
     @Cacheable(value = "news",
                key = "#query + '_' + #sources.toString() + '_' + @providerConfigService.activeProvider",
                unless = "!#result.success()")
@@ -77,7 +76,7 @@ public class NewsAgent {
         String result = chatClient.prompt()
                 .system(agentProperties.news().systemPrompt())
                 .user(userPrompt)
-                .tools((Object[]) tools)
+                .toolCallbacks(tools)
                 .call()
                 .content();
 
