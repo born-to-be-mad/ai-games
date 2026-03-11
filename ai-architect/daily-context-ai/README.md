@@ -185,6 +185,9 @@ docker compose --profile ollama up --build
 # OR: start without Ollama (using local Ollama at localhost:11434)
 # Add OLLAMA_BASE_URL=http://host.docker.internal:11434 to .env first
 docker compose up --build
+
+# Verify all 'daily-context-ai' containers are running
+docker ps --filter "name=daily-context-ai" --format "table {{.ID}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}\t{{.Names}}"
 ```
 
 Services available after startup:

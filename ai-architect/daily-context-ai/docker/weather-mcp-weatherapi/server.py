@@ -9,7 +9,7 @@ API_KEY = os.environ.get("WEATHERAPI_KEY", "")
 
 
 @mcp.tool()
-async def get_current_weather(location: str) -> str:
+async def weatherapi_get_current_weather(location: str) -> str:
     """Get current weather for a location using WeatherAPI."""
     if not API_KEY:
         return "WeatherAPI key not configured. Set WEATHERAPI_KEY environment variable."
@@ -40,7 +40,7 @@ async def get_current_weather(location: str) -> str:
 
 
 @mcp.tool()
-async def get_weather_forecast(location: str, days: int = 3) -> str:
+async def weatherapi_get_weather_forecast(location: str, days: int = 3) -> str:
     """Get weather forecast for a location using WeatherAPI."""
     if not API_KEY:
         return "WeatherAPI key not configured. Set WEATHERAPI_KEY environment variable."

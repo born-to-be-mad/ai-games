@@ -25,7 +25,7 @@ async def geocode(location: str) -> dict | None:
 
 
 @mcp.tool()
-async def get_current_weather(location: str) -> str:
+async def openweathermap_get_current_weather(location: str) -> str:
     """Get current weather for a location using OpenWeatherMap."""
     if not API_KEY:
         return "OpenWeatherMap key not configured. Set OPENWEATHERMAP_KEY environment variable."
@@ -63,7 +63,7 @@ async def get_current_weather(location: str) -> str:
 
 
 @mcp.tool()
-async def get_weather_forecast(location: str, days: int = 3) -> str:
+async def openweathermap_get_weather_forecast(location: str, days: int = 3) -> str:
     """Get weather forecast for a location using OpenWeatherMap (5-day/3h, sampled daily)."""
     if not API_KEY:
         return "OpenWeatherMap key not configured. Set OPENWEATHERMAP_KEY environment variable."

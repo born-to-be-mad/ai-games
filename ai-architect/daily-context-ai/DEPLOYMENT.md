@@ -56,7 +56,6 @@ curl -s -X POST http://localhost:8080/api/chat \
   -d '{"query":"Weather in London?"}'
 
 open http://localhost:3000          # React UI
-open http://localhost:8080/h2-console   # H2 console
 ```
 
 ### 4. Stop
@@ -89,7 +88,7 @@ docker compose --profile ollama down -v          # also removes ollama-models vo
 | Variable            | Default    | Description                               |
 |---------------------|------------|-------------------------------------------|
 | `AI_PROVIDER_ACTIVE`| `ollama`   | Active LLM: `ollama`, `openai`, `anthropic` |
-| `OLLAMA_BASE_URL`   | `http://ollama:11434` | Ollama base URL (override for local Ollama) |
+| `OLLAMA_BASE_URL`   | `http://localhost:11434` | Ollama base URL (override for local Ollama) |
 | `OPENAI_API_KEY`    | *(empty)*  | OpenAI key — required when provider=openai |
 | `ANTHROPIC_API_KEY` | *(empty)*  | Anthropic key — required when provider=anthropic |
 

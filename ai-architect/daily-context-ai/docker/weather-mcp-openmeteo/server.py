@@ -19,7 +19,7 @@ async def geocode(location: str) -> dict | None:
 
 
 @mcp.tool()
-async def get_current_weather(location: str) -> str:
+async def openmeteo_get_current_weather(location: str) -> str:
     """Get current weather for a location using Open-Meteo (no API key required)."""
     geo = await geocode(location)
     if not geo:
@@ -49,7 +49,7 @@ async def get_current_weather(location: str) -> str:
 
 
 @mcp.tool()
-async def get_weather_forecast(location: str, days: int = 3) -> str:
+async def openmeteo_get_weather_forecast(location: str, days: int = 3) -> str:
     """Get weather forecast for a location using Open-Meteo (no API key required)."""
     days = max(1, min(days, 16))
     geo = await geocode(location)

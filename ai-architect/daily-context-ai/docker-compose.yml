@@ -10,7 +10,7 @@ services:
       AI_PROVIDER_ACTIVE: ${AI_PROVIDER_ACTIVE:-ollama}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434}
       MCP_WEATHER_OPENMETEO_URL: http://weather-mcp-openmeteo:8080
       MCP_WEATHER_WEATHERAPI_URL: http://weather-mcp-weatherapi:8080
       MCP_WEATHER_OPENWEATHERMAP_URL: http://weather-mcp-openweathermap:8080
