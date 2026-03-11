@@ -4,6 +4,7 @@ import ai.architect.orchestrator.config.AgentProperties;
 import ai.architect.orchestrator.mcp.client.WeatherMcpClient;
 import ai.architect.orchestrator.service.MetricsService;
 import ai.architect.orchestrator.service.ProviderConfigService;
+import ai.architect.orchestrator.tool.SanitizingToolCallback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -62,7 +63,9 @@ public class WeatherAgent {
         log.info("WeatherAgent executing query='{}' providers={} tools={}", query, providers, callbacks.size());
 
         ChatClient chatClient = providerConfigService.getChatClient();
-        ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
+        ToolCallback[] tools = callbacks.stream()
+                .map(SanitizingToolCallback::new)
+                .toArray(ToolCallback[]::new);
         String result = chatClient.prompt()
                 .system(agentProperties.weather().systemPrompt())
                 .user(query)

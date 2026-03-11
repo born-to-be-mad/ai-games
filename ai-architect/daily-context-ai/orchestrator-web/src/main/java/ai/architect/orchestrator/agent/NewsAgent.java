@@ -4,6 +4,7 @@ import ai.architect.orchestrator.config.AgentProperties;
 import ai.architect.orchestrator.mcp.client.NewsMcpClient;
 import ai.architect.orchestrator.service.MetricsService;
 import ai.architect.orchestrator.service.ProviderConfigService;
+import ai.architect.orchestrator.tool.SanitizingToolCallback;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -72,7 +73,9 @@ public class NewsAgent {
         log.info("NewsAgent executing query='{}' sources={} tools={}", query, sourcesParam, callbacks.size());
 
         ChatClient chatClient = providerConfigService.getChatClient();
-        ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
+        ToolCallback[] tools = callbacks.stream()
+                .map(SanitizingToolCallback::new)
+                .toArray(ToolCallback[]::new);
         String result = chatClient.prompt()
                 .system(agentProperties.news().systemPrompt())
                 .user(userPrompt)
