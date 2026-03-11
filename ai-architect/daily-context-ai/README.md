@@ -119,7 +119,81 @@ Required keys per service:
 
 Open-Meteo requires no key. Ollama runs locally. At least one news key needed for news results.
 
-### 2. Start MCP servers
+### API Key Acquisition Guide
+
+#### No key required
+
+| Service | Notes |
+|---|---|
+| **Open-Meteo** | Fully free, open-source weather API. No registration needed. |
+| **Ollama** | Runs locally. Install from https://ollama.ai, then `ollama pull llama3.2`. |
+
+#### Weather APIs
+
+| Key | Service | Free tier | Sign-up URL |
+|---|---|---|---|
+| `WEATHERAPI_KEY` | WeatherAPI | 1M calls/month | https://www.weatherapi.com/signup.aspx |
+| `OPENWEATHERMAP_KEY` | OpenWeatherMap | 1,000 calls/day | https://home.openweathermap.org/users/sign_up |
+
+**WeatherAPI:** Sign up → dashboard auto-shows your API key on first login.
+
+**OpenWeatherMap:** Sign up → *API keys* tab → default key is created automatically. New keys take up to 10 minutes to activate.
+
+#### News APIs
+
+| Key | Service | Free tier | Sign-up URL |
+|---|---|---|---|
+| `THENEWSAPI_KEY` | TheNewsAPI | 100 requests/day | https://www.thenewsapi.com/register |
+| `GNEWS_KEY` | GNews | 100 requests/day | https://gnews.io/register |
+| `NEWSAPI_KEY` | NewsAPI | 100 requests/day | https://newsapi.org/register |
+
+**TheNewsAPI:** Register → *API Token* shown immediately on dashboard.
+
+**GNews:** Register → *Dashboard* → copy API key.
+
+**NewsAPI:** Register → API key shown on the registration confirmation page. Free plan only works from `localhost`; non-localhost requests require a paid plan.
+
+#### LLM APIs (optional — only if not using Ollama)
+
+| Key | Service | Pricing | Console URL |
+|---|---|---|---|
+| `OPENAI_API_KEY` | OpenAI | Pay-per-use | https://platform.openai.com/api-keys |
+| `ANTHROPIC_API_KEY` | Anthropic | Pay-per-use | https://console.anthropic.com/ |
+
+**OpenAI:** Sign in → *API keys* → *Create new secret key* → copy immediately (shown once). Requires billing setup.
+
+**Anthropic:** Sign in → *API Keys* → *Create Key* → copy immediately. Requires billing setup.
+
+### 2. Start with Docker Compose (recommended)
+
+```bash
+# Start all 7 services (Ollama runs in Docker)
+docker compose --profile ollama up --build
+
+# OR: start without Ollama (using local Ollama at localhost:11434)
+# Add OLLAMA_BASE_URL=http://host.docker.internal:11434 to .env first
+docker compose up --build
+```
+
+Services available after startup:
+
+| URL | Service |
+|---|---|
+| http://localhost:3000 | React UI |
+| http://localhost:8080/api/config/providers | Backend health check |
+| http://localhost:8080/h2-console | H2 database console |
+
+```bash
+# Individual service rebuild
+docker compose build backend
+docker compose up -d backend
+
+# Stop
+docker compose down
+docker compose --profile ollama down -v   # also removes ollama-models volume
+```
+
+### 2b. Start MCP servers only (for local backend dev)
 
 ```bash
 # Weather servers (Open-Meteo, WeatherAPI, OpenWeatherMap)
@@ -333,7 +407,7 @@ React 18 single-page app (`orchestrator-frontend/`). Communicates with the backe
 
 ```bash
 cd orchestrator-frontend && npm run build
-# Output in orchestrator-frontend/build/ — served by Nginx in Docker (Phase 10)
+# Output in orchestrator-frontend/build/ — served by Nginx in Docker
 ```
 
 ## REST API
@@ -468,12 +542,18 @@ curl -s http://localhost:8080/api/config/providers
 - Error banner on failed requests; optimistic user-message append while waiting for response
 - Build verified: `Compiled successfully`
 
-**Next Phase:** Phase 10 — Docker Compose Integration
+**Phase 10: Docker Compose Integration** ✅ Complete
+- `Dockerfile` (root) — multi-stage: Gradle build → JRE runtime for backend JAR
+- `orchestrator-frontend/Dockerfile` — multi-stage: Node build → Nginx runtime
+- `orchestrator-frontend/nginx.conf` — SPA routing + `/api/*` proxy to `backend:8080`
+- `docker-compose.yml` — all 7 services unified; Ollama as optional `--profile ollama`
+- `.dockerignore` files for root and frontend
+- `application.yml` — MCP URLs + Ollama URL + AI provider wrapped in `${VAR:default}`
+- `.env.example` — added `AI_PROVIDER_ACTIVE`, `OLLAMA_BASE_URL`
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 10: Docker Compose Integration
 - Phase 11: Testing & Documentation
 - Phase 12: Enhancements (Optional)
 

@@ -22,7 +22,7 @@ spring:
         format_sql: true
   ai:
     ollama:
-      base-url: http://localhost:11434
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         model: llama3.2
     # OpenAI — set OPENAI_API_KEY env var to enable
@@ -44,18 +44,18 @@ spring:
         streamable-http:
           connections:
             weather-openmeteo:
-              url: http://localhost:8101
+              url: ${MCP_WEATHER_OPENMETEO_URL:http://localhost:8101}
             weather-weatherapi:
-              url: http://localhost:8103
+              url: ${MCP_WEATHER_WEATHERAPI_URL:http://localhost:8103}
             weather-openweathermap:
-              url: http://localhost:8104
+              url: ${MCP_WEATHER_OPENWEATHERMAP_URL:http://localhost:8104}
             news-aggregator:
-              url: http://localhost:8102
+              url: ${MCP_NEWS_AGGREGATOR_URL:http://localhost:8102}
 
 # Active AI provider: ollama | openai | anthropic
 ai:
   provider:
-    active: ollama
+    active: ${AI_PROVIDER_ACTIVE:ollama}
 
 # Agent system prompts — override here without recompiling
 agent:

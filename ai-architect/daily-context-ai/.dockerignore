@@ -1,0 +1,10 @@
+.gradle
+.idea
+*/build/
+*/out/
+*.class
+orchestrator-frontend/node_modules/
+orchestrator-frontend/build/
+data/
+*.log
+.DS_Store

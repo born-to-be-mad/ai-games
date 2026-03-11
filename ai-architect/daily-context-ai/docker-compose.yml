@@ -1,0 +1,105 @@
+services:
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      AI_PROVIDER_ACTIVE: ${AI_PROVIDER_ACTIVE:-ollama}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      MCP_WEATHER_OPENMETEO_URL: http://weather-mcp-openmeteo:8080
+      MCP_WEATHER_WEATHERAPI_URL: http://weather-mcp-weatherapi:8080
+      MCP_WEATHER_OPENWEATHERMAP_URL: http://weather-mcp-openweathermap:8080
+      MCP_NEWS_AGGREGATOR_URL: http://news-mcp:8080
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      weather-mcp-openmeteo:
+        condition: service_healthy
+      weather-mcp-weatherapi:
+        condition: service_healthy
+      weather-mcp-openweathermap:
+        condition: service_healthy
+      news-mcp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/config/providers"]
+      interval: 30s
+      timeout: 10s
+      start-period: 90s
+      retries: 3
+    networks:
+      - daily-context-network
+
+  frontend:
+    build:
+      context: orchestrator-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - daily-context-network
+
+  weather-mcp-openmeteo:
+    build:
+      context: docker/weather-mcp-openmeteo
+    ports:
+      - "8101:8080"
+    networks:
+      - daily-context-network
+
+  weather-mcp-weatherapi:
+    build:
+      context: docker/weather-mcp-weatherapi
+    ports:
+      - "8103:8080"
+    environment:
+      WEATHERAPI_KEY: ${WEATHERAPI_KEY:-}
+    networks:
+      - daily-context-network
+
+  weather-mcp-openweathermap:
+    build:
+      context: docker/weather-mcp-openweathermap
+    ports:
+      - "8104:8080"
+    environment:
+      OPENWEATHERMAP_KEY: ${OPENWEATHERMAP_KEY:-}
+    networks:
+      - daily-context-network
+
+  news-mcp:
+    build:
+      context: docker/news-mcp
+    ports:
+      - "8102:8080"
+    environment:
+      THENEWSAPI_KEY: ${THENEWSAPI_KEY:-}
+      GNEWS_KEY: ${GNEWS_KEY:-}
+      NEWSAPI_KEY: ${NEWSAPI_KEY:-}
+    networks:
+      - daily-context-network
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - daily-context-network
+    profiles:
+      - ollama
+
+volumes:
+  ollama-models:
+
+networks:
+  daily-context-network:
+    driver: bridge
