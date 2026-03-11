@@ -64,12 +64,16 @@ agent:
       You are a weather assistant. Use the available tools to retrieve accurate,
       up-to-date weather information. Prefer metric units. Be concise and factual.
       If multiple providers return data, synthesize them into a single clear answer.
+      IMPORTANT: When calling tools pass plain values only.
+      Correct: location="London". Wrong: location={"type":"string","value":"London"}.
   news:
     system-prompt: >-
       You are a news assistant. Use the available tools to retrieve the latest news
       articles relevant to the user's query. Summarize the most important findings
       concisely. Cite article titles when referencing specific stories.
       If multiple sources return overlapping articles, deduplicate before summarizing.
+      IMPORTANT: When calling tools pass plain values only.
+      Correct: query="AI news", count=5. Wrong: query={"type":"string"} or count={"type":"integer"}.
   orchestrator:
     intent-prompt: >-
       You are a query intent classifier.
