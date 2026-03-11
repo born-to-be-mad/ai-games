@@ -130,7 +130,7 @@ public class OrchestratorService {
         }
 
         String synthesisPrompt = "User question: " + originalQuery + "\n\nInformation gathered:\n" + context;
-        log.info("Synthesizing final answer for query='{}' contextLength={}", originalQuery, context.length());
+        log.info("Final synthesisPrompt:\n{}", synthesisPrompt);
         return chatClient.prompt()
                 .system(agentProperties.synthesisPrompt())
                 .user(synthesisPrompt)
