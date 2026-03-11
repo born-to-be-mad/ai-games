@@ -23,7 +23,7 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 |---|---|
 | Language | Java 25 |
 | Framework | Spring Boot 4.0.3 |
-| AI | Spring AI 1.1.2 |
+| AI | Spring AI 2.0.0-M2 |
 | Build | Gradle 9.2.1 + `java-library` |
 | Database | H2 (file-based) |
 | MCP Servers | Python 3.12, `mcp>=1.8.0` |
@@ -541,6 +541,15 @@ curl -s http://localhost:8080/api/config/providers
 - `ApiService` — axios wrappers for all 5 REST endpoints; dev proxy to `localhost:8080`
 - Error banner on failed requests; optimistic user-message append while waiting for response
 - Build verified: `Compiled successfully`
+
+**Phase 11: Testing & Documentation** 🔄 In Progress — smoke test complete
+
+**Smoke test fixes applied:**
+- `docker-compose.yml`: `start-period` → `start_period`
+- `orchestrator-frontend/Dockerfile`: `npm ci` → `npm install`
+- All 4 MCP `server.py`: moved `host`/`port` to `FastMCP()` constructor (`mcp` 1.26.0)
+- `build.gradle`: Spring AI `1.1.2` → `2.0.0-M2` (Boot 4.0 compatibility)
+- `Application.java`: added `@EnableJpaRepositories` + `@EntityScan` with Spring Boot 4.0 package paths
 
 **Phase 10: Docker Compose Integration** ✅ Complete
 - `Dockerfile` (root) — multi-stage: Gradle build → JRE runtime for backend JAR

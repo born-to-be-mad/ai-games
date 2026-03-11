@@ -2,7 +2,7 @@ import os
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("news-aggregator")
+mcp = FastMCP("news-aggregator", host="0.0.0.0", port=8080)
 
 THENEWSAPI_KEY = os.environ.get("THENEWSAPI_KEY", "")
 GNEWS_KEY = os.environ.get("GNEWS_KEY", "")
@@ -125,4 +125,4 @@ async def get_all_news(query: str, count: int = 5, sources: str = "all") -> str:
     return "\n\n".join(results)
 
 
-mcp.run(transport="streamable-http", host="0.0.0.0", port=8080)
+mcp.run(transport="streamable-http")

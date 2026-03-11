@@ -30,7 +30,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/api/config/providers"]
       interval: 30s
       timeout: 10s
-      start-period: 90s
+      start_period: 90s
       retries: 3
     networks:
       - daily-context-network

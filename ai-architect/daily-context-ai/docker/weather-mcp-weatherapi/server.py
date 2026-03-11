@@ -2,7 +2,7 @@ import os
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-mcp = FastMCP("weather-weatherapi")
+mcp = FastMCP("weather-weatherapi", host="0.0.0.0", port=8080)
 
 BASE_URL = "https://api.weatherapi.com/v1"
 API_KEY = os.environ.get("WEATHERAPI_KEY", "")
@@ -72,4 +72,4 @@ async def get_weather_forecast(location: str, days: int = 3) -> str:
     return "\n".join(lines)
 
 
-mcp.run(transport="streamable-http", host="0.0.0.0", port=8080)
+mcp.run(transport="streamable-http")

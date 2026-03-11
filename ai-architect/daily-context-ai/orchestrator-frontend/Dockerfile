@@ -2,7 +2,7 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 COPY public public
 COPY src src
 ENV GENERATE_SOURCEMAP=false
