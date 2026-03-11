@@ -61,6 +61,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+### H2 database (runtime data — auto-created on first run) ###
+data/
+*.mv.db
+*.trace.db
+
+### Secrets ###
+.env
+
 ### Miscellaneous ###
 *.log
 *.tmp
