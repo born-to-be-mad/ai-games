@@ -30,10 +30,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'com.github.ben-manes.caffeine:caffeine'
 
-    // Resilience4j — core JARs only (spring-boot3 starter is incompatible with SB4)
-    implementation 'io.github.resilience4j:resilience4j-core:2.3.0'
-    implementation 'io.github.resilience4j:resilience4j-retry:2.3.0'
-    implementation 'io.github.resilience4j:resilience4j-circuitbreaker:2.3.0'
+    // AOP (enables @Retryable / @ConcurrencyLimit SB4 declarative resilience)
+    implementation 'org.springframework.boot:spring-boot-starter-aspectj'
 
     // Rate limiting (Bucket4j core — starter is incompatible with SB4)
     implementation 'com.bucket4j:bucket4j-core:8.10.1'

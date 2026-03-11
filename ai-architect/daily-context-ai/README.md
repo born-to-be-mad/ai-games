@@ -16,7 +16,7 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 - Conversation history with H2 database persistence
 - Conversation export — JSON and PDF (with title page)
 - User preferences persisted per browser client
-- Retry + circuit breaker on all agent calls (Resilience4j)
+- SB4 declarative resilience (`@Retryable` + `@ConcurrencyLimit`) on all agent calls
 - Caffeine caching for weather and news results (10-min TTL)
 - Per-IP rate limiting (configurable, default 10 req/min)
 - Prometheus metrics via Spring Boot Actuator
@@ -101,8 +101,8 @@ Spring AI 2.0.0-M2 uses updated artifact naming (`spring-ai-starter-*`):
 - `spring-boot-starter-validation` — bean validation
 - `spring-boot-starter-actuator` — health, metrics endpoints
 - `spring-boot-starter-cache` + `caffeine` — Caffeine in-memory caching
+- `spring-boot-starter-aspectj` — AOP support (SB4 rename of `spring-boot-starter-aop`); enables `@Retryable` / `@ConcurrencyLimit`
 - `micrometer-registry-prometheus` — Prometheus metrics export
-- `resilience4j-core/retry/circuitbreaker:2.3.0` — retry + circuit breaker (core JARs — SB4 compatible)
 - `bucket4j-core:8.10.1` — per-IP rate limiting (core JAR — SB4 compatible)
 - `openpdf:2.0.3` — PDF conversation export
 - `h2` — embedded database
@@ -523,7 +523,7 @@ curl -s http://localhost:8080/actuator/prometheus | grep chat_
 | 11 | Testing & Documentation | ✅ Complete |
 | 12 | Enhancements | ✅ Complete |
 
-**Build:** `BUILD SUCCESSFUL` — 43 tests pass, full stack verified end-to-end.
+**Build:** `BUILD SUCCESSFUL` — 43 tests pass, full stack verified end-to-end. CI runs automatically on every push/PR via GitHub Actions.
 
 For the detailed phase-by-phase plan, fixes applied, and architectural decisions see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md).
 
@@ -565,9 +565,20 @@ For the detailed phase-by-phase plan, fixes applied, and architectural decisions
 
 ### Phase 12 highlights — Enhancements
 
-**Resilience**
-- Resilience4j retry (3 attempts, 500ms wait) + circuit breaker (50% threshold, 10s open) on `WeatherAgent` and `NewsAgent`
-- Graceful degradation: `AgentResult.failure` returned when circuit is open
+**Resilience (SB4 declarative — no Resilience4j)**
+- `@Retryable(maxRetries=3, delay=500, multiplier=1.5, maxDelay=5000)` on `WeatherAgent.execute` and `NewsAgent.execute`
+- `@ConcurrencyLimit(limit=5)` — max 5 concurrent LLM calls per agent; excess calls block until a slot is free
+- `@EnableResilientMethods` in `CacheConfig` activates the AOP proxies
+- Proxy order: `@Cacheable` → `@Retryable` → `@ConcurrencyLimit` → actual method
+- Early guard returns (`AgentResult.failure` when no providers connected) bypass retry — no AOP involved
+- LLM exceptions propagate through `@Retryable`; on exhaustion, caught by `AgentCoordinationService.exceptionally()`
+- Replaces programmatic Resilience4j approach; `ResilienceConfig.java` deleted; Resilience4j JARs removed
+- SB4 note: AOP starter is `spring-boot-starter-aspectj` (renamed from `spring-boot-starter-aop`)
+
+**CI (GitHub Actions)**
+- `.github/workflows/ci.yml` — triggers on push/PR to `main`
+- Two parallel jobs: `backend` (Java 25, Temurin, `./gradlew test`) and `frontend` (Node 20, `npm ci && npm run build`)
+- Test reports uploaded as artifact on backend failure
 
 **Caching**
 - Caffeine — `weather` and `news` caches, 10-min TTL, 100 entries per cache
@@ -595,7 +606,8 @@ For the detailed phase-by-phase plan, fixes applied, and architectural decisions
 - Selector choices saved automatically with 500ms debounce
 
 **Spring Boot 4.0 compatibility**
-- Use Resilience4j **core JARs** (not `resilience4j-spring-boot3` starter)
+- Resilience4j removed; SB4 ships built-in `@Retryable` / `@ConcurrencyLimit` in `org.springframework.resilience.annotation`
+- AOP starter renamed: use `spring-boot-starter-aspectj` (not `spring-boot-starter-aop`)
 - Use Bucket4j **core JAR** (not `bucket4j-spring-boot-starter`)
 
 ---
