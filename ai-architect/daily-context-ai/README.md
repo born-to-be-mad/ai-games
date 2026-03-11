@@ -26,7 +26,7 @@ Daily Context AI uses the Orchestrator-Workers pattern to intelligently route us
 | AI | Spring AI 2.0.0-M2 |
 | Build | Gradle 9.2.1 + `java-library` |
 | Database | H2 (file-based) |
-| MCP Servers | Python 3.12, `mcp>=1.8.0` |
+| MCP Servers | Python 3.12, `mcp>=1.26.0` |
 | Frontend | React |
 | Deployment | Docker Compose |
 
@@ -78,7 +78,7 @@ Tomcat and Spring's async executor also use virtual threads (`spring.threads.vir
 
 ### Spring AI Starters
 
-Spring AI 1.1.2 uses updated artifact naming (`spring-ai-starter-*`):
+Spring AI 2.0.0-M2 uses updated artifact naming (`spring-ai-starter-*`):
 
 | Artifact | Purpose |
 |---|---|
@@ -306,7 +306,7 @@ H2 file-based database, persisted at `./data/orchestrator`.
 
 ## MCP Servers
 
-Standalone Python MCP servers using **Streamable HTTP transport** (`mcp>=1.8.0`). Spring AI connects to each at `http://localhost:<port>/mcp`.
+Standalone Python MCP servers using **Streamable HTTP transport** (`mcp>=1.26.0`). Spring AI connects to each at `http://localhost:<port>/mcp`.
 
 ### Weather Servers
 
@@ -465,106 +465,60 @@ curl -s http://localhost:8080/api/config/providers
 
 ## Project Status
 
-**Phase 1: Project Foundation** ✅ Complete
-- Multi-module Gradle structure with Java 25
-- Spring Boot 4.0.3 + Spring AI 1.1.2 configured
-- Package structure: `ai.architect.orchestrator`
-- AI providers configured: Ollama (default), OpenAI, Anthropic
-- Build verified: `BUILD SUCCESSFUL`
+| Phase | Title | Status |
+|---|---|---|
+| 1 | Project Foundation | ✅ Complete |
+| 2 | Core Domain & H2 Integration | ✅ Complete |
+| 3 | AI Provider Configuration | ✅ Complete |
+| 4 | Weather MCP Servers | ✅ Complete |
+| 5 | News MCP Server | ✅ Complete |
+| 6 | MCP Client Integration | ✅ Complete |
+| 7 | Agent Implementation | ✅ Complete |
+| 8 | REST API | ✅ Complete |
+| 9 | React Frontend | ✅ Complete |
+| 10 | Docker Compose Integration | ✅ Complete |
+| 11 | Testing & Documentation | ✅ Complete |
+| 12 | Enhancements (Optional) | 🔲 |
 
-**Phase 2: Core Domain & H2 Integration** ✅ Complete
-- `Conversation` and `Message` JPA entities (UUID PKs)
-- `MessageRole` enum: USER / ASSISTANT / SYSTEM
-- `ConversationRepository` / `MessageRepository` with custom query methods
-- H2 file-based database at `./data/orchestrator`, console at `/h2-console`
-- Build verified: `BUILD SUCCESSFUL`
+**Build:** `BUILD SUCCESSFUL` — 43 tests pass, full stack verified end-to-end.
 
-**Phase 3: AI Provider Configuration** ✅ Complete
-- `AiProviderProperties` — `@ConfigurationProperties("ai.provider")`, runtime provider switching
-- `OllamaConfig` / `OpenAiConfig` / `AnthropicConfig` — conditional `@Configuration` per provider
-- `ChatClientFactory` — resolves active `ChatModel` by class name at startup
-- `ProviderConfigService` — `getChatClient()`, `getChatClient(String)`, `getAvailableProviders()`
-- Build verified: `BUILD SUCCESSFUL`
+For the detailed phase-by-phase plan, fixes applied, and architectural decisions see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md).
 
-**Phase 4: Weather MCP Servers** ✅ Complete
-- `docker/weather-mcp-openmeteo` — Open-Meteo, no key, port 8101; geocoding → current weather + forecast
-- `docker/weather-mcp-weatherapi` — WeatherAPI, `WEATHERAPI_KEY`, port 8103
-- `docker/weather-mcp-openweathermap` — OpenWeatherMap, `OPENWEATHERMAP_KEY`, port 8104; geocodes via `/geo/1.0/direct`
-- All: Python 3.12-slim, Streamable HTTP transport, `mcp>=1.8.0`, `httpx>=0.27.0`
-- `docker-compose-mcp-weather.yml` — builds and starts all 3 servers on `daily-context-network`
+### Phase 10 highlights — Docker Compose
 
-**Phase 5: News MCP Server** ✅ Complete
-- `docker/news-mcp` — aggregates TheNewsAPI, GNews, NewsAPI; port 8102
-- Tools: `get_news_thenewsapi`, `get_news_gnews`, `get_news_newsapi`, `get_all_news`
-- `get_all_news` dispatches to selected sources via comma-separated `sources` param
-- `docker-compose-mcp-news.yml` — builds and starts news server on `daily-context-network`
-- `.env.example` — template for all 7 API keys
-
-**Phase 6: MCP Client Integration** ✅ Complete
-- `orchestrator-core` and `orchestrator-mcp` promoted to `java-library`; Spring AI starters and MCP client exposed as `api` so types (`ChatClient`, `BeanOutputConverter`, `ToolCallback`) are visible to `orchestrator-web`
-- Lombok added to root `subprojects` block (`compileOnly` + `annotationProcessor`, version managed by Spring Boot BOM)
-- `application.yml` — 4 Streamable HTTP connections (SYNC mode, 30s timeout)
-- `WeatherMcpClientConfig` / `NewsMcpClientConfig` — `@Configuration @RequiredArgsConstructor`; `SyncMcpToolCallbackProvider.builder()`
-- `WeatherMcpClient` / `NewsMcpClient` — `@Component @Slf4j`; `getToolCallbacks()`, `isConnected()`
-- Refactors: `AiProviderProperties` → record (no `@Component`); entities → Lombok; services → `@RequiredArgsConstructor`
-- Build verified: `BUILD SUCCESSFUL`
-
-**Phase 7: Agent Implementation** ✅ Complete
-- `spring.threads.virtual.enabled: true` — virtual threads for Tomcat + Spring async executor
-- `VirtualThreadConfig` — `@Bean Executor virtualThreadExecutor()` = `Executors.newVirtualThreadPerTaskExecutor()`
-- `QueryIntent` record — `needsWeather`, `needsNews`, `location`, `newsQuery`
-- `AgentResult` record — `agentName`, `content`, `success`, `errorMessage`; `success()` / `failure()` factory methods
-- `AgentCoordinationService` — `runParallel()` submits tasks via `CompletableFuture.supplyAsync` on virtual thread executor
-- `WeatherAgent` / `NewsAgent` — `@Component @Slf4j @RequiredArgsConstructor`; system prompt injected via `AgentProperties`
-- `OrchestratorService` — `BeanOutputConverter<QueryIntent>` intent analysis → parallel agent dispatch → LLM synthesis
-- `AgentProperties` record — `@ConfigurationProperties("agent")`; nested `Weather` / `News` records with `systemPrompt`; prompts externalised to `application.yml`
-- `AiProviderProperties` — `@Component` removed; registered via `@ConfigurationPropertiesScan` on `Application`
-- `ProviderConfigService` — single `@Getter ChatClient chatClient` field; built eagerly at startup from the active provider
-- Build verified: `BUILD SUCCESSFUL`
-
-**Phase 8: REST API** ✅ Complete
-- `ChatController` — `POST /api/chat` with `@Valid @RequestBody ChatRequest`
-- `ConversationController` — `GET /api/conversations`, `GET /api/conversations/{id}`, `DELETE /api/conversations/{id}`
-- `ConfigController` — `GET /api/config/providers`
-- `ConversationService` — resolves/creates `Conversation`, persists `USER` + `ASSISTANT` messages around orchestrator call, sets topic on first message (first 50 chars of query)
-- `CorsConfig` — `allowedOrigins("*")` on `/api/**` for React dev server
-- DTOs: `ChatRequest` (record, `@NotBlank query`), `ChatResponse` (conversationId, answer, durationMs), `ConversationDTO`, `MessageDTO`
-- `orchestrator-web/build.gradle` — added `spring-boot-starter-data-jpa` + `spring-boot-starter-validation`
-- Logging added to `ConversationService`, `AgentCoordinationService`, `OrchestratorService`
-- Build verified: `BUILD SUCCESSFUL`
-
-**Phase 9: React Frontend** ✅ Complete
-- 2-column layout: dark sidebar (conversation history) + main chat area
-- `ConversationHistory` — New Chat button, conversation list with topic + date, delete per conversation, AI providers info in footer
-- `ChatInterface` — scrollable message history, textarea input (Enter sends), weather/news provider checkboxes, loading state
-- `ResponseDisplay` — USER bubbles (right, blue) + ASSISTANT bubbles (left, gray, `white-space: pre-wrap`)
-- `ApiService` — axios wrappers for all 5 REST endpoints; dev proxy to `localhost:8080`
-- Error banner on failed requests; optimistic user-message append while waiting for response
-- Build verified: `Compiled successfully`
-
-**Phase 11: Testing & Documentation** 🔄 In Progress — smoke test complete
-
-**Smoke test fixes applied:**
-- `docker-compose.yml`: `start-period` → `start_period`
-- `orchestrator-frontend/Dockerfile`: `npm ci` → `npm install`
-- All 4 MCP `server.py`: moved `host`/`port` to `FastMCP()` constructor (`mcp` 1.26.0)
-- `build.gradle`: Spring AI `1.1.2` → `2.0.0-M2` (Boot 4.0 compatibility)
-- `Application.java`: added `@EnableJpaRepositories` + `@EntityScan` with Spring Boot 4.0 package paths
-
-**Phase 10: Docker Compose Integration** ✅ Complete
-- `Dockerfile` (root) — multi-stage: Gradle build → JRE runtime for backend JAR
+- `Dockerfile` (root) — multi-stage: Gradle build → JRE 25 runtime
 - `orchestrator-frontend/Dockerfile` — multi-stage: Node build → Nginx runtime
-- `orchestrator-frontend/nginx.conf` — SPA routing + `/api/*` proxy to `backend:8080`
-- `docker-compose.yml` — all 7 services unified; Ollama as optional `--profile ollama`
-- `.dockerignore` files for root and frontend
-- `application.yml` — MCP URLs + Ollama URL + AI provider wrapped in `${VAR:default}`
-- `.env.example` — added `AI_PROVIDER_ACTIVE`, `OLLAMA_BASE_URL`
+- `docker-compose.yml` — all 7 services on a shared bridge network; Ollama as optional `--profile ollama`
+- `application.yml` — MCP URLs + Ollama URL + AI provider controlled by env vars with localhost defaults
 
-For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
+### Phase 11 highlights — Testing & Documentation
 
-**Upcoming Phases:**
-- Phase 11: Testing & Documentation
-- Phase 12: Enhancements (Optional)
+**Automated tests (43 total)**
+
+| Test class | What it tests |
+|---|---|
+| `AgentCoordinationServiceTest` | Parallel execution, exception-to-failure conversion |
+| `ConversationServiceTest` | processChat, list, get, delete, topic truncation |
+| `OrchestratorServiceTest` | Intent routing, direct answer, agent dispatch |
+| `ChatControllerTest` | POST /api/chat — valid, blank, missing body |
+| `ConversationControllerTest` | GET list/single, DELETE, 404 cases |
+| `ConfigControllerTest` | GET /api/config/providers |
+| `ConversationRepositoryTest` | JPA queries, UUID generation, userId filtering |
+| `MessageRepositoryTest` | Conversation scoping, deleteByConversationId |
+
+**Documentation**
+
+| File | Contents |
+|---|---|
+| `API_DOCUMENTATION.md` | All endpoints, request/response schemas, curl examples |
+| `DEPLOYMENT.md` | Docker Compose quick start, env vars, service map, local dev |
+| `TROUBLESHOOTING.md` | MCP connectivity, AI provider errors, database issues, diagnostics |
+
+**Spring Boot 4.0 testing notes**
+
+- `@DataJpaTest` was removed in Spring Boot 4.0 → replaced with `@ExtendWith(SpringExtension.class)` + custom `JpaTestConfig` (manual H2 + Hibernate)
+- `@WebMvcTest` moved to `org.springframework.boot.webmvc.test.autoconfigure`; requires `spring-boot-starter-webmvc-test` dependency
+- A `TestApplication` class in the common parent package is needed for `@WebMvcTest` to find `@SpringBootApplication`
 
 ## License
 

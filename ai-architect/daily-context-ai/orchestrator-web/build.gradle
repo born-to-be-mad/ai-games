@@ -21,4 +21,7 @@ dependencies {
 
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // MVC test slice (@WebMvcTest) — Spring Boot 4.0
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 }
