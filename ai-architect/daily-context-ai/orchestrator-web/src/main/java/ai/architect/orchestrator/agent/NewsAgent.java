@@ -69,7 +69,7 @@ public class NewsAgent {
 
         String userPrompt = query + "\nSources to use: " + sourcesParam;
 
-        log.debug("News agent executing query='{}' sources={}", query, sourcesParam);
+        log.info("NewsAgent executing query='{}' sources={} tools={}", query, sourcesParam, callbacks.size());
 
         ChatClient chatClient = providerConfigService.getChatClient();
         ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
@@ -80,6 +80,7 @@ public class NewsAgent {
                 .call()
                 .content();
 
+        log.info("NewsAgent completed query='{}' responseLength={}", query, result == null ? 0 : result.length());
         return AgentResult.success("news", result);
     }
 }

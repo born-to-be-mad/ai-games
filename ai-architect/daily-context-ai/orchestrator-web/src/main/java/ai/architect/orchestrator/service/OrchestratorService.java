@@ -80,11 +80,13 @@ public class OrchestratorService {
             String weatherQuery = intent.location().isBlank()
                     ? userQuery
                     : "Current weather and forecast for: " + intent.location();
+            log.info("Dispatching WeatherAgent with query='{}'", weatherQuery);
             tasks.add(() -> weatherAgent.execute(weatherQuery, weatherProviders));
         }
 
         if (intent.needsNews()) {
             String newsQuery = intent.newsQuery().isBlank() ? userQuery : intent.newsQuery();
+            log.info("Dispatching NewsAgent with query='{}'", newsQuery);
             tasks.add(() -> newsAgent.execute(newsQuery, newsSources));
         }
 
@@ -127,9 +129,11 @@ public class OrchestratorService {
             context.append("\n\n");
         }
 
+        String synthesisPrompt = "User question: " + originalQuery + "\n\nInformation gathered:\n" + context;
+        log.info("Synthesizing final answer for query='{}' contextLength={}", originalQuery, context.length());
         return chatClient.prompt()
                 .system(agentProperties.synthesisPrompt())
-                .user("User question: " + originalQuery + "\n\nInformation gathered:\n" + context)
+                .user(synthesisPrompt)
                 .call()
                 .content();
     }

@@ -59,7 +59,7 @@ public class WeatherAgent {
                     "No weather providers connected. Ensure MCP containers are running.");
         }
 
-        log.debug("Weather agent executing query='{}' providers={}", query, providers);
+        log.info("WeatherAgent executing query='{}' providers={} tools={}", query, providers, callbacks.size());
 
         ChatClient chatClient = providerConfigService.getChatClient();
         ToolCallback[] tools = callbacks.toArray(ToolCallback[]::new);
@@ -70,6 +70,7 @@ public class WeatherAgent {
                 .call()
                 .content();
 
+        log.info("WeatherAgent completed query='{}' responseLength={}", query, result == null ? 0 : result.length());
         return AgentResult.success("weather", result);
     }
 }
