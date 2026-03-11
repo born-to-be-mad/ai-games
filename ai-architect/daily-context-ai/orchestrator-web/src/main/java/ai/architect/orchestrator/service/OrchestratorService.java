@@ -84,6 +84,7 @@ public class OrchestratorService {
         List<AgentResult> results = coordinationService.runParallel(tasks);
 
         // Step 5 — Synthesize into a final answer
+        log.info("Synthesizing answer from {} agent result(s) for query='{}'", results.size(), userQuery);
         return synthesize(userQuery, results, chatClient);
     }
 

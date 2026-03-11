@@ -23,6 +23,7 @@ public class AgentCoordinationService {
     private final Executor virtualThreadExecutor;
 
     public List<AgentResult> runParallel(List<Supplier<AgentResult>> tasks) {
+        log.info("Dispatching {} agent task(s) in parallel", tasks.size());
         List<CompletableFuture<AgentResult>> futures = tasks.stream()
                 .map(task -> CompletableFuture
                         .supplyAsync(task, virtualThreadExecutor)
@@ -32,8 +33,12 @@ public class AgentCoordinationService {
                         }))
                 .toList();
 
-        return futures.stream()
+        List<AgentResult> results = futures.stream()
                 .map(CompletableFuture::join)
                 .toList();
+
+        long succeeded = results.stream().filter(AgentResult::success).count();
+        log.info("Agent tasks completed: {}/{} succeeded", succeeded, results.size());
+        return results;
     }
 }

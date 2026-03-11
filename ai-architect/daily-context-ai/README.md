@@ -289,6 +289,59 @@ spring:
 
 `WeatherMcpClient` and `NewsMcpClient` in `orchestrator-mcp` wrap the auto-configured `McpSyncClient` beans and expose `getToolCallbacks()` for use in agents.
 
+## REST API
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/chat` | Process a query; returns answer + conversationId + durationMs |
+| `GET` | `/api/conversations` | List all conversations (no messages) |
+| `GET` | `/api/conversations/{id}` | Get conversation with all messages |
+| `DELETE` | `/api/conversations/{id}` | Delete conversation and its messages |
+| `GET` | `/api/config/providers` | List available AI providers |
+
+### Chat request / response
+
+```json
+// POST /api/chat
+{
+  "query": "What is the weather in London?",
+  "conversationId": null,
+  "weatherProviders": [],
+  "newsSources": []
+}
+
+// Response
+{
+  "conversationId": "550e8400-e29b-41d4-a716-446655440000",
+  "answer": "...",
+  "durationMs": 3241
+}
+```
+
+- `conversationId` — omit or pass `null` to start a new conversation; pass an existing UUID to continue
+- `weatherProviders` / `newsSources` — empty array or omit to use all available providers/sources
+
+### Example curl commands
+
+```bash
+# Chat
+curl -s -X POST http://localhost:8080/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query":"What is the weather in London?","weatherProviders":[],"newsSources":[]}'
+
+# List conversations
+curl -s http://localhost:8080/api/conversations
+
+# Get conversation with messages
+curl -s http://localhost:8080/api/conversations/{id}
+
+# Delete conversation
+curl -s -X DELETE http://localhost:8080/api/conversations/{id}
+
+# List available providers
+curl -s http://localhost:8080/api/config/providers
+```
+
 ## Project Status
 
 **Phase 1: Project Foundation** ✅ Complete
@@ -348,12 +401,22 @@ spring:
 - `ProviderConfigService` — single `@Getter ChatClient chatClient` field; built eagerly at startup from the active provider
 - Build verified: `BUILD SUCCESSFUL`
 
-**Next Phase:** Phase 8 — REST API
+**Phase 8: REST API** ✅ Complete
+- `ChatController` — `POST /api/chat` with `@Valid @RequestBody ChatRequest`
+- `ConversationController` — `GET /api/conversations`, `GET /api/conversations/{id}`, `DELETE /api/conversations/{id}`
+- `ConfigController` — `GET /api/config/providers`
+- `ConversationService` — resolves/creates `Conversation`, persists `USER` + `ASSISTANT` messages around orchestrator call, sets topic on first message (first 50 chars of query)
+- `CorsConfig` — `allowedOrigins("*")` on `/api/**` for React dev server
+- DTOs: `ChatRequest` (record, `@NotBlank query`), `ChatResponse` (conversationId, answer, durationMs), `ConversationDTO`, `MessageDTO`
+- `orchestrator-web/build.gradle` — added `spring-boot-starter-data-jpa` + `spring-boot-starter-validation`
+- Logging added to `ConversationService`, `AgentCoordinationService`, `OrchestratorService`
+- Build verified: `BUILD SUCCESSFUL`
+
+**Next Phase:** Phase 9 — React Frontend
 
 For detailed implementation plan, see [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
 
 **Upcoming Phases:**
-- Phase 8: REST API Implementation
 - Phase 9: React Frontend
 - Phase 10: Docker Compose Integration
 - Phase 11: Testing & Documentation
