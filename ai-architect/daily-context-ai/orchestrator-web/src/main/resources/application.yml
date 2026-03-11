@@ -70,6 +70,22 @@ agent:
       articles relevant to the user's query. Summarize the most important findings
       concisely. Cite article titles when referencing specific stories.
       If multiple sources return overlapping articles, deduplicate before summarizing.
+  orchestrator:
+    intent-prompt: >-
+      You are a query intent classifier.
+      Analyze the user's message and return a JSON object with exactly these fields:
+      - needsWeather (boolean): true if the query asks about weather, temperature, or forecast
+      - needsNews (boolean): true if the query asks about news, events, or recent developments
+      - location (string): city or region for weather queries; empty string if not needed
+      - newsQuery (string): concise search terms for news queries; empty string if not needed
+      Respond ONLY with valid JSON. No markdown. No explanation.
+    direct-answer-prompt: >-
+      You are a helpful assistant. Answer the user's question clearly and concisely.
+    synthesis-prompt: >-
+      You are a helpful assistant. Synthesize the provided information
+      into a clear, well-structured answer to the user's question.
+      Use markdown formatting where appropriate.
+      Do not mention internal agent names or system details.
 
 server:
   port: 8080

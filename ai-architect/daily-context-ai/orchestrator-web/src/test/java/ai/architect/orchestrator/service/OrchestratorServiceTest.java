@@ -4,6 +4,7 @@ import ai.architect.orchestrator.agent.AgentResult;
 import ai.architect.orchestrator.agent.NewsAgent;
 import ai.architect.orchestrator.agent.QueryIntent;
 import ai.architect.orchestrator.agent.WeatherAgent;
+import ai.architect.orchestrator.config.AgentProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +33,10 @@ class OrchestratorServiceTest {
     @Mock
     private AgentCoordinationService coordinationService;
     @Mock
+    private AgentProperties agentProperties;
+    @Mock
+    private AgentProperties.Orchestrator orchestratorProperties;
+    @Mock
     private ChatClient chatClient;
     @Mock
     private ChatClient.ChatClientRequestSpec requestSpec;
@@ -42,7 +47,12 @@ class OrchestratorServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new OrchestratorService(providerConfigService, weatherAgent, newsAgent, coordinationService);
+        lenient().when(agentProperties.orchestrator()).thenReturn(orchestratorProperties);
+        lenient().when(orchestratorProperties.intentPrompt()).thenReturn("intent: ");
+        lenient().when(orchestratorProperties.directAnswerPrompt()).thenReturn("direct answer prompt");
+        lenient().when(orchestratorProperties.synthesisPrompt()).thenReturn("synthesis prompt");
+
+        service = new OrchestratorService(providerConfigService, weatherAgent, newsAgent, coordinationService, agentProperties);
         when(providerConfigService.getChatClient()).thenReturn(chatClient);
     }
 

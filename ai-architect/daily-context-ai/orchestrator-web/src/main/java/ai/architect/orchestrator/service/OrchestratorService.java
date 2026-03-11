@@ -4,7 +4,7 @@ import ai.architect.orchestrator.agent.AgentResult;
 import ai.architect.orchestrator.agent.NewsAgent;
 import ai.architect.orchestrator.agent.QueryIntent;
 import ai.architect.orchestrator.agent.WeatherAgent;
-import lombok.RequiredArgsConstructor;
+import ai.architect.orchestrator.config.AgentProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -22,18 +22,26 @@ import java.util.function.Supplier;
  *   <li>Dispatches to {@link WeatherAgent} and/or {@link NewsAgent} in parallel (virtual threads)</li>
  *   <li>Synthesizes all agent results into a final coherent response via LLM</li>
  * </ol>
- *
+ * <p>
  * Queries that need neither weather nor news are answered directly by the LLM.
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OrchestratorService {
 
     private final ProviderConfigService providerConfigService;
     private final WeatherAgent weatherAgent;
     private final NewsAgent newsAgent;
     private final AgentCoordinationService coordinationService;
+    private final AgentProperties.Orchestrator agentProperties;
+
+    public OrchestratorService(ProviderConfigService providerConfigService, WeatherAgent weatherAgent, NewsAgent newsAgent, AgentCoordinationService coordinationService, AgentProperties agentProperties) {
+        this.providerConfigService = providerConfigService;
+        this.weatherAgent = weatherAgent;
+        this.newsAgent = newsAgent;
+        this.coordinationService = coordinationService;
+        this.agentProperties = agentProperties.orchestrator();
+    }
 
     /**
      * Processes a user query end-to-end.
@@ -59,7 +67,7 @@ public class OrchestratorService {
         if (!intent.needsWeather() && !intent.needsNews()) {
             log.info("No specialized agent needed — answering directly");
             return chatClient.prompt()
-                    .system("You are a helpful assistant. Answer the user's question clearly and concisely.")
+                    .system(agentProperties.directAnswerPrompt())
                     .user(userQuery)
                     .call()
                     .content();
@@ -95,15 +103,7 @@ public class OrchestratorService {
     private QueryIntent analyzeIntent(String query, ChatClient chatClient) {
         BeanOutputConverter<QueryIntent> converter = new BeanOutputConverter<>(QueryIntent.class);
         String response = chatClient.prompt()
-                .system("""
-                        You are a query intent classifier.
-                        Analyze the user's message and return a JSON object with exactly these fields:
-                        - needsWeather (boolean): true if the query asks about weather, temperature, or forecast
-                        - needsNews (boolean): true if the query asks about news, events, or recent developments
-                        - location (string): city or region for weather queries; empty string if not needed
-                        - newsQuery (string): concise search terms for news queries; empty string if not needed
-                        Respond ONLY with valid JSON. No markdown. No explanation.
-                        """ + converter.getFormat())
+                .system(agentProperties.intentPrompt() + converter.getFormat())
                 .user(query)
                 .call()
                 .content();
@@ -128,12 +128,7 @@ public class OrchestratorService {
         }
 
         return chatClient.prompt()
-                .system("""
-                        You are a helpful assistant. Synthesize the provided information
-                        into a clear, well-structured answer to the user's question.
-                        Use markdown formatting where appropriate.
-                        Do not mention internal agent names or system details.
-                        """)
+                .system(agentProperties.synthesisPrompt())
                 .user("User question: " + originalQuery + "\n\nInformation gathered:\n" + context)
                 .call()
                 .content();
