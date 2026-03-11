@@ -73,3 +73,15 @@ agent:
 
 server:
   port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+
+rate-limit:
+  requests-per-minute: 10

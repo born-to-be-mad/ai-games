@@ -36,12 +36,14 @@ class ConversationServiceTest {
     private MessageRepository messageRepository;
     @Mock
     private OrchestratorService orchestratorService;
+    @Mock
+    private MetricsService metricsService;
 
     private ConversationService service;
 
     @BeforeEach
     void setUp() {
-        service = new ConversationService(conversationRepository, messageRepository, orchestratorService);
+        service = new ConversationService(conversationRepository, messageRepository, orchestratorService, metricsService);
     }
 
     // -------------------------------------------------------------------------

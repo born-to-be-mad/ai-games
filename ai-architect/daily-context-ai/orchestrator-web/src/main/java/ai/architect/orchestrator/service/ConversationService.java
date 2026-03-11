@@ -29,9 +29,11 @@ public class ConversationService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final OrchestratorService orchestratorService;
+    private final MetricsService metricsService;
 
     @Transactional
     public ChatResponse processChat(ChatRequest req) {
+        metricsService.incrementChatRequests();
         Conversation conversation = resolveConversation(req.conversationId());
         log.info("Processing chat: conversationId={} query='{}'", conversation.getId(), req.query());
 

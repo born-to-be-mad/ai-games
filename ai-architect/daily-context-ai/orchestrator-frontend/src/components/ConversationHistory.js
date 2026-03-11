@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { exportConversationUrl } from '../services/ApiService';
 
 export default function ConversationHistory({ conversations, activeId, onSelect, onDelete, onNewChat, aiProviders }) {
+  const [exportMenuId, setExportMenuId] = useState(null);
+
+  const handleExport = (e, id, format) => {
+    e.stopPropagation();
+    setExportMenuId(null);
+    window.location.href = exportConversationUrl(id, format);
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
@@ -22,11 +31,24 @@ export default function ConversationHistory({ conversations, activeId, onSelect,
             <div className="conv-meta">
               {new Date(c.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' })}
             </div>
-            <button
-              className="conv-delete"
-              title="Delete"
-              onClick={e => { e.stopPropagation(); onDelete(c.id); }}
-            >×</button>
+            <div className="conv-actions" onClick={e => e.stopPropagation()}>
+              <button
+                className="conv-export-btn"
+                title="Export"
+                onClick={() => setExportMenuId(exportMenuId === c.id ? null : c.id)}
+              >↓</button>
+              {exportMenuId === c.id && (
+                <div className="export-menu">
+                  <button onClick={e => handleExport(e, c.id, 'json')}>Export JSON</button>
+                  <button onClick={e => handleExport(e, c.id, 'pdf')}>Export PDF</button>
+                </div>
+              )}
+              <button
+                className="conv-delete"
+                title="Delete"
+                onClick={e => { e.stopPropagation(); onDelete(c.id); }}
+              >×</button>
+            </div>
           </div>
         ))}
       </div>

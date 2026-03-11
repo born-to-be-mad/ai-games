@@ -16,3 +16,12 @@ export const deleteConversation = (id) =>
 
 export const getProviders = () =>
   api.get('/api/config/providers').then(r => r.data);
+
+export const getPreferences = (clientId) =>
+  api.get(`/api/preferences/${clientId}`).then(r => r.data);
+
+export const savePreferences = (clientId, prefs) =>
+  api.put(`/api/preferences/${clientId}`, prefs).then(r => r.data);
+
+export const exportConversationUrl = (id, format) =>
+  `/api/conversations/${id}/export/${format}`;

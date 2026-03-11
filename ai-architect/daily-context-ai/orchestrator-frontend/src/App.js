@@ -1,7 +1,27 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ConversationHistory from './components/ConversationHistory';
 import ChatInterface from './components/ChatInterface';
-import { sendChat, getConversations, getConversation, deleteConversation, getProviders } from './services/ApiService';
+import {
+  sendChat,
+  getConversations,
+  getConversation,
+  deleteConversation,
+  getProviders,
+  getPreferences,
+  savePreferences,
+} from './services/ApiService';
+
+function getOrCreateClientId() {
+  let id = localStorage.getItem('clientId');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('clientId', id);
+  }
+  return id;
+}
+
+const CLIENT_ID = getOrCreateClientId();
+const PREFS_DEBOUNCE_MS = 500;
 
 export default function App() {
   const [conversations, setConversations] = useState([]);
@@ -13,6 +33,8 @@ export default function App() {
   const [weatherProviders, setWeatherProviders] = useState([]);
   const [newsSources, setNewsSources] = useState([]);
   const [error, setError] = useState(null);
+
+  const saveDebounceRef = useRef(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -28,7 +50,39 @@ export default function App() {
     getProviders()
       .then(setAiProviders)
       .catch(e => console.error('Failed to load providers', e));
+
+    // Load user preferences on startup
+    getPreferences(CLIENT_ID)
+      .then(prefs => {
+        if (prefs.defaultWeatherProviders) {
+          setWeatherProviders(prefs.defaultWeatherProviders.split(',').filter(Boolean));
+        }
+        if (prefs.defaultNewsSources) {
+          setNewsSources(prefs.defaultNewsSources.split(',').filter(Boolean));
+        }
+      })
+      .catch(e => console.error('Failed to load preferences', e));
   }, [loadConversations]);
+
+  const persistPreferences = useCallback((wp, ns) => {
+    if (saveDebounceRef.current) clearTimeout(saveDebounceRef.current);
+    saveDebounceRef.current = setTimeout(() => {
+      savePreferences(CLIENT_ID, {
+        defaultWeatherProviders: wp.join(','),
+        defaultNewsSources: ns.join(','),
+      }).catch(e => console.error('Failed to save preferences', e));
+    }, PREFS_DEBOUNCE_MS);
+  }, []);
+
+  const handleWeatherChange = (wp) => {
+    setWeatherProviders(wp);
+    persistPreferences(wp, newsSources);
+  };
+
+  const handleNewsChange = (ns) => {
+    setNewsSources(ns);
+    persistPreferences(weatherProviders, ns);
+  };
 
   const handleSelectConversation = async (id) => {
     try {
@@ -82,7 +136,7 @@ export default function App() {
     } catch (e) {
       console.error('Chat request failed', e);
       setError('Request failed. Is the backend running?');
-      setMessages(prev => prev.slice(0, -1)); // remove optimistic user message
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setLoading(false);
     }
@@ -107,8 +161,8 @@ export default function App() {
           weatherProviders={weatherProviders}
           newsSources={newsSources}
           onQueryChange={setQuery}
-          onWeatherChange={setWeatherProviders}
-          onNewsChange={setNewsSources}
+          onWeatherChange={handleWeatherChange}
+          onNewsChange={handleNewsChange}
           onSend={handleSend}
         />
       </div>

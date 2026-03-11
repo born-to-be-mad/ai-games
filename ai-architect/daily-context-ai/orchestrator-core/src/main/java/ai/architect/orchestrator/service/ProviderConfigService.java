@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 public class ProviderConfigService {
 
     private final ChatClient chatClient;
+    private final String activeProvider;
 
     public ProviderConfigService(AiProviderProperties properties, ChatClientFactory chatClientFactory) {
         this.chatClient = chatClientFactory.createChatClient(properties.active());
+        this.activeProvider = properties.active();
     }
 
 }

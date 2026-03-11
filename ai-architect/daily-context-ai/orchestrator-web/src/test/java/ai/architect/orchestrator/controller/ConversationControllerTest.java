@@ -2,6 +2,7 @@ package ai.architect.orchestrator.controller;
 
 import ai.architect.orchestrator.dto.ConversationDTO;
 import ai.architect.orchestrator.dto.MessageDTO;
+import ai.architect.orchestrator.service.ConversationExportService;
 import ai.architect.orchestrator.service.ConversationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ class ConversationControllerTest {
 
     @MockitoBean
     private ConversationService conversationService;
+
+    @MockitoBean
+    private ConversationExportService conversationExportService;
 
     @Test
     void getConversations_returnsList() throws Exception {
