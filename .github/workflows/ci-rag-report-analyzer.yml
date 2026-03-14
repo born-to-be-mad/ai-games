@@ -1,0 +1,36 @@
+name: CI — rag-report-analyzer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-architect/rag-report-analyzer/**'
+      - '.github/workflows/ci-rag-report-analyzer.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ai-architect/rag-report-analyzer/**'
+      - '.github/workflows/ci-rag-report-analyzer.yml'
+
+jobs:
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-architect/rag-report-analyzer/backend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: gradle
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rag-report-analyzer-test-reports
+          path: ai-architect/rag-report-analyzer/backend/build/reports/tests/
