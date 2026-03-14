@@ -41,8 +41,8 @@ dependencies {
     // Spring AI — document reader (PDF via Apache PDFBox)
     implementation("org.springframework.ai:spring-ai-pdf-document-reader")
 
-    // Spring AI — core (includes SimpleVectorStore, pulled transitively by model starters)
-    // SimpleVectorStore is in spring-ai-model which is part of the model starters above
+    // Spring AI — vector store: VectorStore interface, SimpleVectorStore, SearchRequest
+    implementation("org.springframework.ai:spring-ai-vector-store")
 
     // H2 for local dev
     runtimeOnly("com.h2database:h2")
