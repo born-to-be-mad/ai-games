@@ -3,6 +3,7 @@ package com.aiarchitect.rag.report.domain.port.out;
 import org.springframework.ai.document.Document;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Outbound port: abstracts the vector store.
@@ -21,4 +22,13 @@ public interface DocumentStorePort {
      * Returns the {@code topK} most similar documents for the given query.
      */
     List<Document> similaritySearch(String query, int topK);
+
+    /**
+     * Returns the {@code topK} most similar documents whose metadata matches all entries in
+     * {@code metadataFilter}. Implementations backed by SimpleVectorStore perform post-filtering;
+     * ChromaDB (phase 5) will use native filter expressions for efficiency.
+     *
+     * @param metadataFilter key/value pairs that every returned document must satisfy
+     */
+    List<Document> similaritySearch(String query, int topK, Map<String, Object> metadataFilter);
 }
