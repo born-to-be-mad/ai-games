@@ -1,0 +1,65 @@
+services:
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - VECTORSTORE_TYPE=${VECTORSTORE_TYPE:-chroma}
+      - CHROMA_HOST=chroma
+      - CHROMA_PORT=8000
+      - PREDICTION_MODE=${PREDICTION_MODE:-NARRATIVE_PREDICTION}
+    depends_on:
+      chroma:
+        condition: service_healthy
+    networks:
+      - rag-network
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - rag-network
+
+  chroma:
+    image: chromadb/chroma:0.6.3
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma-data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rag-network
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    profiles:
+      - ollama
+    networks:
+      - rag-network
+
+volumes:
+  chroma-data:
+  ollama-data:
+
+networks:
+  rag-network:
+    driver: bridge
