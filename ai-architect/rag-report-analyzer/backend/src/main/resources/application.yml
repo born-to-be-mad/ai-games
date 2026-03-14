@@ -40,6 +40,11 @@ spring:
 server:
   port: 8080
 
+ai:
+  provider:
+    # Active LLM provider: openai | anthropic | ollama
+    active: ${AI_PROVIDER:openai}
+
 app:
   # Vector store: simple | chroma
   vectorstore:
