@@ -128,3 +128,34 @@ button.btn.secondary:hover:not(:disabled) { background: #cbd5e1; }
 /* --- radio group --- */
 .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .radio-group label { flex-direction: row; align-items: center; gap: 6px; cursor: pointer; font-size: 0.875rem; color: #334155; }
+
+/* --- shared description text under panel headings --- */
+.panel-description { font-size: 0.8rem; color: #64748b; margin-bottom: 1rem; }
+
+/* --- small button variant --- */
+button.btn.btn-sm { font-size: 0.75rem; padding: 0.25rem 0.75rem; margin-top: 8px; }
+
+/* --- knowledge graph --- */
+.graph-canvas-wrapper { border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; overflow: hidden; }
+.graph-canvas { width: 100%; display: block; }
+.graph-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #475569; }
+.graph-node-info { margin-top: 1rem; background: #f1f5f9; padding: 0.75rem; border-radius: 6px; font-size: 0.8rem; }
+.graph-node-info pre { margin-top: 4px; white-space: pre-wrap; color: #334155; }
+
+/* --- prediction panel --- */
+.prediction-mode-section { margin-bottom: 1rem; }
+.prediction-mode-label { font-size: 0.8rem; font-weight: 500; color: #64748b; margin-bottom: 8px; }
+.mode-desc { font-size: 0.75rem; color: #94a3b8; margin-left: 4px; }
+.outlook-title { margin-bottom: 1rem; display: flex; align-items: center; }
+.outlook-title .methodology-badge { margin-left: 10px; }
+.value--highlighted { font-size: 1.15rem; font-weight: 600; color: #4f46e5; }
+.confidence-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.confidence-row .confidence-bar { flex: 1; max-width: 300px; margin-top: 0; }
+.confidence-pct { font-size: 0.9rem; font-weight: 600; }
+.risk-list { margin-top: 6px; }
+
+/* --- Q&A --- */
+.qa-question-label { margin-bottom: 0.75rem; display: block; }
+.qa-question-label textarea { margin-top: 4px; }
+.answer-box--spaced { margin-bottom: 1rem; }
+.sources-title { margin-bottom: 0.5rem; }

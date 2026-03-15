@@ -143,7 +143,7 @@ function KnowledgeGraph() {
   return (
     <div className="panel">
       <h2>Knowledge Graph</h2>
-      <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
+      <p className="panel-description">
         Force-directed graph of Company → Report → Metric relationships.
         Drag nodes to rearrange; scroll to zoom; click a node for details.
       </p>
@@ -162,15 +162,15 @@ function KnowledgeGraph() {
         </button>
       </div>
 
-      {error && <p className="error" style={{ marginBottom: '0.5rem' }}>{error}</p>}
+      {error && <p className="error">{error}</p>}
 
-      <div style={{ border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', overflow: 'hidden' }}>
-        <svg ref={svgRef} style={{ width: '100%', display: 'block' }} />
+      <div className="graph-canvas-wrapper">
+        <svg ref={svgRef} className="graph-canvas" />
       </div>
 
-      <div className="graph-legend" style={{ marginTop: '0.75rem' }}>
+      <div className="graph-legend">
         {Object.entries(NODE_COLORS).map(([type, color]) => (
-          <span key={type} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#475569' }}>
+          <span key={type} className="graph-legend-item">
             <span className="legend-dot" style={{ background: color }} />
             {type}
           </span>
@@ -178,18 +178,12 @@ function KnowledgeGraph() {
       </div>
 
       {info && (
-        <div style={{ marginTop: '1rem', background: '#f1f5f9', padding: '0.75rem', borderRadius: 6, fontSize: '0.8rem' }}>
+        <div className="graph-node-info">
           <strong>{info.type}: {info.id}</strong>
           {info.data && (
-            <pre style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#334155' }}>
-              {JSON.stringify(info.data, null, 2)}
-            </pre>
+            <pre>{JSON.stringify(info.data, null, 2)}</pre>
           )}
-          <button
-            className="btn secondary"
-            style={{ marginTop: 8, fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}
-            onClick={() => setInfo(null)}
-          >
+          <button className="btn secondary btn-sm" onClick={() => setInfo(null)}>
             Close
           </button>
         </div>

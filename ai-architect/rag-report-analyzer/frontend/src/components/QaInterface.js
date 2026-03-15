@@ -1,28 +1,20 @@
 import React, { useState } from 'react';
 import { askQuestion } from '../services/ApiService';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 function QaInterface() {
   const [question, setQuestion] = useState('');
   const [ticker, setTicker] = useState('NVDA');
   const [year, setYear] = useState(2025);
   const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { loading, error, run } = useAsyncAction();
 
   const handleSubmit = async e => {
     e.preventDefault();
     if (!question.trim()) return;
-    setLoading(true);
-    setError(null);
     setResult(null);
-    try {
-      const { data } = await askQuestion(question, ticker, year);
-      setResult(data);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Request failed.');
-    } finally {
-      setLoading(false);
-    }
+    const res = await run(() => askQuestion(question, ticker, year));
+    if (res) setResult(res.data);
   };
 
   return (
@@ -45,18 +37,16 @@ function QaInterface() {
                 type="number"
                 value={year}
                 onChange={e => setYear(Number(e.target.value))}
-                style={{ width: 100 }}
               />
             </label>
           </div>
-          <label style={{ marginBottom: '0.75rem', display: 'block' }}>
+          <label className="qa-question-label">
             Question
             <textarea
               rows={3}
               value={question}
               onChange={e => setQuestion(e.target.value)}
               placeholder="What was the total revenue for fiscal year 2025?"
-              style={{ marginTop: 4 }}
             />
           </label>
           <button className="btn" type="submit" disabled={loading || !question.trim()}>
@@ -70,11 +60,11 @@ function QaInterface() {
       {result && (
         <div className="panel">
           <h3>Answer</h3>
-          <div className="answer-box" style={{ marginBottom: '1rem' }}>{result.answer}</div>
+          <div className="answer-box answer-box--spaced">{result.answer}</div>
 
-          {result.sources && result.sources.length > 0 && (
+          {result.sources?.length > 0 && (
             <>
-              <h3 style={{ marginBottom: '0.5rem' }}>
+              <h3 className="sources-title">
                 Sources ({result.sources.length} chunk{result.sources.length !== 1 ? 's' : ''})
               </h3>
               {result.sources.map((src, i) => (

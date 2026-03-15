@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { predict } from '../services/ApiService';
+import { useAsyncAction } from '../hooks/useAsyncAction';
 
 const MODES = [
   { value: 'NARRATIVE_PREDICTION', label: 'Narrative (LLM)',         desc: 'Qualitative trend analysis via LLM' },
@@ -11,37 +12,29 @@ function PredictionPanel() {
   const [ticker, setTicker] = useState('NVDA');
   const [mode, setMode] = useState('NARRATIVE_PREDICTION');
   const [outlook, setOutlook] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { loading, error, run } = useAsyncAction();
 
   const handlePredict = async () => {
-    setLoading(true);
-    setError(null);
     setOutlook(null);
-    try {
-      const { data } = await predict(ticker, mode);
-      setOutlook(data);
-    } catch (err) {
-      setError(
-        err.response?.status === 400
-          ? 'No metrics stored for this ticker. Extract metrics first.'
-          : (err.response?.data?.message || err.message)
-      );
-    } finally {
-      setLoading(false);
-    }
+    const result = await run(
+      () => predict(ticker, mode),
+      err => err.response?.status === 400
+        ? 'No metrics stored for this ticker. Extract metrics first.'
+        : (err.response?.data?.message || err.message)
+    );
+    if (result) setOutlook(result.data);
   };
 
   return (
     <div>
       <div className="panel">
         <h2>Financial Prediction</h2>
-        <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
+        <p className="panel-description">
           Generates a forward-looking financial outlook based on stored historical metrics.
           Requires at least one period of extracted metrics.
         </p>
 
-        <div className="form-row" style={{ marginBottom: '0.75rem' }}>
+        <div className="form-row">
           <label>
             Ticker
             <input
@@ -52,10 +45,8 @@ function PredictionPanel() {
           </label>
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 500, color: '#64748b', marginBottom: 8 }}>
-            Prediction Mode
-          </div>
+        <div className="prediction-mode-section">
+          <div className="prediction-mode-label">Prediction Mode</div>
           <div className="radio-group">
             {MODES.map(m => (
               <label key={m.value}>
@@ -68,7 +59,7 @@ function PredictionPanel() {
                 />
                 <span>
                   <strong>{m.label}</strong>
-                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginLeft: 4 }}>— {m.desc}</span>
+                  <span className="mode-desc">— {m.desc}</span>
                 </span>
               </label>
             ))}
@@ -78,16 +69,14 @@ function PredictionPanel() {
         <button className="btn" onClick={handlePredict} disabled={loading}>
           {loading ? 'Predicting…' : 'Generate Outlook'}
         </button>
-        {error && <p className="error" style={{ marginTop: 8 }}>{error}</p>}
+        {error && <p className="error">{error}</p>}
       </div>
 
       {outlook && (
         <div className="panel">
-          <h3 style={{ marginBottom: '1rem' }}>
+          <h3 className="outlook-title">
             {ticker} Financial Outlook
-            <span className="methodology-badge" style={{ marginLeft: 10 }}>
-              {outlook.methodology}
-            </span>
+            <span className="methodology-badge">{outlook.methodology}</span>
           </h3>
 
           <div className="outlook">
@@ -98,30 +87,28 @@ function PredictionPanel() {
 
             <div className="outlook-field">
               <label>Predicted Revenue Range</label>
-              <div className="value" style={{ fontSize: '1.15rem', fontWeight: 600, color: '#4f46e5' }}>
-                {outlook.predictedRevenueRange}
-              </div>
+              <div className="value value--highlighted">{outlook.predictedRevenueRange}</div>
             </div>
 
             <div className="outlook-field">
               <label>Confidence</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                <div className="confidence-bar" style={{ flex: 1, maxWidth: 300 }}>
+              <div className="confidence-row">
+                <div className="confidence-bar">
                   <div
                     className="confidence-fill"
                     style={{ width: `${Math.round((outlook.confidence || 0) * 100)}%` }}
                   />
                 </div>
-                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                <span className="confidence-pct">
                   {Math.round((outlook.confidence || 0) * 100)}%
                 </span>
               </div>
             </div>
 
-            {outlook.risks && outlook.risks.length > 0 && (
+            {outlook.risks?.length > 0 && (
               <div className="outlook-field">
                 <label>Key Risk Factors</label>
-                <ul className="risk-list" style={{ marginTop: 6 }}>
+                <ul className="risk-list">
                   {outlook.risks.map((risk, i) => <li key={i}>{risk}</li>)}
                 </ul>
               </div>

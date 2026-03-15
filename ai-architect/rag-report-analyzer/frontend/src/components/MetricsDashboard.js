@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -66,11 +66,14 @@ function MetricsDashboard() {
   };
 
   // Build chart data from loaded metrics (single period shown as bar)
-  const barData = metrics
-    ? METRIC_DEFS
-        .filter(d => d.unit === '$M' && metrics[d.key] != null)
-        .map(d => ({ name: d.label, value: metrics[d.key] }))
-    : [];
+  const barData = useMemo(
+    () => metrics
+      ? METRIC_DEFS
+          .filter(d => d.unit === '$M' && metrics[d.key] != null)
+          .map(d => ({ name: d.label, value: metrics[d.key] }))
+      : [],
+    [metrics]
+  );
 
   return (
     <div>
