@@ -1,6 +1,7 @@
 package com.aiarchitect.rag.report.vectorstore;
 
 import com.aiarchitect.rag.report.infrastructure.adapter.out.vectorstore.SimpleVectorStoreAdapter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class SimpleVectorStoreAdapterTest {
                 keywordVector(inv.getArgument(0, Document.class).getText()));
 
         SimpleVectorStore vectorStore = SimpleVectorStore.builder(embeddingModel).build();
-        adapter = new SimpleVectorStoreAdapter(vectorStore);
+        adapter = new SimpleVectorStoreAdapter(vectorStore, new SimpleMeterRegistry());
     }
 
     @Test

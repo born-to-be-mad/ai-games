@@ -1,6 +1,8 @@
 package com.aiarchitect.rag.report.infrastructure.adapter.out.vectorstore;
 
 import com.aiarchitect.rag.report.domain.port.out.DocumentStorePort;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -26,19 +28,28 @@ import java.util.Map;
 public class SimpleVectorStoreAdapter implements DocumentStorePort {
 
     private final VectorStore vectorStore;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public void store(List<Document> documents) {
         log.debug("Storing {} documents in vector store", documents.size());
-        vectorStore.add(documents);
+        Timer.builder("vector.store.operation")
+                .tag("type", "simple")
+                .tag("operation", "store")
+                .register(meterRegistry)
+                .record(() -> vectorStore.add(documents));
         log.debug("Stored {} documents", documents.size());
     }
 
     @Override
     public List<Document> similaritySearch(String query, int topK) {
         log.debug("Similarity search: query='{}', topK={}", query, topK);
-        List<Document> results = vectorStore.similaritySearch(
-                SearchRequest.builder().query(query).topK(topK).build());
+        List<Document> results = Timer.builder("vector.store.operation")
+                .tag("type", "simple")
+                .tag("operation", "search")
+                .register(meterRegistry)
+                .record(() -> vectorStore.similaritySearch(
+                        SearchRequest.builder().query(query).topK(topK).build()));
         log.debug("Found {} results for query='{}'", results.size(), query);
         return results;
     }
@@ -52,13 +63,19 @@ public class SimpleVectorStoreAdapter implements DocumentStorePort {
     @Override
     public List<Document> similaritySearch(String query, int topK, Map<String, Object> metadataFilter) {
         log.debug("Filtered search: query='{}', topK={}, filter={}", query, topK, metadataFilter);
-        List<Document> candidates = vectorStore.similaritySearch(
-                SearchRequest.builder().query(query).topK(topK * 3).build());
-        List<Document> results = candidates.stream()
-                .filter(doc -> metadataFilter.entrySet().stream()
-                        .allMatch(e -> e.getValue().equals(doc.getMetadata().get(e.getKey()))))
-                .limit(topK)
-                .toList();
+        List<Document> results = Timer.builder("vector.store.operation")
+                .tag("type", "simple")
+                .tag("operation", "search_filtered")
+                .register(meterRegistry)
+                .record(() -> {
+                    List<Document> candidates = vectorStore.similaritySearch(
+                            SearchRequest.builder().query(query).topK(topK * 3).build());
+                    return candidates.stream()
+                            .filter(doc -> metadataFilter.entrySet().stream()
+                                    .allMatch(e -> e.getValue().equals(doc.getMetadata().get(e.getKey()))))
+                            .limit(topK)
+                            .toList();
+                });
         log.debug("Filtered to {} results for query='{}'", results.size(), query);
         return results;
     }

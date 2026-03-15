@@ -4,6 +4,8 @@ import com.aiarchitect.rag.report.domain.model.LlmCallException;
 import com.aiarchitect.rag.report.domain.model.eval.EvalScores;
 import com.aiarchitect.rag.report.domain.port.out.EvalJudgePort;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -36,6 +38,7 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
 
     private final Map<String, ChatClient> chatClientsByProvider;
     private final AiProviderProperties aiProviderProperties;
+    private final MeterRegistry meterRegistry;
 
     @Value("classpath:prompts/eval-judge.st")
     private Resource systemPromptResource;
@@ -69,27 +72,31 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
         log.debug("Judging answer for question='{}' with {} context chunks via {}",
                 question, retrievedChunks.size(), provider);
 
-        EvalScoresDto dto = client.prompt()
-                .system(s -> s.text(systemPromptResource))
-                .user(u -> u.text("""
-                        Question: {question}
+        EvalScoresDto dto = Timer.builder("llm.call.duration")
+                .tag("provider", provider)
+                .tag("operation", "eval_judge")
+                .register(meterRegistry)
+                .record(() -> client.prompt()
+                        .system(s -> s.text(systemPromptResource))
+                        .user(u -> u.text("""
+                                Question: {question}
 
-                        Expected answer (ground truth):
-                        {expectedAnswer}
+                                Expected answer (ground truth):
+                                {expectedAnswer}
 
-                        Generated answer (RAG pipeline output):
-                        {generatedAnswer}
+                                Generated answer (RAG pipeline output):
+                                {generatedAnswer}
 
-                        Retrieved context ({chunkCount} chunks):
-                        {context}
-                        """)
-                        .param("question", question)
-                        .param("expectedAnswer", expectedAnswer)
-                        .param("generatedAnswer", generatedAnswer)
-                        .param("chunkCount", String.valueOf(retrievedChunks.size()))
-                        .param("context", context.isEmpty() ? "(no chunks retrieved)" : context))
-                .call()
-                .entity(EvalScoresDto.class);
+                                Retrieved context ({chunkCount} chunks):
+                                {context}
+                                """)
+                                .param("question", question)
+                                .param("expectedAnswer", expectedAnswer)
+                                .param("generatedAnswer", generatedAnswer)
+                                .param("chunkCount", String.valueOf(retrievedChunks.size()))
+                                .param("context", context.isEmpty() ? "(no chunks retrieved)" : context))
+                        .call()
+                        .entity(EvalScoresDto.class));
 
         double precision = safeScore(dto.getContextPrecision());
         double recall = safeScore(dto.getContextRecall());

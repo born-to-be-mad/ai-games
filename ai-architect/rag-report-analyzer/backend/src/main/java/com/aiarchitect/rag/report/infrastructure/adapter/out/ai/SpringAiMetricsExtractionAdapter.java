@@ -4,6 +4,8 @@ import com.aiarchitect.rag.report.domain.model.FinancialMetrics;
 import com.aiarchitect.rag.report.domain.model.LlmCallException;
 import com.aiarchitect.rag.report.domain.port.out.MetricsExtractionPort;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -41,6 +43,7 @@ public class SpringAiMetricsExtractionAdapter implements MetricsExtractionPort {
 
     private final Map<String, ChatClient> chatClientsByProvider;
     private final AiProviderProperties aiProviderProperties;
+    private final MeterRegistry meterRegistry;
 
     @Value("classpath:prompts/metrics-extraction.st")
     private Resource systemPromptResource;
@@ -69,22 +72,26 @@ public class SpringAiMetricsExtractionAdapter implements MetricsExtractionPort {
         log.debug("Extracting metrics for {}/{}/{} using {} chunks via {}",
                 ticker, year, quarter, chunks.size(), provider);
 
-        FinancialMetricsDto dto = client.prompt()
-                .system(s -> s.text(systemPromptResource))
-                .user(u -> u.text("""
-                        Company: {ticker}
-                        Fiscal year: {year}
-                        Quarter: {quarter}
+        FinancialMetricsDto dto = Timer.builder("llm.call.duration")
+                .tag("provider", provider)
+                .tag("operation", "metrics_extraction")
+                .register(meterRegistry)
+                .record(() -> client.prompt()
+                        .system(s -> s.text(systemPromptResource))
+                        .user(u -> u.text("""
+                                Company: {ticker}
+                                Fiscal year: {year}
+                                Quarter: {quarter}
 
-                        Report excerpts:
-                        {context}
-                        """)
-                        .param("ticker", ticker)
-                        .param("year", String.valueOf(year))
-                        .param("quarter", quarter)
-                        .param("context", context))
-                .call()
-                .entity(FinancialMetricsDto.class);
+                                Report excerpts:
+                                {context}
+                                """)
+                                .param("ticker", ticker)
+                                .param("year", String.valueOf(year))
+                                .param("quarter", quarter)
+                                .param("context", context))
+                        .call()
+                        .entity(FinancialMetricsDto.class));
 
         log.debug("Extracted: revenue={}, netIncome={}, eps={}",
                 dto.getRevenue(), dto.getNetIncome(), dto.getEps());

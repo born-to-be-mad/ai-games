@@ -1,0 +1,208 @@
+{
+  "title": "RAG Report Analyzer",
+  "uid": "rag-report-analyzer",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "rate(http_server_requests_seconds_count{application=\"rag-report-analyzer\"}[1m])",
+          "legendFormat": "{{method}} {{uri}} {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 2,
+      "title": "HTTP P99 Latency",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{application=\"rag-report-analyzer\"}[1m]))",
+          "legendFormat": "p99 {{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 3,
+      "title": "LLM Call Duration (p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(llm_call_duration_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "p99 {{operation}} ({{provider}})"
+        },
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.50, rate(llm_call_duration_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "p50 {{operation}} ({{provider}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Vector Store Operation Duration (p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(vector_store_operation_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "p99 {{operation}} ({{type}})"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Cache Hit Ratio (qa-answers)",
+      "type": "gauge",
+      "gridPos": { "x": 0, "y": 16, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "rate(cache_gets_total{application=\"rag-report-analyzer\",result=\"hit\"}[5m]) / rate(cache_gets_total{application=\"rag-report-analyzer\"}[5m])",
+          "legendFormat": "hit ratio"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.8 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Spring AI — Token Usage (tokens/min)",
+      "type": "timeseries",
+      "gridPos": { "x": 6, "y": 16, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "rate(spring_ai_chat_client_token_usage_total{application=\"rag-report-analyzer\"}[1m])",
+          "legendFormat": "{{token_type}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 7,
+      "title": "JVM Heap Used",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "jvm_memory_used_bytes{application=\"rag-report-analyzer\",area=\"heap\"}",
+          "legendFormat": "{{id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 8,
+      "title": "JVM GC Pause Duration",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "rate(jvm_gc_pause_seconds_sum{application=\"rag-report-analyzer\"}[1m])",
+          "legendFormat": "{{action}} {{cause}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Spring AI — Embedding Duration (p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 30, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(spring_ai_embedding_model_observations_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "p99 embedding"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Spring AI — ChatClient Duration (p99)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 30, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "histogram_quantile(0.99, rate(spring_ai_chat_client_observations_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "p99 chat-client"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Recent Logs (Loki)",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 38, "w": 24, "h": 10 },
+      "targets": [
+        {
+          "datasource": { "uid": "loki" },
+          "expr": "{app=\"rag-report-analyzer\"} | json",
+          "legendFormat": ""
+        }
+      ],
+      "options": {
+        "showLabels": false,
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupStrategy": "none"
+      }
+    }
+  ]
+}

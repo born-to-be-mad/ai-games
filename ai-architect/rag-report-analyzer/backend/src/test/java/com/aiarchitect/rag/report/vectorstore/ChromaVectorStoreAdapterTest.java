@@ -1,6 +1,7 @@
 package com.aiarchitect.rag.report.vectorstore;
 
 import com.aiarchitect.rag.report.infrastructure.adapter.out.vectorstore.ChromaVectorStoreAdapter;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class ChromaVectorStoreAdapterTest {
     @BeforeEach
     void setUp() {
         vectorStore = mock(VectorStore.class);
-        adapter = new ChromaVectorStoreAdapter(vectorStore);
+        adapter = new ChromaVectorStoreAdapter(vectorStore, new SimpleMeterRegistry());
     }
 
     @Test
