@@ -1,0 +1,212 @@
+[
+  {
+    "question": "What was NVIDIA's total revenue for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's total revenue for fiscal year 2025 was $130.5 billion, representing a 114% increase year-over-year.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Data Center segment revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Data Center segment revenue was $115.2 billion in fiscal year 2025, driven by demand for AI training and inference infrastructure.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's net income for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA reported net income of $72.9 billion for fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's gross margin in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's gross margin was approximately 74.6% for fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's diluted earnings per share (EPS) for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's diluted earnings per share (EPS) for fiscal year 2025 was $2.94.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's operating income for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's operating income for fiscal year 2025 was $93.3 billion.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How much did NVIDIA spend on research and development in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA spent approximately $8.7 billion on research and development in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What were NVIDIA's primary revenue growth drivers in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's primary growth drivers were the strong demand for its Hopper GPU architecture used in AI training and inference, particularly the H100 and H200 chips purchased by cloud service providers and enterprises.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Gaming segment revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Gaming segment revenue was approximately $11.4 billion in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Professional Visualization revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Professional Visualization revenue was approximately $1.9 billion in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What is NVIDIA's primary product for AI training as of fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's primary product for AI training as of fiscal year 2025 is the H100 GPU based on the Hopper architecture, with the H200 as an updated version offering increased memory bandwidth.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's cash and cash equivalents position at the end of fiscal year 2025?",
+    "expectedAnswer": "NVIDIA held approximately $8.6 billion in cash and cash equivalents at the end of fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How much did NVIDIA return to shareholders in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA returned approximately $15.4 billion to shareholders through share repurchases and dividends in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What risks did NVIDIA identify related to export controls in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA identified U.S. government export control restrictions on advanced semiconductor chips as a key risk, which limit its ability to sell certain products to China and other countries, potentially reducing revenue.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Automotive segment revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Automotive segment revenue was approximately $1.7 billion in fiscal year 2025, reflecting growing demand for its DRIVE platform.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What is NVIDIA CUDA and why is it significant for the company?",
+    "expectedAnswer": "NVIDIA CUDA is a parallel computing platform and programming model that allows developers to use NVIDIA GPUs for general-purpose computing. It is significant because it creates a large developer ecosystem and a switching cost that makes customers less likely to switch to competitor hardware.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What is NVIDIA's next-generation GPU architecture announced in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA announced the Blackwell GPU architecture as its next-generation platform in fiscal year 2025, succeeding the Hopper architecture and targeting AI training, inference, and high-performance computing.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was the year-over-year revenue growth rate for NVIDIA's Data Center segment in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Data Center segment revenue grew approximately 142% year-over-year in fiscal year 2025, from approximately $47.5 billion to $115.2 billion.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How does NVIDIA describe its competitive positioning in the AI accelerator market?",
+    "expectedAnswer": "NVIDIA describes its competitive positioning as dominant in the AI accelerator market, citing its full-stack approach combining hardware (GPUs), software (CUDA), and developer ecosystem as key differentiators against competitors like AMD and Intel.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's operating cash flow in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA generated approximately $64.1 billion in operating cash flow in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' total revenue for fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems reported total revenue of $4,687.8 million ($4.69 billion) for fiscal year 2023, representing a decrease of approximately 3.5% compared to fiscal year 2022.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' net income for fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems reported net income of $686.9 million for fiscal year 2023.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' diluted earnings per share for fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems' diluted earnings per share (EPS) for fiscal year 2023 was approximately $11.85.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was the primary reason for EPAM's revenue decline in fiscal year 2023?",
+    "expectedAnswer": "EPAM's revenue declined in fiscal year 2023 primarily due to the ongoing impact of the Russia-Ukraine war, which disrupted delivery operations in Ukraine — historically one of EPAM's largest engineering talent hubs — and led to client caution around Eastern European delivery.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How many employees did EPAM Systems have at the end of fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems had approximately 52,150 employees (production headcount) at the end of fiscal year 2023, a reduction from approximately 59,000 at the end of fiscal year 2022.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What geographic markets does EPAM Systems serve, and which is the largest?",
+    "expectedAnswer": "EPAM Systems serves North America, Europe, and other geographies. North America is its largest market, representing the majority of revenues, followed by Europe. EPAM's engineering delivery is concentrated in Eastern Europe, India, and other regions.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' cash and cash equivalents position at the end of fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems held approximately $1.7 billion in cash, cash equivalents, and short-term investments at the end of fiscal year 2023.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What are EPAM Systems' primary service offerings?",
+    "expectedAnswer": "EPAM Systems' primary service offerings include software product development, digital transformation, technology consulting, and IT services. The company specializes in custom software engineering, cloud migration, data analytics, and AI-powered solutions for enterprise clients.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What risks related to geopolitical conflict did EPAM Systems disclose in its fiscal year 2023 annual report?",
+    "expectedAnswer": "EPAM disclosed significant risks from the Russia-Ukraine war, including disruption to its Ukrainian engineering workforce, potential for further conflict escalation, uncertainty around talent availability in Eastern Europe, and reputational and operational risks from the conflict region proximity.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How did EPAM Systems describe its strategy for geographic diversification of its delivery model in fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems described accelerating geographic diversification away from Eastern Europe by expanding delivery capabilities in India, Poland, Hungary, Mexico, and other countries, while continuing to support and retain its Ukrainian engineering workforce.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  }
+]
