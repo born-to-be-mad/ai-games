@@ -1,0 +1,142 @@
+[
+  {
+    "question": "What was NVIDIA's total revenue for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's total revenue for fiscal year 2025 was $130.5 billion, representing a 114% increase year-over-year.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Data Center segment revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Data Center segment revenue was $115.2 billion in fiscal year 2025, driven by demand for AI training and inference infrastructure.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's net income for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA reported net income of $72.9 billion for fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's gross margin in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's gross margin was approximately 74.6% for fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's diluted earnings per share (EPS) for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's diluted earnings per share (EPS) for fiscal year 2025 was $2.94.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's operating income for fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's operating income for fiscal year 2025 was $93.3 billion.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How much did NVIDIA spend on research and development in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA spent approximately $8.7 billion on research and development in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What were NVIDIA's primary revenue growth drivers in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's primary growth drivers were the strong demand for its Hopper GPU architecture used in AI training and inference, particularly the H100 and H200 chips purchased by cloud service providers and enterprises.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Gaming segment revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Gaming segment revenue was approximately $11.4 billion in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Professional Visualization revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Professional Visualization revenue was approximately $1.9 billion in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What is NVIDIA's primary product for AI training as of fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's primary product for AI training as of fiscal year 2025 is the H100 GPU based on the Hopper architecture, with the H200 as an updated version offering increased memory bandwidth.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's cash and cash equivalents position at the end of fiscal year 2025?",
+    "expectedAnswer": "NVIDIA held approximately $8.6 billion in cash and cash equivalents at the end of fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How much did NVIDIA return to shareholders in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA returned approximately $15.4 billion to shareholders through share repurchases and dividends in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What risks did NVIDIA identify related to export controls in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA identified U.S. government export control restrictions on advanced semiconductor chips as a key risk, which limit its ability to sell certain products to China and other countries, potentially reducing revenue.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's Automotive segment revenue in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Automotive segment revenue was approximately $1.7 billion in fiscal year 2025, reflecting growing demand for its DRIVE platform.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What is NVIDIA CUDA and why is it significant for the company?",
+    "expectedAnswer": "NVIDIA CUDA is a parallel computing platform and programming model that allows developers to use NVIDIA GPUs for general-purpose computing. It is significant because it creates a large developer ecosystem and a switching cost that makes customers less likely to switch to competitor hardware.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What is NVIDIA's next-generation GPU architecture announced in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA announced the Blackwell GPU architecture as its next-generation platform in fiscal year 2025, succeeding the Hopper architecture and targeting AI training, inference, and high-performance computing.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was the year-over-year revenue growth rate for NVIDIA's Data Center segment in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA's Data Center segment revenue grew approximately 142% year-over-year in fiscal year 2025, from approximately $47.5 billion to $115.2 billion.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How does NVIDIA describe its competitive positioning in the AI accelerator market?",
+    "expectedAnswer": "NVIDIA describes its competitive positioning as dominant in the AI accelerator market, citing its full-stack approach combining hardware (GPUs), software (CUDA), and developer ecosystem as key differentiators against competitors like AMD and Intel.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was NVIDIA's operating cash flow in fiscal year 2025?",
+    "expectedAnswer": "NVIDIA generated approximately $64.1 billion in operating cash flow in fiscal year 2025.",
+    "ticker": "NVDA",
+    "year": 2025,
+    "quarter": "Annual"
+  }
+]
