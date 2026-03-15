@@ -58,6 +58,9 @@ dependencies {
     implementation("org.mapstruct:mapstruct:1.6.3")
     annotationProcessor("org.mapstruct:mapstruct-processor:1.6.3")
 
+    // Apache Commons Math — linear regression for PredictionService
+    implementation("org.apache.commons:commons-math3:3.6.1")
+
     // dotenv for .env file support
     implementation("io.github.cdimascio:dotenv-java:3.0.2")
 
