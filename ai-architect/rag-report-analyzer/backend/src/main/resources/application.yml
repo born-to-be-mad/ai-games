@@ -13,7 +13,7 @@ spring:
       enabled: true
       path: /h2-console
 
-  # Spring AI — provider selection via LLM_PROVIDER env var
+  # Spring AI — provider selection via AI_PROVIDER env var
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:not-set}
@@ -46,9 +46,18 @@ ai:
     active: ${AI_PROVIDER:openai}
 
 app:
-  # Vector store: simple | chroma
+  # Vector store: simple | chroma (env: VECTORSTORE_TYPE)
+  # - simple: in-memory, zero setup, resets on restart (default for local dev)
+  # - chroma: ChromaDB via Docker, persistent, native metadata filters
   vectorstore:
     type: ${VECTORSTORE_TYPE:simple}
+
+  # ChromaDB connection — only used when VECTORSTORE_TYPE=chroma.
+  # ChromaApi bean is created lazily (ConditionalOnProperty), so these env vars
+  # are only required when running with Docker Compose (CHROMA_HOST=chroma, CHROMA_PORT=8000).
+  chroma:
+    host: ${CHROMA_HOST:localhost}
+    port: ${CHROMA_PORT:8000}
 
   # Prediction mode
   prediction:
