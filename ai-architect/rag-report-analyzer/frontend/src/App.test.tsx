@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
-// Mock API service to prevent axios ESM module loading in Jest
 jest.mock('./services/ApiService', () => ({
   ingestReport:    jest.fn(),
   askQuestion:     jest.fn(),
@@ -11,7 +10,6 @@ jest.mock('./services/ApiService', () => ({
   predict:         jest.fn(),
 }));
 
-// Mock KnowledgeGraph to prevent D3 ESM loading in Jest
 jest.mock('./components/KnowledgeGraph', () =>
   function MockKnowledgeGraph() { return <div data-testid="knowledge-graph">Knowledge Graph</div>; }
 );
@@ -32,8 +30,8 @@ test('renders all navigation tabs', () => {
 
 test('Upload tab is active by default', () => {
   render(<App />);
-  const activeTab = document.querySelector('nav button.active');
-  expect(activeTab).toHaveTextContent('Upload');
+  const uploadBtn = screen.getByText('Upload');
+  expect(uploadBtn.className).toContain('bg-white');
 });
 
 test('clicking Q&A tab switches to Q&A screen', () => {
