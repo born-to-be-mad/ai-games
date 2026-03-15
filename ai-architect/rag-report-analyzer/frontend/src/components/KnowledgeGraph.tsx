@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import * as d3 from 'd3';
 import { useQuery } from '@tanstack/react-query';
 import { getMetricsGraph } from '../services/ApiService';
@@ -13,27 +14,21 @@ const NODE_RADIUS: Record<GraphNode['type'], number> = { Company: 22, Report: 16
 
 const INPUT = 'px-3 py-1.5 border border-slate-300 rounded-md text-sm w-28 outline-none focus:border-indigo-500 transition-colors';
 
+interface GraphFormValues { ticker: string; }
+
 export default function KnowledgeGraph() {
-  const [ticker, setTicker] = useState('NVDA');
+  const { register, getValues } = useForm<GraphFormValues>({ defaultValues: { ticker: 'NVDA' } });
   const [info, setInfo] = useState<GraphNode | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const simRef = useRef<d3.Simulation<GraphNode, GraphEdge> | null>(null);
 
   const graphQuery = useQuery({
-    queryKey: ['metrics-graph', ticker] as const,
-    queryFn: () => getMetricsGraph(ticker).then(r => r.data),
+    queryKey: ['metrics-graph', 'NVDA'] as const,
+    queryFn: () => getMetricsGraph(getValues('ticker')).then(r => r.data),
     enabled: false,
   });
 
-  useEffect(() => {
-    if (!graphQuery.data) return;
-    drawGraph(graphQuery.data.nodes, graphQuery.data.edges);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphQuery.data]);
-
-  useEffect(() => () => { simRef.current?.stop(); }, []);
-
-  const drawGraph = (nodes: GraphNode[], edges: GraphEdge[]) => {
+  const drawGraph = useCallback((nodes: GraphNode[], edges: GraphEdge[]) => {
     if (!svgRef.current) return;
     simRef.current?.stop();
 
@@ -96,7 +91,14 @@ export default function KnowledgeGraph() {
       node.attr('cx', d => d.x ?? 0).attr('cy', d => d.y ?? 0);
       nodeLabel.attr('x', d => d.x ?? 0).attr('y', d => d.y ?? 0);
     });
-  };
+  }, [setInfo]);
+
+  useEffect(() => {
+    if (!graphQuery.data) return;
+    drawGraph(graphQuery.data.nodes, graphQuery.data.edges);
+  }, [graphQuery.data, drawGraph]);
+
+  useEffect(() => () => { simRef.current?.stop(); }, []);
 
   const error = graphQuery.error
     ? ((graphQuery.error as { response?: { status?: number } }).response?.status === 404
@@ -115,9 +117,14 @@ export default function KnowledgeGraph() {
       <div className="flex gap-3 flex-wrap items-end mb-4">
         <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
           Ticker
-          <input type="text" value={ticker} className={INPUT} onChange={e => setTicker(e.target.value.toUpperCase())} />
+          <input
+            type="text"
+            className={INPUT}
+            {...register('ticker', { required: true, setValueAs: (v: string) => v.toUpperCase() })}
+          />
         </label>
         <button
+          type="button"
           onClick={() => graphQuery.refetch()}
           disabled={graphQuery.isFetching}
           className="px-5 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"

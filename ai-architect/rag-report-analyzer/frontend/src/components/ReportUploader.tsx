@@ -1,22 +1,37 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { ingestReport } from '../services/ApiService';
 import type { Quarter } from '../types/api';
 
+interface UploadFormValues {
+  file: FileList;
+  ticker: string;
+  year: number;
+  quarter: Quarter;
+}
+
 const INPUT = 'px-3 py-1.5 border border-slate-300 rounded-md text-sm outline-none focus:border-indigo-500 transition-colors';
 
 export default function ReportUploader() {
-  const [file, setFile] = useState<File | null>(null);
-  const [ticker, setTicker] = useState('NVDA');
-  const [year, setYear] = useState(2025);
-  const [quarter, setQuarter] = useState<Quarter>('Annual');
   const [progress, setProgress] = useState(0);
+  const { register, handleSubmit, watch } = useForm<UploadFormValues>({
+    defaultValues: { ticker: 'NVDA', year: 2025, quarter: 'Annual' },
+  });
+
+  const fileList = watch('file');
+  const hasFile = fileList && fileList.length > 0;
 
   const mutation = useMutation({
-    mutationFn: () => {
-      if (!file) throw new Error('No file selected');
-      return ingestReport(file, ticker, year, quarter, setProgress);
-    },
+    mutationFn: (values: UploadFormValues) =>
+      ingestReport(values.file[0], values.ticker, values.year, values.quarter, setProgress),
+    onSuccess: () => setProgress(100),
+  });
+
+  const onSubmit = handleSubmit(data => {
+    setProgress(0);
+    mutation.reset();
+    mutation.mutate(data);
   });
 
   return (
@@ -25,7 +40,7 @@ export default function ReportUploader() {
       <p className="text-sm text-slate-500 mb-4">
         Ingests a PDF (10-K / 10-Q), chunks it, embeds the chunks, and stores them in the vector store.
       </p>
-      <form onSubmit={e => { e.preventDefault(); mutation.mutate(); }}>
+      <form onSubmit={onSubmit}>
         <div className="flex gap-3 flex-wrap items-end mb-4">
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             PDF File
@@ -33,33 +48,31 @@ export default function ReportUploader() {
               type="file"
               accept=".pdf"
               className={INPUT + ' w-auto'}
-              onChange={e => { setFile(e.target.files?.[0] ?? null); mutation.reset(); }}
+              {...register('file', { required: true })}
             />
           </label>
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             Ticker
             <input
               type="text"
-              value={ticker}
               className={INPUT + ' w-28'}
-              onChange={e => setTicker(e.target.value.toUpperCase())}
               placeholder="NVDA"
+              {...register('ticker', { required: true, setValueAs: (v: string) => v.toUpperCase() })}
             />
           </label>
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             Fiscal Year
             <input
               type="number"
-              value={year}
               className={INPUT + ' w-24'}
-              onChange={e => setYear(Number(e.target.value))}
               min={2000}
               max={2100}
+              {...register('year', { required: true, valueAsNumber: true })}
             />
           </label>
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             Quarter
-            <select value={quarter} className={INPUT + ' w-28'} onChange={e => setQuarter(e.target.value as Quarter)}>
+            <select className={INPUT + ' w-28'} {...register('quarter')}>
               <option value="Annual">Annual</option>
               <option value="Q1">Q1</option>
               <option value="Q2">Q2</option>
@@ -69,7 +82,7 @@ export default function ReportUploader() {
           </label>
           <button
             type="submit"
-            disabled={!file || mutation.isPending}
+            disabled={!hasFile || mutation.isPending}
             className="px-5 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {mutation.isPending ? 'Uploading…' : 'Ingest Report'}
@@ -85,13 +98,14 @@ export default function ReportUploader() {
           </div>
         )}
         {mutation.isSuccess && (
-          <p className="text-emerald-600 text-sm mt-2">Report ingested successfully ({file?.name}).</p>
+          <p className="text-emerald-600 text-sm mt-2">
+            Report ingested successfully ({fileList?.[0]?.name}).
+          </p>
         )}
         {mutation.isError && (
           <p className="text-red-600 text-sm mt-2">
-            {(mutation.error as Error & { response?: { data?: { message?: string } } }).response?.data?.message
-              ?? (mutation.error as Error).message
-              ?? 'Upload failed.'}
+            {(mutation.error as Error & { response?: { data?: { message?: string } } })
+              .response?.data?.message ?? (mutation.error as Error).message ?? 'Upload failed.'}
           </p>
         )}
       </form>
