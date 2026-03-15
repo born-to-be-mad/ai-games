@@ -37,6 +37,21 @@ spring:
         options:
           model: nomic-embed-text
 
+    # Spring AI observations (Layer 4) — emits spans + metrics for ChatClient / VectorStore / Embedding
+    # Enabled automatically when Micrometer is on the classpath.
+    # Set include-input/include-output=true only if prompts are non-sensitive (PII risk).
+    chat:
+      client:
+        observations:
+          include-input: false
+          include-output: false
+    vectorstore:
+      observations:
+        include-query-response: false
+    embedding:
+      observations:
+        include-input: false
+
 server:
   port: 8080
 
@@ -80,9 +95,26 @@ management:
     export:
       prometheus:
         enabled: true
+    # Tag every metric with the service name — visible in Grafana as a label
+    tags:
+      application: ${spring.application.name}
   endpoint:
     health:
       show-details: when-authorized
+
+  # Distributed tracing (Layer 2) — Micrometer Tracing + OTel OTLP → Grafana Tempo
+  tracing:
+    sampling:
+      # 100 % in dev; override via TRACING_SAMPLING_PROBABILITY env var in prod (e.g. 0.1)
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+  otlp:
+    tracing:
+      # OTLP gRPC endpoint — point to Grafana Tempo (default) or any OTel Collector
+      endpoint: ${OTLP_ENDPOINT:http://tempo:4317}
+
+# Bridge LOKI_URL env var to Spring property so logback-spring.xml can read it via springProperty
+loki:
+  url: ${LOKI_URL:http://loki:3100}
 
 logging:
   level:

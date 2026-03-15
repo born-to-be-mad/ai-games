@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: rag-report-analyzer
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'backend:8080' ]
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: instance

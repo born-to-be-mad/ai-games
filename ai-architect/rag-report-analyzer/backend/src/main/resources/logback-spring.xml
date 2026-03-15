@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logback config (Layer 3 — Centralised Logging).
+
+  Two appenders run in parallel:
+    CONSOLE — plain-text for local dev (pattern includes traceId/spanId injected by Micrometer Tracing)
+    LOKI    — JSON push to Grafana Loki; traceId/spanId in JSON fields enable cross-linking
+              to traces in Grafana Tempo ("jump to trace" from a log line).
+
+  LOKI_URL env var (default: http://loki:3100) is set by docker-compose under the
+  "observability" profile. When the Loki service is not running the appender silently
+  discards events — no impact on application behaviour.
+-->
+<configuration>
+    <springProperty scope="context" name="APP_NAME"   source="spring.application.name" defaultValue="rag-report-analyzer"/>
+    <springProperty scope="context" name="LOKI_URL"   source="loki.url"                defaultValue="http://loki:3100"/>
+
+    <!-- ── Console appender (local dev) ──────────────────────────────────── -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- traceId / spanId are added to MDC automatically by Micrometer Tracing -->
+            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%X{traceId:-},%X{spanId:-}] %cyan(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ── Loki appender (Grafana Loki, JSON format) ──────────────────────── -->
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>${LOKI_URL}/loki/api/v1/push</url>
+            <!-- Batch up to 1 s or 1 000 log lines, whichever comes first -->
+            <batchMaxItems>1000</batchMaxItems>
+            <batchTimeoutMs>1000</batchTimeoutMs>
+        </http>
+        <format>
+            <label>
+                <!-- Grafana stream selectors — low-cardinality fields only -->
+                <pattern>app=${APP_NAME},level=%level,logger=%logger{20}</pattern>
+            </label>
+            <message>
+                <!-- JSON layout: includes timestamp, level, logger, message, MDC (traceId/spanId) -->
+                <pattern>{"ts":"%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ}","level":"%level","logger":"%logger{36}","thread":"%thread","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}","msg":"%message"%nopex}%n</pattern>
+            </message>
+            <sortByTime>true</sortByTime>
+        </format>
+    </appender>
+
+    <!-- ── Async wrapper for Loki (non-blocking) ─────────────────────────── -->
+    <appender name="LOKI_ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="LOKI"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+
+    <!-- ── Root logger ────────────────────────────────────────────────────── -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="LOKI_ASYNC"/>
+    </root>
+
+    <!-- Reduce Spring/Hibernate noise -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate"       level="WARN"/>
+    <logger name="com.aiarchitect.rag" level="INFO"/>
+    <logger name="org.springframework.ai" level="INFO"/>
+</configuration>

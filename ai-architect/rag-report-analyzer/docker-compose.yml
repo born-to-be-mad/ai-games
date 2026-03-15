@@ -21,6 +21,9 @@ services:
       - POSTGRES_DB=${POSTGRES_DB:-ragdb}
       - POSTGRES_USER=${POSTGRES_USER:-raguser}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-me}
+      # Observability — active when --profile observability is used; ignored otherwise
+      - OTLP_ENDPOINT=${OTLP_ENDPOINT:-http://tempo:4317}
+      - LOKI_URL=${LOKI_URL:-http://loki:3100}
     depends_on:
       chroma:
         condition: service_healthy
@@ -86,10 +89,83 @@ services:
     networks:
       - rag-network
 
+  # ── Observability stack (Layer 1–4) ──────────────────────────────────────
+  # Activate with: docker compose --profile observability up
+  # Grafana UI: http://localhost:3001  (admin / admin)
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    profiles:
+      - observability
+    networks:
+      - rag-network
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    ports:
+      - "3200:3200"   # Tempo HTTP API
+      - "4317:4317"   # OTLP gRPC receiver
+    volumes:
+      - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo-data:/tmp/tempo
+    command: [ "-config.file=/etc/tempo.yaml" ]
+    profiles:
+      - observability
+    networks:
+      - rag-network
+
+  loki:
+    image: grafana/loki:3.1.0
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./observability/loki.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: [ "-config.file=/etc/loki/local-config.yaml" ]
+    profiles:
+      - observability
+    networks:
+      - rag-network
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    volumes:
+      - ./observability/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    profiles:
+      - observability
+    networks:
+      - rag-network
+
 volumes:
   chroma-data:
   ollama-data:
   postgres-data:
+  prometheus-data:
+  tempo-data:
+  loki-data:
+  grafana-data:
 
 networks:
   rag-network:

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Test-only Logback config — overrides logback-spring.xml for all unit/integration tests.
+  Uses CONSOLE only; Loki appender is excluded so no network calls are made during tests
+  and Spring Boot 4's strict ERROR-level Logback status check does not fail the context.
+-->
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate"       level="WARN"/>
+    <logger name="com.aiarchitect.rag" level="INFO"/>
+    <logger name="org.springframework.ai" level="INFO"/>
+</configuration>

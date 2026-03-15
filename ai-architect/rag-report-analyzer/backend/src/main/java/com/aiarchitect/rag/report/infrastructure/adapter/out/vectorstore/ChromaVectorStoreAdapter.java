@@ -1,6 +1,8 @@
 package com.aiarchitect.rag.report.infrastructure.adapter.out.vectorstore;
 
 import com.aiarchitect.rag.report.domain.port.out.DocumentStorePort;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -27,8 +29,9 @@ import java.util.Map;
  *   <li>The filter is pushed to the database engine, reducing network transfer
  * </ul>
  *
- * <p>The domain code ({@link com.aiarchitect.rag.report.domain.port.out.DocumentStorePort})
- * is unchanged — this is the hexagonal architecture pay-off.
+ * <h3>Observability</h3>
+ * Records {@code vector.store.operation} timer tagged with {@code type=chroma} and
+ * {@code operation=store|search} for all operations.
  */
 @Slf4j
 @Component
@@ -37,19 +40,28 @@ import java.util.Map;
 public class ChromaVectorStoreAdapter implements DocumentStorePort {
 
     private final VectorStore vectorStore;
+    private final MeterRegistry meterRegistry;
 
     @Override
     public void store(List<Document> documents) {
         log.debug("Storing {} documents in ChromaDB", documents.size());
-        vectorStore.add(documents);
+        Timer.builder("vector.store.operation")
+                .tag("type", "chroma")
+                .tag("operation", "store")
+                .register(meterRegistry)
+                .record(() -> vectorStore.add(documents));
         log.debug("Stored {} documents", documents.size());
     }
 
     @Override
     public List<Document> similaritySearch(String query, int topK) {
         log.debug("ChromaDB similarity search: query='{}', topK={}", query, topK);
-        List<Document> results = vectorStore.similaritySearch(
-                SearchRequest.builder().query(query).topK(topK).build());
+        List<Document> results = Timer.builder("vector.store.operation")
+                .tag("type", "chroma")
+                .tag("operation", "search")
+                .register(meterRegistry)
+                .record(() -> vectorStore.similaritySearch(
+                        SearchRequest.builder().query(query).topK(topK).build()));
         log.debug("Found {} results", results.size());
         return results;
     }
@@ -76,7 +88,11 @@ public class ChromaVectorStoreAdapter implements DocumentStorePort {
                 ? SearchRequest.builder().query(query).topK(topK).filterExpression(filterExpression).build()
                 : SearchRequest.builder().query(query).topK(topK).build();
 
-        List<Document> results = vectorStore.similaritySearch(request);
+        List<Document> results = Timer.builder("vector.store.operation")
+                .tag("type", "chroma")
+                .tag("operation", "search_filtered")
+                .register(meterRegistry)
+                .record(() -> vectorStore.similaritySearch(request));
         log.debug("ChromaDB filtered to {} results for query='{}'", results.size(), query);
         return results;
     }
