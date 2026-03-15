@@ -4,10 +4,25 @@ Evaluation of the `rag-report-analyzer` pipeline against the manually verified g
 
 ## Dataset
 
-- **Source:** NVIDIA FY2025 Annual Report (10-K, filed 2025)
-- **Size:** 20 Q&A pairs covering revenue, segment performance, risks, strategy, and key metrics
+- **Size:** 30 Q&A pairs across two companies (20 NVDA + 10 EPAM)
 - **Location:** `backend/src/main/resources/eval/golden-dataset.json`
-- **Verification:** Manually verified against the original SEC filing — NOT LLM-generated
+- **Verification:** Manually verified against original SEC filings — NOT LLM-generated
+
+| Company | Ticker | Report | Period | Items | Topics |
+|---------|--------|--------|--------|-------|--------|
+| NVIDIA | NVDA | 10-K | FY2025 (ended Jan 26 2025) | 20 | Revenue, segments, EPS, margins, strategy, risks, export controls, Blackwell GPU |
+| EPAM Systems | EPAM | 10-K | FY2023 (ended Dec 31 2023) | 10 | Revenue, net income, EPS, headcount, geopolitics, delivery model, strategy |
+
+### Source Documents
+
+| Company | Filing | SEC EDGAR | Investor Relations |
+|---------|--------|-----------|-------------------|
+| NVIDIA Corporation | 10-K FY2025 (CIK 0001045810) | [SEC EDGAR](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001045810&type=10-K&dateb=&owner=include&count=5) | [investor.nvidia.com](https://investor.nvidia.com/financial-info/annual-reports/) |
+| EPAM Systems, Inc. | 10-K FY2023 (CIK 0001352010) | [SEC EDGAR](https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001352010&type=10-K&dateb=&owner=include&count=5) | [ir.epam.com](https://ir.epam.com/financial-information/annual-reports) |
+
+> **Note:** Download the actual PDFs from the links above to ingest and evaluate.
+> All expected answers were verified against the original filings; figures are in the units stated
+> in each answer (billions USD unless specified otherwise).
 
 ## Metrics (RAGAS-inspired)
 
@@ -25,17 +40,19 @@ All metrics are scored 0.0–1.0 via LLM-as-judge (`eval-judge.st` prompt). See 
 ## How to Run
 
 ```bash
-# Ingest the report first (required before evaluation)
+# 1. Ingest both reports (required before evaluation)
 curl -X POST "http://localhost:8080/api/v1/ingest" \
   -F "file=@NVIDIA-2025-Annual-Report.pdf" \
-  -F "ticker=NVDA" \
-  -F "year=2025" \
-  -F "quarter=Annual"
+  -F "ticker=NVDA" -F "year=2025" -F "quarter=Annual"
 
-# Single configuration run (topK=5)
+curl -X POST "http://localhost:8080/api/v1/ingest" \
+  -F "file=@EPAM-2023-Annual-Report.pdf" \
+  -F "ticker=EPAM" -F "year=2023" -F "quarter=Annual"
+
+# 2. Single configuration run (topK=5, all 30 questions)
 curl -X POST "http://localhost:8080/api/v1/eval/run?topK=5"
 
-# Full comparison matrix (topK=3, 5, 10)
+# 3. Full comparison matrix (topK=3, 5, 10)
 curl -X POST "http://localhost:8080/api/v1/eval/run/matrix"
 ```
 

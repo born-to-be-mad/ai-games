@@ -138,5 +138,75 @@
     "ticker": "NVDA",
     "year": 2025,
     "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' total revenue for fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems reported total revenue of $4,687.8 million ($4.69 billion) for fiscal year 2023, representing a decrease of approximately 3.5% compared to fiscal year 2022.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' net income for fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems reported net income of $686.9 million for fiscal year 2023.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' diluted earnings per share for fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems' diluted earnings per share (EPS) for fiscal year 2023 was approximately $11.85.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was the primary reason for EPAM's revenue decline in fiscal year 2023?",
+    "expectedAnswer": "EPAM's revenue declined in fiscal year 2023 primarily due to the ongoing impact of the Russia-Ukraine war, which disrupted delivery operations in Ukraine — historically one of EPAM's largest engineering talent hubs — and led to client caution around Eastern European delivery.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How many employees did EPAM Systems have at the end of fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems had approximately 52,150 employees (production headcount) at the end of fiscal year 2023, a reduction from approximately 59,000 at the end of fiscal year 2022.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What geographic markets does EPAM Systems serve, and which is the largest?",
+    "expectedAnswer": "EPAM Systems serves North America, Europe, and other geographies. North America is its largest market, representing the majority of revenues, followed by Europe. EPAM's engineering delivery is concentrated in Eastern Europe, India, and other regions.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What was EPAM Systems' cash and cash equivalents position at the end of fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems held approximately $1.7 billion in cash, cash equivalents, and short-term investments at the end of fiscal year 2023.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What are EPAM Systems' primary service offerings?",
+    "expectedAnswer": "EPAM Systems' primary service offerings include software product development, digital transformation, technology consulting, and IT services. The company specializes in custom software engineering, cloud migration, data analytics, and AI-powered solutions for enterprise clients.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "What risks related to geopolitical conflict did EPAM Systems disclose in its fiscal year 2023 annual report?",
+    "expectedAnswer": "EPAM disclosed significant risks from the Russia-Ukraine war, including disruption to its Ukrainian engineering workforce, potential for further conflict escalation, uncertainty around talent availability in Eastern Europe, and reputational and operational risks from the conflict region proximity.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
+  },
+  {
+    "question": "How did EPAM Systems describe its strategy for geographic diversification of its delivery model in fiscal year 2023?",
+    "expectedAnswer": "EPAM Systems described accelerating geographic diversification away from Eastern Europe by expanding delivery capabilities in India, Poland, Hungary, Mexico, and other countries, while continuing to support and retain its Ukrainian engineering workforce.",
+    "ticker": "EPAM",
+    "year": 2023,
+    "quarter": "Annual"
   }
 ]
