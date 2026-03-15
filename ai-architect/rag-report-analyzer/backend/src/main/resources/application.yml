@@ -70,6 +70,20 @@ app:
     year: ${DEMO_YEAR:2025}
     quarter: ${DEMO_QUARTER:Annual}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose health, info, Prometheus scrape endpoint, metrics browser, cache stats
+        include: "health,info,prometheus,metrics,caches"
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: when-authorized
+
 logging:
   level:
     com.aiarchitect.rag: INFO

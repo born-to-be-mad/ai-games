@@ -1,6 +1,7 @@
 package com.aiarchitect.rag.report.infrastructure.adapter.out.ai;
 
 import com.aiarchitect.rag.report.domain.model.FinancialMetrics;
+import com.aiarchitect.rag.report.domain.model.LlmCallException;
 import com.aiarchitect.rag.report.domain.port.out.MetricsExtractionPort;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,6 +29,10 @@ import java.util.stream.Collectors;
  *   <li>Parses the LLM response into the DTO
  * </ol>
  * Maps the DTO to the domain {@link FinancialMetrics} record.
+ *
+ * <h3>Resilience</h3>
+ * Retries up to 3 times with exponential backoff (1s → 2s → 4s) on any exception.
+ * After all retries fail, throws {@link LlmCallException}.
  */
 @Slf4j
 @Component
@@ -37,6 +45,11 @@ public class SpringAiMetricsExtractionAdapter implements MetricsExtractionPort {
     @Value("classpath:prompts/metrics-extraction.st")
     private Resource systemPromptResource;
 
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0)
+    )
     @Override
     public FinancialMetrics extract(String ticker, int year, String quarter, List<Document> chunks) {
         String provider = aiProviderProperties.active();
@@ -83,5 +96,12 @@ public class SpringAiMetricsExtractionAdapter implements MetricsExtractionPort {
                 dto.getEps(),
                 dto.getOperatingCashFlow(),
                 dto.getDebtToEquity());
+    }
+
+    @Recover
+    public FinancialMetrics extractFallback(Exception ex, String ticker, int year, String quarter,
+                                            List<Document> chunks) {
+        log.error("Metrics extraction failed after 3 retries for {}/{}/{}", ticker, year, quarter, ex);
+        throw new LlmCallException("LLM unavailable after retries: " + ex.getMessage(), ex);
     }
 }

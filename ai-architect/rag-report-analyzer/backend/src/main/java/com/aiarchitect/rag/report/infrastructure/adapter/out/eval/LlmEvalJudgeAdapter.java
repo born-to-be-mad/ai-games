@@ -1,5 +1,6 @@
 package com.aiarchitect.rag.report.infrastructure.adapter.out.eval;
 
+import com.aiarchitect.rag.report.domain.model.LlmCallException;
 import com.aiarchitect.rag.report.domain.model.eval.EvalScores;
 import com.aiarchitect.rag.report.domain.port.out.EvalJudgePort;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
@@ -9,6 +10,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -20,6 +24,10 @@ import java.util.stream.Collectors;
  *
  * <p>Uses Spring AI's {@code ChatClient.call().entity(EvalScoresDto.class)} for structured output.
  * System prompt loaded from {@code classpath:prompts/eval-judge.st}.
+ *
+ * <h3>Resilience</h3>
+ * Retries up to 3 times with exponential backoff (1s → 2s → 4s) on any exception.
+ * After all retries fail, throws {@link LlmCallException}.
  */
 @Slf4j
 @Component
@@ -32,6 +40,11 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
     @Value("classpath:prompts/eval-judge.st")
     private Resource systemPromptResource;
 
+    @Retryable(
+            retryFor = Exception.class,
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0)
+    )
     @Override
     public EvalScores judge(
             String question,
@@ -87,6 +100,13 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
                 precision, recall, faithfulness, relevance);
 
         return new EvalScores(precision, recall, faithfulness, relevance);
+    }
+
+    @Recover
+    public EvalScores judgeFallback(Exception ex, String question, String expectedAnswer,
+                                    String generatedAnswer, List<Document> retrievedChunks) {
+        log.error("Eval judge failed after 3 retries for question='{}'", question, ex);
+        throw new LlmCallException("LLM unavailable after retries: " + ex.getMessage(), ex);
     }
 
     /** Clamps null or out-of-range values to [0.0, 1.0]. */

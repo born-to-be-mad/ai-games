@@ -14,6 +14,13 @@ services:
       - CHROMA_HOST=chroma
       - CHROMA_PORT=8000
       - PREDICTION_MODE=${PREDICTION_MODE:-NARRATIVE_PREDICTION}
+      # PostgreSQL — set SPRING_PROFILES_ACTIVE=postgres when running with --profile postgres
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-ragdb}
+      - POSTGRES_USER=${POSTGRES_USER:-raguser}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-ragpass}
     depends_on:
       chroma:
         condition: service_healthy
@@ -45,6 +52,29 @@ services:
     networks:
       - rag-network
 
+  # PostgreSQL — production database replacing H2.
+  # Activate with: docker compose --profile postgres up
+  # Backend also needs SPRING_PROFILES_ACTIVE=postgres to switch datasource.
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ragdb}
+      POSTGRES_USER: ${POSTGRES_USER:-raguser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ragpass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-raguser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
+    networks:
+      - rag-network
+
   ollama:
     image: ollama/ollama:latest
     ports:
@@ -59,6 +89,7 @@ services:
 volumes:
   chroma-data:
   ollama-data:
+  postgres-data:
 
 networks:
   rag-network:

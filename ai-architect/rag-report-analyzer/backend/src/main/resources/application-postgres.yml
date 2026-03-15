@@ -1,0 +1,21 @@
+# PostgreSQL profile — activate with SPRING_PROFILES_ACTIVE=postgres
+# Used in production / Docker Compose: docker compose --profile postgres up
+#
+# Required env vars: POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+# See .env.example for Docker Compose defaults.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:ragdb}
+    username: ${POSTGRES_USER:raguser}
+    password: ${POSTGRES_PASSWORD:ragpass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      # 'update' — applies schema changes without dropping data; use 'validate' in production
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: false
+  h2:
+    console:
+      enabled: false
