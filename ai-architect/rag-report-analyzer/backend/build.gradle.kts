@@ -47,8 +47,24 @@ dependencies {
     // Spring AI — ChromaDB vector store (no auto-config; bean created manually in VectorStoreConfig)
     implementation("org.springframework.ai:spring-ai-chroma-store")
 
+    // Resilience — retry with exponential backoff
+    // Note: spring-boot-starter-aop is not in the Spring Boot 4.0.3 BOM; aspectjweaver is
+    // already on the classpath transitively. Only spring-retry needs an explicit version.
+    implementation("org.springframework.retry:spring-retry:2.0.11")
+
+    // Caching — Spring Cache abstraction + Caffeine high-performance cache
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("com.github.ben-manes.caffeine:caffeine")
+
+    // Observability — Actuator + Micrometer → Prometheus metrics endpoint
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
     // H2 for local dev
     runtimeOnly("com.h2database:h2")
+
+    // PostgreSQL — runtime driver for production profile
+    runtimeOnly("org.postgresql:postgresql")
 
     // Lombok
     compileOnly("org.projectlombok:lombok")
