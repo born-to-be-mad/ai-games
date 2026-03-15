@@ -34,3 +34,25 @@ jobs:
         with:
           name: rag-report-analyzer-test-reports
           path: ai-architect/rag-report-analyzer/backend/build/reports/tests/
+
+  frontend:
+    name: Frontend Tests + Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-architect/rag-report-analyzer/frontend
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ai-architect/rag-report-analyzer/frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test -- --watchAll=false --ci
+        env:
+          CI: true
+      - name: Build
+        run: npm run build
