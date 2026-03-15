@@ -44,6 +44,9 @@ dependencies {
     // Spring AI — vector store: VectorStore interface, SimpleVectorStore, SearchRequest
     implementation("org.springframework.ai:spring-ai-vector-store")
 
+    // Spring AI — ChromaDB vector store (no auto-config; bean created manually in VectorStoreConfig)
+    implementation("org.springframework.ai:spring-ai-chroma-store")
+
     // H2 for local dev
     runtimeOnly("com.h2database:h2")
 

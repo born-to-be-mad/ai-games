@@ -6,21 +6,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * Outbound adapter: delegates to Spring AI's {@link VectorStore}.
+ * Outbound adapter: delegates to Spring AI's {@link org.springframework.ai.vectorstore.SimpleVectorStore}.
  *
- * <p>In phases 1-4 the backing store is {@code SimpleVectorStore} (in-memory).
- * Phase 5 swaps it for ChromaDB without touching this class or the domain —
- * only the {@code VectorStoreConfig} bean definition changes.
+ * <p>Active only when {@code app.vectorstore.type=simple} (the default).
+ * Phase 5 adds {@link ChromaVectorStoreAdapter} for {@code type=chroma} which uses
+ * native ChromaDB filter expressions instead of this post-filtering approach.
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "app.vectorstore.type", havingValue = "simple", matchIfMissing = true)
 public class SimpleVectorStoreAdapter implements DocumentStorePort {
 
     private final VectorStore vectorStore;
