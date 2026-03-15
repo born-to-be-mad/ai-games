@@ -1,18 +1,21 @@
+import { vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
-jest.mock('./services/ApiService', () => ({
-  ingestReport:    jest.fn(),
-  askQuestion:     jest.fn(),
-  extractMetrics:  jest.fn(),
-  getMetrics:      jest.fn(),
-  getMetricsGraph: jest.fn(),
-  predict:         jest.fn(),
+vi.mock('./services/ApiService', () => ({
+  ingestReport:    vi.fn(),
+  askQuestion:     vi.fn(),
+  extractMetrics:  vi.fn(),
+  getMetrics:      vi.fn(),
+  getMetricsGraph: vi.fn(),
+  predict:         vi.fn(),
 }));
 
-jest.mock('./components/KnowledgeGraph', () =>
-  function MockKnowledgeGraph() { return <div data-testid="knowledge-graph">Knowledge Graph</div>; }
-);
+vi.mock('./components/KnowledgeGraph', () => ({
+  default: function MockKnowledgeGraph() {
+    return <div data-testid="knowledge-graph">Knowledge Graph</div>;
+  },
+}));
 
 test('renders app header', () => {
   render(<App />);
