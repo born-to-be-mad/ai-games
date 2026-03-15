@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
+import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -29,21 +30,30 @@ function MetricsCard({ label, value, unit }: MetricsCardProps) {
   );
 }
 
+interface MetricsFormValues { ticker: string; year: number; quarter: Quarter; }
+
 export default function MetricsDashboard() {
-  const [ticker, setTicker] = useState('NVDA');
-  const [year, setYear] = useState(2025);
-  const [quarter, setQuarter] = useState<Quarter>('Annual');
+  const { register, getValues } = useForm<MetricsFormValues>({
+    defaultValues: { ticker: 'NVDA', year: 2025, quarter: 'Annual' },
+  });
   const queryClient = useQueryClient();
 
   const metricsQuery = useQuery({
-    queryKey: ['metrics', ticker, year, quarter] as const,
-    queryFn: () => getMetrics(ticker, year, quarter).then(r => r.data),
+    queryKey: ['metrics', 'NVDA', 2025, 'Annual'] as const,
+    queryFn: () => {
+      const { ticker, year, quarter } = getValues();
+      return getMetrics(ticker, year, quarter).then(r => r.data);
+    },
     enabled: false,
   });
 
   const extractMutation = useMutation({
-    mutationFn: () => extractMetrics(ticker, year, quarter).then(r => r.data),
+    mutationFn: () => {
+      const { ticker, year, quarter } = getValues();
+      return extractMetrics(ticker, year, quarter).then(r => r.data);
+    },
     onSuccess: data => {
+      const { ticker, year, quarter } = getValues();
       queryClient.setQueryData(['metrics', ticker, year, quarter], data);
     },
   });
@@ -76,15 +86,23 @@ export default function MetricsDashboard() {
         <div className="flex gap-3 flex-wrap items-end mb-4">
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             Ticker
-            <input type="text" value={ticker} className={INPUT + ' w-28'} onChange={e => setTicker(e.target.value.toUpperCase())} />
+            <input
+              type="text"
+              className={INPUT + ' w-28'}
+              {...register('ticker', { required: true, setValueAs: (v: string) => v.toUpperCase() })}
+            />
           </label>
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             Year
-            <input type="number" value={year} className={INPUT + ' w-24'} onChange={e => setYear(Number(e.target.value))} />
+            <input
+              type="number"
+              className={INPUT + ' w-24'}
+              {...register('year', { required: true, valueAsNumber: true })}
+            />
           </label>
           <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
             Quarter
-            <select value={quarter} className={INPUT + ' w-28'} onChange={e => setQuarter(e.target.value as Quarter)}>
+            <select className={INPUT + ' w-28'} {...register('quarter')}>
               <option value="Annual">Annual</option>
               <option value="Q1">Q1</option>
               <option value="Q2">Q2</option>
@@ -93,6 +111,7 @@ export default function MetricsDashboard() {
             </select>
           </label>
           <button
+            type="button"
             onClick={() => metricsQuery.refetch()}
             disabled={isLoading}
             className="px-5 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -100,6 +119,7 @@ export default function MetricsDashboard() {
             {isLoading ? 'Loading…' : 'Load Metrics'}
           </button>
           <button
+            type="button"
             onClick={() => extractMutation.mutate()}
             disabled={isExtracting}
             className="px-5 py-1.5 bg-slate-200 text-slate-700 rounded-md text-sm font-medium transition-colors hover:bg-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"

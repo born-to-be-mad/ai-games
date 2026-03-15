@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
 import { predict } from '../services/ApiService';
 import type { FinancialOutlook, PredictionMode } from '../types/api';
@@ -11,15 +12,20 @@ const MODES: Array<{ value: PredictionMode; label: string; desc: string }> = [
 
 const INPUT = 'px-3 py-1.5 border border-slate-300 rounded-md text-sm w-28 outline-none focus:border-indigo-500 transition-colors';
 
+interface PredictionFormValues { ticker: string; mode: PredictionMode; }
+
 export default function PredictionPanel() {
-  const [ticker, setTicker] = useState('NVDA');
-  const [mode, setMode] = useState<PredictionMode>('NARRATIVE_PREDICTION');
+  const { register, handleSubmit } = useForm<PredictionFormValues>({
+    defaultValues: { ticker: 'NVDA', mode: 'NARRATIVE_PREDICTION' },
+  });
 
   const mutation = useMutation({
-    mutationFn: () => predict(ticker, mode).then(r => r.data),
+    mutationFn: (values: PredictionFormValues) => predict(values.ticker, values.mode).then(r => r.data),
   });
 
   const outlook: FinancialOutlook | undefined = mutation.data;
+
+  const onSubmit = handleSubmit(data => mutation.mutate(data));
 
   return (
     <div>
@@ -30,55 +36,55 @@ export default function PredictionPanel() {
           Requires at least one period of extracted metrics.
         </p>
 
-        <div className="flex gap-3 flex-wrap items-end mb-4">
-          <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
-            Ticker
-            <input type="text" value={ticker} className={INPUT} onChange={e => setTicker(e.target.value.toUpperCase())} />
-          </label>
-        </div>
-
-        <div className="mb-4">
-          <div className="text-xs font-medium text-slate-500 mb-2">Prediction Mode</div>
-          <div className="flex gap-4 flex-wrap">
-            {MODES.map(m => (
-              <label key={m.value} className="flex items-center gap-1.5 cursor-pointer text-sm text-slate-700">
-                <input
-                  type="radio"
-                  name="mode"
-                  value={m.value}
-                  checked={mode === m.value}
-                  onChange={() => setMode(m.value)}
-                />
-                <span>
-                  <strong>{m.label}</strong>
-                  <span className="text-[0.75rem] text-slate-400 ml-1">— {m.desc}</span>
-                </span>
-              </label>
-            ))}
+        <form onSubmit={onSubmit}>
+          <div className="flex gap-3 flex-wrap items-end mb-4">
+            <label className="text-xs font-medium text-slate-500 flex flex-col gap-1">
+              Ticker
+              <input
+                type="text"
+                className={INPUT}
+                {...register('ticker', { required: true, setValueAs: (v: string) => v.toUpperCase() })}
+              />
+            </label>
           </div>
-        </div>
 
-        <button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending}
-          className="px-5 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {mutation.isPending ? 'Predicting…' : 'Generate Outlook'}
-        </button>
-        {mutation.isError && (
-          <p className="text-red-600 text-sm mt-2">
-            {(mutation.error as Error & { response?: { status?: number; data?: { message?: string } } }).response?.status === 400
-              ? 'No metrics stored for this ticker. Extract metrics first.'
-              : ((mutation.error as Error & { response?: { data?: { message?: string } } }).response?.data?.message
-                  ?? (mutation.error as Error).message)}
-          </p>
-        )}
+          <div className="mb-4">
+            <div className="text-xs font-medium text-slate-500 mb-2">Prediction Mode</div>
+            <div className="flex gap-4 flex-wrap">
+              {MODES.map(m => (
+                <label key={m.value} className="flex items-center gap-1.5 cursor-pointer text-sm text-slate-700">
+                  <input type="radio" value={m.value} {...register('mode', { required: true })} />
+                  <span>
+                    <strong>{m.label}</strong>
+                    <span className="text-[0.75rem] text-slate-400 ml-1">— {m.desc}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="px-5 py-1.5 bg-indigo-600 text-white rounded-md text-sm font-medium transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {mutation.isPending ? 'Predicting…' : 'Generate Outlook'}
+          </button>
+          {mutation.isError && (
+            <p className="text-red-600 text-sm mt-2">
+              {(mutation.error as Error & { response?: { status?: number; data?: { message?: string } } }).response?.status === 400
+                ? 'No metrics stored for this ticker. Extract metrics first.'
+                : ((mutation.error as Error & { response?: { data?: { message?: string } } }).response?.data?.message
+                    ?? (mutation.error as Error).message)}
+            </p>
+          )}
+        </form>
       </div>
 
       {outlook && (
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <h3 className="text-[0.95rem] font-medium mb-4 text-slate-700 flex items-center gap-2">
-            {ticker} Financial Outlook
+            Financial Outlook
             <span className="inline-block bg-violet-100 text-violet-800 text-xs px-2 py-0.5 rounded font-medium">
               {outlook.methodology}
             </span>
