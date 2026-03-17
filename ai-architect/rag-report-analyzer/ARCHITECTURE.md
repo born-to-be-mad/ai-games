@@ -2,8 +2,9 @@
 
 ## Table of Contents
 1. [Architecture Overview](#architecture-overview)
-2. [RAG Q&A Sequence Diagram](#rag-qa-sequence-diagram)
-3. [STRIDE Threat Model](#stride-threat-model)
+2. [RAG Supply Chain](#rag-supply-chain)
+3. [RAG Q&A Sequence Diagram](#rag-qa-sequence-diagram)
+4. [STRIDE Threat Model](#stride-threat-model)
 
 ---
 
@@ -23,15 +24,18 @@ graph TD
         PP["PredictionPanel.tsx"]
     end
 
-    subgraph BE["Backend  ·  Spring Boot 4.0.3 / Spring AI 2.0.0-M2  :8080"]
-        subgraph IN["Inbound Adapters (REST)"]
+    subgraph BE["Backend  ·  Spring Boot 4.0.3 / Java 25 / Spring AI 2.0  :8080"]
+        subgraph IN["Inbound Adapters"]
+            IC["IngestionController\nPOST /api/v1/ingest\n(multipart/form-data)"]
             QC["QaController\nGET /api/v1/qa"]
             MC["MetricsController\nPOST /api/v1/metrics/extract\nGET  /api/v1/metrics/{ticker}/{year}/{quarter}\nGET  /api/v1/metrics/graph/{ticker}"]
             AC["AnalysisController\nGET /api/v1/analysis/{ticker}"]
             EC["EvaluationController\nPOST /api/v1/eval/run"]
+            IR["IngestionRunner\n(optional · INGEST_ON_START=true)"]
         end
 
         subgraph DOMAIN["Domain (Hexagon Core)"]
+            RIS["ReportIngestionService"]
             QAS["FinancialQaService\n@Cacheable(qa-answers · 30 min)"]
             MES["MetricsExtractionService"]
             PS["PredictionService\nNARRATIVE · LR · HYBRID"]
@@ -39,18 +43,24 @@ graph TD
         end
 
         subgraph OUT["Outbound Adapters"]
+            PDFA["PdfDocumentReaderAdapter\nPagePdfDocumentReader\n512-token chunks / 64 overlap"]
             VSA["VectorStoreAdapter\nSimple (in-memory) │ Chroma (HTTP)\nTimer(vector.store.operation)"]
             LMA["SpringAiLanguageAdapter\n@Retryable(3×, 1s→2s→4s)\nTimer(llm.call.duration)"]
             MEA["MetricsExtractionAdapter\n@Retryable · ChatClient.entity()"]
             EVA["LlmEvalJudgeAdapter\n@Retryable · RAGAS judge"]
             RRA["ReportRepositoryAdapter\nJPA · H2 (dev) / PostgreSQL (prod)"]
-            PDFA["PdfDocumentReaderAdapter\nPagePdfDocumentReader\n512-token chunks / 64 overlap"]
+        end
+
+        subgraph CFG["Configuration"]
+            IP["IngestionProperties\napp.ingestion.*"]
+            AP["AiProviderProperties\nai.provider.active"]
+            RC["ResilienceConfig\n@EnableRetry · @EnableCaching\nCaffeine: 500 entries / 30 min TTL"]
         end
     end
 
     subgraph EXT["External Services"]
         CHROMA[("ChromaDB  :8000\ncollection: rag-reports")]
-        LLM["LLM APIs\nOpenAI gpt-4o-mini\nAnthropic claude-sonnet-4-6\nOllama llama3.2  :11434"]
+        LLM["LLM APIs\nOpenAI gpt-4o-mini · text-embedding-3-small\nAnthropic claude-sonnet-4-6\nOllama llama3.2 · nomic-embed-text  :11434"]
         DB[("H2 (dev)\nPostgreSQL :5432 (--profile postgres)")]
     end
 
@@ -63,12 +73,17 @@ graph TD
 
     U -->|"HTTP :3000"| FE
     FE -->|"/api/* proxy"| IN
+    RA -->|"multipart PDF"| IC
 
+    IC --> RIS
+    IR -.->|"on startup"| RIS
     QC --> QAS
     MC --> MES
     AC --> PS
     EC --> ES
 
+    RIS --> PDFA
+    RIS --> VSA
     QAS --> VSA
     QAS --> LMA
     MES --> VSA
@@ -83,7 +98,6 @@ graph TD
     MEA -->|"HTTPS"| LLM
     EVA -->|"HTTPS"| LLM
     RRA --> DB
-    PDFA -->|"FileSystemResource"| VSA
 
     BE -->|"scrape :8080/actuator/prometheus"| PROM
     BE -->|"OTLP gRPC"| TEMPO
@@ -94,11 +108,98 @@ graph TD
 ```
 
 **Key architectural decisions:**
-- **Hexagonal (Ports & Ports)** — domain core has zero framework dependencies; ArchUnit enforces boundaries
+- **Hexagonal (Ports & Adapters)** — domain core has zero framework dependencies; ArchUnit enforces boundaries
+- **Dual ingestion paths** — `POST /api/v1/ingest` (multipart upload via UI) or `IngestionRunner` (auto-ingest on startup with `INGEST_ON_START=true`)
+- **Type-safe config** — `@ConfigurationProperties` records (`IngestionProperties`, `AiProviderProperties`) over scattered `@Value`
 - **Provider-agnostic LLM** — single `AI_PROVIDER` env var switches OpenAI / Anthropic / Ollama
 - **Vector store swap** — `@ConditionalOnProperty` selects `SimpleVectorStore` (dev) or ChromaDB (prod) with zero domain changes
-- **Resilience** — `@Retryable` (3×, exponential backoff) on all LLM adapters; Caffeine cache on Q&A answers
+- **Resilience** — `@Retryable` (3×, exponential backoff) on all LLM adapters; Caffeine cache on Q&A answers (500 entries, 30 min TTL)
 - **Full observability** — Micrometer (metrics) + OTel OTLP (traces) + Loki4j (logs) → Grafana unified view
+
+---
+
+## RAG Supply Chain
+
+Two data paths flow through the system: the **Ingestion Pipeline** (write path) transforms PDFs into searchable vectors, and the **Retrieval & Generation Pipeline** (read path) answers questions using those vectors.
+
+### Ingestion Pipeline (Write Path)
+
+```mermaid
+graph LR
+    PDF["📄 PDF Upload<br/><i>SEC 10-K / 10-Q</i><br/><code>POST /api/v1/ingest</code><br/>or IngestionRunner"]
+    READ["📖 Document Reading<br/><b>PagePdfDocumentReader</b><br/>1 page = 1 document"]
+    CHUNK["✂️ Chunking<br/><b>TokenTextSplitter</b><br/>512 tokens / 64 overlap<br/>split on . ? ! \\n"]
+    META["🏷️ Metadata Enrichment<br/><b>ReportIngestionService</b><br/>ticker · year · quarter<br/>report_type · source_file"]
+    EMBED["🔢 Embedding<br/><b>EmbeddingModel</b><br/>OpenAI: text-embedding-3-small<br/>Ollama: nomic-embed-text"]
+    STORE[("💾 Vector Store<br/><b>SimpleVectorStore</b> (in-memory)<br/>or <b>ChromaDB</b> (persistent)")]
+
+    PDF --> READ --> CHUNK --> META --> EMBED --> STORE
+
+    style PDF fill:#334155,stroke:#94a3b8,color:#f8fafc
+    style READ fill:#1e3a5f,stroke:#3b82f6,color:#f8fafc
+    style CHUNK fill:#1e3a5f,stroke:#3b82f6,color:#f8fafc
+    style META fill:#422006,stroke:#f59e0b,color:#f8fafc
+    style EMBED fill:#3b0764,stroke:#a855f7,color:#f8fafc
+    style STORE fill:#052e16,stroke:#22c55e,color:#f8fafc
+```
+
+| Step | Component | Details |
+|------|-----------|---------|
+| 1. Upload | `IngestionController` or `IngestionRunner` | Multipart PDF via REST, or auto-ingest on startup (`INGEST_ON_START=true`) |
+| 2. Read | `PagePdfDocumentReader` | One `Document` per page, preserves page number metadata |
+| 3. Chunk | `TokenTextSplitter` | 512 tokens per chunk, 64-token overlap; splits preferring `.` `?` `!` `\n` boundaries |
+| 4. Enrich | `ReportIngestionService` | Attaches `ticker`, `year`, `quarter`, `report_type`, `source_file` to every chunk |
+| 5. Embed | `EmbeddingModel` | Converts text → vector (1536-dim OpenAI or 768-dim nomic) |
+| 6. Store | `DocumentStorePort` | Vectors + metadata persisted for similarity search |
+
+### Retrieval & Generation Pipeline (Read Path)
+
+```mermaid
+graph LR
+    Q["❓ User Question<br/>question + ticker + year<br/><code>GET /api/v1/qa</code>"]
+    CACHE{"🗄️ Cache Check<br/><b>Caffeine</b><br/>key: ticker:year:question<br/>TTL 30 min · max 500"}
+    QEMBED["🔢 Query Embedding<br/><b>EmbeddingModel</b><br/>(same model as ingestion)"]
+    SEARCH["🔍 Similarity Search<br/><b>DocumentStorePort</b><br/>topK = 5<br/>filter: {ticker, year}"]
+    CTX["📋 Context Assembly<br/><b>Top-K Chunks</b><br/>ranked by cosine similarity"]
+    PROMPT["📝 LLM Prompt<br/><b>ChatClient</b><br/>qa-system.st template<br/>system + context + question"]
+    LLM["🤖 LLM Generation<br/><b>Language Model</b><br/>GPT-4o-mini / Claude Sonnet<br/>/ Llama 3.2<br/><i>@Retryable 3× · 1s→2s→4s</i>"]
+    RESP["✅ Response<br/><b>QaAnswer</b><br/>{ answer, sources:<br/>[{ chunkId, text, pageNumber }] }"]
+
+    Q --> CACHE
+    CACHE -->|"HIT"| RESP
+    CACHE -->|"MISS"| QEMBED --> SEARCH --> CTX --> PROMPT --> LLM --> RESP
+
+    style Q fill:#334155,stroke:#94a3b8,color:#f8fafc
+    style CACHE fill:#042f2e,stroke:#14b8a6,color:#f8fafc
+    style QEMBED fill:#3b0764,stroke:#a855f7,color:#f8fafc
+    style SEARCH fill:#052e16,stroke:#22c55e,color:#f8fafc
+    style CTX fill:#422006,stroke:#f59e0b,color:#f8fafc
+    style PROMPT fill:#4c0519,stroke:#f43f5e,color:#f8fafc
+    style LLM fill:#4c0519,stroke:#f43f5e,color:#f8fafc
+    style RESP fill:#052e16,stroke:#10b981,color:#f8fafc
+```
+
+| Step | Component | Details |
+|------|-----------|---------|
+| 1. Question | `QaController` | Receives question, ticker, year from frontend |
+| 2. Cache | `Caffeine` | Key = `ticker:year:question`; on **HIT** returns immediately (30 min TTL, 500 entries) |
+| 3. Embed | `EmbeddingModel` | Converts question text → query vector |
+| 4. Search | `DocumentStorePort` | Cosine similarity, topK=5, filtered by `{ticker, year}` metadata |
+| 5. Assemble | `FinancialQaService` | Collects top-K chunks as context window |
+| 6. Prompt | `ChatClient` | Renders `qa-system.st` template with system instructions + context + question |
+| 7. Generate | `LanguageModelPort` | LLM call with `@Retryable` (3 attempts, exponential backoff 1s→2s→4s) |
+| 8. Response | `QaAnswer` | Answer text + source chunks (chunkId, text, pageNumber) for attribution |
+
+### Color Legend
+
+| Color | Meaning |
+|-------|---------|
+| 🔵 Blue | Document processing (read, chunk) |
+| 🟠 Amber | Domain logic (enrichment, assembly) |
+| 🟣 Purple | Embedding (text → vector) |
+| 🟢 Green | Storage & retrieval (vector store) |
+| 🔴 Rose | LLM interaction (prompt, generation) |
+| 🩵 Teal | Caching & resilience |
 
 ---
 
@@ -182,7 +283,7 @@ The analysis covers: REST API, frontend proxy, backend services, vector store (C
 | T2 | No input validation/sanitisation on `question`, `ticker`, `year` parameters → prompt injection via crafted question | LLM prompt | **High** | Validate and sanitise inputs; consider a prompt-injection guard layer |
 | T3 | H2 web console enabled (`/h2-console`) in default profile — in-memory DB fully accessible with no auth | Financial metrics (H2) | **Medium** (dev only) | Disable H2 console in non-dev profiles; gate with Spring Security |
 | T4 | `@Cacheable` stores answers keyed by `ticker:year:question`; a poisoned answer persists 30 min | Q&A cache | **Medium** | Add cache invalidation endpoint (admin-only); use signed/validated LLM responses |
-| T5 | PDF ingestion reads from arbitrary file path (`SAMPLE_PDF_PATH`) with no path-traversal guard | Host filesystem | **Medium** | Validate and canonicalise the file path; restrict to a whitelist directory |
+| T5 | `IngestionRunner` reads from file path (`SAMPLE_PDF_PATH`) — path traversal risk; REST upload uses safe temp files | Host filesystem | **Low** | ✅ REST ingestion writes to temp file (no user-controlled path); validate `SAMPLE_PDF_PATH` at startup |
 
 ---
 
@@ -216,7 +317,7 @@ The analysis covers: REST API, frontend proxy, backend services, vector store (C
 | D1 | No rate limiting on any endpoint — burst of Q&A requests drains OpenAI/Anthropic API credits | LLM budget | **High** | Add rate limiting (Spring Gateway / nginx `limit_req`); set OpenAI usage limits |
 | D2 | `POST /api/v1/eval/run/matrix` runs 3 full RAGAS evaluations (≈60 LLM calls) — a single request is extremely expensive | LLM budget, latency | **High** | Protect behind admin auth; add request queuing; limit to one concurrent run |
 | D3 | `@Retryable` (3×) amplifies failures — a misconfigured LLM key sends 3× the failing requests before raising `LlmCallException` | LLM API rate limits | **Medium** | Add circuit breaker (Resilience4j); exponential backoff already in place |
-| D4 | No max payload / request size limit — large or malformed PDFs can exhaust heap during chunking | JVM heap | **Medium** | Set `spring.servlet.multipart.max-file-size` and `max-request-size`; add PDF validation |
+| D4 | Large or malformed PDFs can exhaust heap during chunking | JVM heap | **Medium** | ✅ `spring.servlet.multipart` limits set to 100 MB; add PDF page-count / content validation before chunking |
 | D5 | ChromaDB collection has no size cap — unbounded ingestion can fill disk | Disk / ChromaDB | **Low** | Set ChromaDB collection limits; add disk-usage alerts in Grafana |
 
 ---
