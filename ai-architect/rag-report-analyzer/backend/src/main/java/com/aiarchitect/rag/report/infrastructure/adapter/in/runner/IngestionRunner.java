@@ -2,30 +2,33 @@ package com.aiarchitect.rag.report.infrastructure.adapter.in.runner;
 
 import com.aiarchitect.rag.report.domain.port.in.ReportIngestionFacade;
 import com.aiarchitect.rag.report.domain.port.out.DocumentStorePort;
+import com.aiarchitect.rag.report.infrastructure.props.IngestionProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 /**
- * Demo runner for phases 1-2: ingests a PDF then runs similarity searches
- * to demonstrate the full embed → store → retrieve cycle.
+ * Optional startup runner: ingests a PDF then runs similarity searches
+ * to verify the full embed → store → retrieve cycle.
  *
- * <p>Active only with {@code --spring.profiles.active=demo}.
+ * <p>Activated by setting {@code app.ingestion.run-on-start=true}
+ * (env: {@code INGEST_ON_START=true}). Disabled by default.
  *
  * <pre>
- * Phase 1: read PDF → chunk → print first 5 chunks
- * Phase 2: embed chunks → store in SimpleVectorStore → similarity search
+ * 1. read PDF → chunk → print first 5 chunks
+ * 2. embed chunks → store in VectorStore → similarity search
  * </pre>
  */
 @Slf4j
 @Component
-@Profile("demo")
+@ConditionalOnProperty(name = "app.ingestion.run-on-start", havingValue = "true")
+@EnableConfigurationProperties(IngestionProperties.class)
 @RequiredArgsConstructor
 public class IngestionRunner implements CommandLineRunner {
 
@@ -33,25 +36,16 @@ public class IngestionRunner implements CommandLineRunner {
 
     private final ReportIngestionFacade reportIngestionFacade;
     private final DocumentStorePort documentStorePort;
-
-    @Value("${app.demo.pdf-path}")
-    private String pdfPath;
-
-    @Value("${app.demo.ticker:NVDA}")
-    private String ticker;
-
-    @Value("${app.demo.year:2025}")
-    private int year;
-
-    @Value("${app.demo.quarter:Annual}")
-    private String quarter;
+    private final IngestionProperties props;
 
     @Override
     public void run(String... args) {
-        log.info("=== Phase 1+2 Demo: Ingest → Embed → Store → Search ===");
-        log.info("PDF: {} | ticker={}, year={}, quarter={}", pdfPath, ticker, year, quarter);
+        log.info("=== Startup Ingestion: Ingest → Embed → Store → Search ===");
+        log.info("PDF: {} | ticker={}, year={}, quarter={}",
+                props.pdfPath(), props.ticker(), props.year(), props.quarter());
 
-        List<Document> chunks = reportIngestionFacade.ingest(pdfPath, ticker, year, quarter);
+        List<Document> chunks = reportIngestionFacade.ingest(
+                props.pdfPath(), props.ticker(), props.year(), props.quarter());
         log.info("Total chunks ingested and stored: {}", chunks.size());
 
         log.info("--- First 5 chunks ---");
@@ -88,6 +82,6 @@ public class IngestionRunner implements CommandLineRunner {
             });
         });
 
-        log.info("=== Demo complete. {} chunks in vector store. ===", chunks.size());
+        log.info("=== Startup ingestion complete. {} chunks in vector store. ===", chunks.size());
     }
 }
