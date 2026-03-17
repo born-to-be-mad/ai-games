@@ -112,12 +112,13 @@ services:
 
   tempo:
     image: grafana/tempo:2.5.0
+    user: "0:0"
     ports:
       - "3200:3200"   # Tempo HTTP API
       - "4317:4317"   # OTLP gRPC receiver
     volumes:
       - ./observability/tempo.yaml:/etc/tempo.yaml:ro
-      - tempo-data:/tmp/tempo
+      - tempo-data:/var/tempo
     command: [ "-config.file=/etc/tempo.yaml" ]
     profiles:
       - observability

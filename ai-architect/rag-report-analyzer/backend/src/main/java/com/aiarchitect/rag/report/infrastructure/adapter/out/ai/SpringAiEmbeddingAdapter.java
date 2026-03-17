@@ -4,6 +4,7 @@ import com.aiarchitect.rag.report.domain.port.out.EmbeddingPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SpringAiEmbeddingAdapter implements EmbeddingPort {
 
+    @Qualifier("activeEmbeddingModel")
     private final EmbeddingModel embeddingModel;
 
     @Override
