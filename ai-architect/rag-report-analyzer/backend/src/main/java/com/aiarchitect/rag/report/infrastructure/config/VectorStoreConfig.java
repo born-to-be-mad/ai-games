@@ -31,6 +31,10 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class VectorStoreConfig {
 
+    private static final String CHROMA_TENANT = "default_tenant";
+    private static final String CHROMA_DATABASE = "default_database";
+    private static final String CHROMA_COLLECTION = "rag-reports";
+
     @Bean
     @ConditionalOnProperty(name = "app.vectorstore.type", havingValue = "simple", matchIfMissing = true)
     public VectorStore simpleVectorStore(@Qualifier("activeEmbeddingModel") EmbeddingModel embeddingModel) {
@@ -54,9 +58,46 @@ public class VectorStoreConfig {
     public VectorStore chromaVectorStore(
             ChromaApi chromaApi,
             @Qualifier("activeEmbeddingModel") EmbeddingModel embeddingModel) {
+
+        ensureChromaSchema(chromaApi);
+
         return ChromaVectorStore.builder(chromaApi, embeddingModel)
-                .collectionName("rag-reports")
-                .initializeSchema(true)
+                .tenantName(CHROMA_TENANT)
+                .databaseName(CHROMA_DATABASE)
+                .collectionName(CHROMA_COLLECTION)
+                .initializeSchema(false)
+                .initializeImmediately(false)
                 .build();
+    }
+
+    /**
+     * Chroma 0.6.x can start before its tenant/database/collection metadata is fully ready.
+     * Ensure required schema exists explicitly so Spring context startup doesn't fail.
+     */
+    private void ensureChromaSchema(ChromaApi chromaApi) {
+        try {
+            try {
+                chromaApi.getTenant(CHROMA_TENANT);
+            } catch (Exception ignored) {
+                chromaApi.createTenant(CHROMA_TENANT);
+            }
+
+            try {
+                chromaApi.getDatabase(CHROMA_TENANT, CHROMA_DATABASE);
+            } catch (Exception ignored) {
+                chromaApi.createDatabase(CHROMA_TENANT, CHROMA_DATABASE);
+            }
+
+            try {
+                chromaApi.getCollection(CHROMA_TENANT, CHROMA_DATABASE, CHROMA_COLLECTION);
+            } catch (Exception ignored) {
+                chromaApi.createCollection(
+                        CHROMA_TENANT,
+                        CHROMA_DATABASE,
+                        new ChromaApi.CreateCollectionRequest(CHROMA_COLLECTION));
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to initialize Chroma schema", e);
+        }
     }
 }

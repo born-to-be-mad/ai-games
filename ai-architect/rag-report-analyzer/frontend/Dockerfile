@@ -10,6 +10,7 @@ RUN npm ci --silent
 # Copy source and build
 COPY index.html ./
 COPY vite.config.ts tsconfig.json ./
+COPY tailwind.config.js postcss.config.js ./
 COPY public ./public
 COPY src ./src
 RUN npm run build
