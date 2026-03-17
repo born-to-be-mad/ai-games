@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Entity
 @Table(name = "financial_metrics",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"ticker", "year", "quarter"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"ticker", "report_year", "report_quarter"}))
 public class FinancialMetricsEntity {
 
     @Id
@@ -28,10 +28,10 @@ public class FinancialMetricsEntity {
     @Column(nullable = false)
     private String ticker;
 
-    @Column(nullable = false)
+    @Column(name = "report_year", nullable = false)
     private int year;
 
-    @Column(nullable = false)
+    @Column(name = "report_quarter", nullable = false)
     private String quarter;
 
     private Double revenue;

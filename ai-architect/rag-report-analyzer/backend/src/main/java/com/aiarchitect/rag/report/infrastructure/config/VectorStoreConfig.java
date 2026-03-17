@@ -5,6 +5,7 @@ import org.springframework.ai.chroma.vectorstore.ChromaVectorStore;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +33,7 @@ public class VectorStoreConfig {
 
     @Bean
     @ConditionalOnProperty(name = "app.vectorstore.type", havingValue = "simple", matchIfMissing = true)
-    public VectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
+    public VectorStore simpleVectorStore(@Qualifier("activeEmbeddingModel") EmbeddingModel embeddingModel) {
         return SimpleVectorStore.builder(embeddingModel).build();
     }
 
@@ -50,7 +51,9 @@ public class VectorStoreConfig {
 
     @Bean
     @ConditionalOnProperty(name = "app.vectorstore.type", havingValue = "chroma")
-    public VectorStore chromaVectorStore(ChromaApi chromaApi, EmbeddingModel embeddingModel) {
+    public VectorStore chromaVectorStore(
+            ChromaApi chromaApi,
+            @Qualifier("activeEmbeddingModel") EmbeddingModel embeddingModel) {
         return ChromaVectorStore.builder(chromaApi, embeddingModel)
                 .collectionName("rag-reports")
                 .initializeSchema(true)
