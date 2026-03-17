@@ -52,6 +52,11 @@ spring:
       observations:
         include-input: false
 
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
 server:
   port: 8080
 
@@ -78,12 +83,15 @@ app:
   prediction:
     mode: ${PREDICTION_MODE:NARRATIVE_PREDICTION}
 
-  # Phase 1 demo runner config (active with --spring.profiles.active=demo)
-  demo:
+  # Startup ingestion — set run-on-start=true (env: INGEST_ON_START=true)
+  # to auto-ingest the sample PDF when the application starts. Disabled by default;
+  # reports can always be uploaded via POST /api/v1/ingest.
+  ingestion:
+    run-on-start: ${INGEST_ON_START:false}
     pdf-path: ${SAMPLE_PDF_PATH:../tmp/NVIDIA-2025-Annual-Report.pdf}
-    ticker: ${DEMO_TICKER:NVDA}
-    year: ${DEMO_YEAR:2025}
-    quarter: ${DEMO_QUARTER:Annual}
+    ticker: ${INGEST_TICKER:NVDA}
+    year: ${INGEST_YEAR:2025}
+    quarter: ${INGEST_QUARTER:Annual}
 
 management:
   endpoints:
