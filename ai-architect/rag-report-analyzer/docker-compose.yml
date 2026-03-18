@@ -6,10 +6,10 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - AI_PROVIDER=${AI_PROVIDER:-openai}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - AI_PROVIDER=${AI_PROVIDER:-ollama}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
       - VECTORSTORE_TYPE=${VECTORSTORE_TYPE:-chroma}
       - CHROMA_HOST=chroma
       - CHROMA_PORT=8000
