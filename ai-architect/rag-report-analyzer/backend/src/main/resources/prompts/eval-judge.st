@@ -26,4 +26,5 @@ Important scoring guidelines:
 - An answer that says "I cannot answer from the provided context" has high faithfulness but low answerRelevance
 - Base your scores ONLY on what is provided; do not use external knowledge
 
-Respond with a JSON object matching the required schema. Do not include any text outside the JSON.
+Respond with a single-line compact JSON object with exactly these four keys: contextPrecision, contextRecall, faithfulness, answerRelevance. Example: {"contextPrecision":0.8,"contextRecall":0.7,"faithfulness":1.0,"answerRelevance":0.9}
+Do not include any text, explanation, or formatting outside the JSON object.
