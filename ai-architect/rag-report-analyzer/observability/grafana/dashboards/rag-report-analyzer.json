@@ -42,19 +42,19 @@
     },
     {
       "id": 3,
-      "title": "LLM Call Duration (p99)",
+      "title": "LLM Call Duration (avg)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, rate(llm_call_duration_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
-          "legendFormat": "p99 {{operation}} ({{provider}})"
+          "expr": "sum by (operation, provider) (rate(llm_call_duration_seconds_sum{application=\"rag-report-analyzer\"}[2m])) / sum by (operation, provider) (rate(llm_call_duration_seconds_count{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "avg {{operation}} ({{provider}})"
         },
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, rate(llm_call_duration_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
-          "legendFormat": "p50 {{operation}} ({{provider}})"
+          "expr": "max_over_time(llm_call_duration_seconds_max{application=\"rag-report-analyzer\"}[5m])",
+          "legendFormat": "max {{operation}} ({{provider}})"
         }
       ],
       "fieldConfig": {
@@ -63,14 +63,14 @@
     },
     {
       "id": 4,
-      "title": "Vector Store Operation Duration (p99)",
+      "title": "Vector Store Operation Duration (avg)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, rate(vector_store_operation_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
-          "legendFormat": "p99 {{operation}} ({{type}})"
+          "expr": "sum by (operation, type) (rate(vector_store_operation_seconds_sum{application=\"rag-report-analyzer\"}[2m])) / sum by (operation, type) (rate(vector_store_operation_seconds_count{application=\"rag-report-analyzer\"}[2m]))",
+          "legendFormat": "avg {{operation}} ({{type}})"
         }
       ],
       "fieldConfig": {
@@ -85,7 +85,7 @@
       "targets": [
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "rate(cache_gets_total{application=\"rag-report-analyzer\",result=\"hit\"}[5m]) / rate(cache_gets_total{application=\"rag-report-analyzer\"}[5m])",
+          "expr": "rate(cache_gets_total{application=\"rag-report-analyzer\",cache=\"qa-answers\",result=\"hit\"}[5m]) / rate(cache_gets_total{application=\"rag-report-analyzer\",cache=\"qa-answers\"}[5m])",
           "legendFormat": "hit ratio"
         }
       ],
@@ -107,14 +107,19 @@
     },
     {
       "id": 6,
-      "title": "Spring AI — Token Usage (tokens/min)",
+      "title": "LLM Token Usage (tokens/min)",
       "type": "timeseries",
       "gridPos": { "x": 6, "y": 16, "w": 12, "h": 6 },
       "targets": [
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "rate(spring_ai_chat_client_token_usage_total{application=\"rag-report-analyzer\"}[1m])",
-          "legendFormat": "{{token_type}}"
+          "expr": "sum by (provider, operation, token_type) (rate(llm_token_usage_total{application=\"rag-report-analyzer\"}[1m])) * 60",
+          "legendFormat": "{{provider}}/{{operation}} {{token_type}}"
+        },
+        {
+          "datasource": { "uid": "prometheus" },
+          "expr": "sum by (provider, operation) (rate(llm_token_usage_missing_total{application=\"rag-report-analyzer\"}[1m]))",
+          "legendFormat": "missing usage {{provider}}/{{operation}}"
         }
       ],
       "fieldConfig": {
@@ -155,14 +160,14 @@
     },
     {
       "id": 9,
-      "title": "Spring AI — Embedding Duration (p99)",
+      "title": "Vector Store Throughput (ops/min)",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 30, "w": 12, "h": 8 },
       "targets": [
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, rate(spring_ai_embedding_model_observations_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
-          "legendFormat": "p99 embedding"
+          "expr": "sum by (operation, type) (rate(vector_store_operation_seconds_count{application=\"rag-report-analyzer\"}[1m])) * 60",
+          "legendFormat": "{{operation}} ({{type}})"
         }
       ],
       "fieldConfig": {
@@ -171,14 +176,14 @@
     },
     {
       "id": 10,
-      "title": "Spring AI — ChatClient Duration (p99)",
+      "title": "LLM Errors (retry/failure proxy)",
       "type": "timeseries",
       "gridPos": { "x": 12, "y": 30, "w": 12, "h": 8 },
       "targets": [
         {
           "datasource": { "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, rate(spring_ai_chat_client_observations_seconds_bucket{application=\"rag-report-analyzer\"}[2m]))",
-          "legendFormat": "p99 chat-client"
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"rag-report-analyzer\",status=~\"5..\",uri=~\"/api/v1/(qa|metrics/extract|eval/run|eval/run/matrix).*\"}[5m]))",
+          "legendFormat": "5xx rate"
         }
       ],
       "fieldConfig": {

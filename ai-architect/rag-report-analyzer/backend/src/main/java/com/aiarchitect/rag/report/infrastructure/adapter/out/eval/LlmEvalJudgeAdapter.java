@@ -3,12 +3,14 @@ package com.aiarchitect.rag.report.infrastructure.adapter.out.eval;
 import com.aiarchitect.rag.report.domain.model.LlmCallException;
 import com.aiarchitect.rag.report.domain.model.eval.EvalScores;
 import com.aiarchitect.rag.report.domain.port.out.EvalJudgePort;
+import com.aiarchitect.rag.report.infrastructure.adapter.out.ai.LlmTokenMetrics;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -72,7 +74,7 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
         log.debug("Judging answer for question='{}' with {} context chunks via {}",
                 question, retrievedChunks.size(), provider);
 
-        EvalScoresDto dto = Timer.builder("llm.call.duration")
+        var response = Timer.builder("llm.call.duration")
                 .tag("provider", provider)
                 .tag("operation", "eval_judge")
                 .register(meterRegistry)
@@ -96,7 +98,14 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
                                 .param("chunkCount", String.valueOf(retrievedChunks.size()))
                                 .param("context", context.isEmpty() ? "(no chunks retrieved)" : context))
                         .call()
-                        .entity(EvalScoresDto.class));
+                        .responseEntity(EvalScoresDto.class));
+
+        ChatResponse chatResponse = response != null ? response.response() : null;
+        LlmTokenMetrics.record(meterRegistry, provider, "eval_judge", chatResponse);
+        EvalScoresDto dto = response != null ? response.entity() : null;
+        if (dto == null) {
+            throw new LlmCallException("LLM returned empty structured response for evaluation");
+        }
 
         double precision = safeScore(dto.getContextPrecision());
         double recall = safeScore(dto.getContextRecall());

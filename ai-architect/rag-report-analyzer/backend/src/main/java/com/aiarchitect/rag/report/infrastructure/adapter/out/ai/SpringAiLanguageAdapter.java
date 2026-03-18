@@ -8,6 +8,7 @@ import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -79,7 +80,7 @@ public class SpringAiLanguageAdapter implements LanguageModelPort {
         log.debug("Calling {} with {} context chunks for question='{}'",
                 provider, contextChunks.size(), question);
 
-        return Timer.builder("llm.call.duration")
+        var response = Timer.builder("llm.call.duration")
                 .tag("provider", provider)
                 .tag("operation", "qa")
                 .register(meterRegistry)
@@ -94,7 +95,20 @@ public class SpringAiLanguageAdapter implements LanguageModelPort {
                                 .param("context", context)
                                 .param("question", question))
                         .call()
-                        .content());
+                        .responseEntity(String.class));
+
+        ChatResponse chatResponse = response != null ? response.response() : null;
+        LlmTokenMetrics.record(meterRegistry, provider, "qa", chatResponse);
+
+        if (response == null) {
+            return "";
+        }
+        if (response.entity() != null) {
+            return response.entity();
+        }
+        return chatResponse != null && chatResponse.getResult() != null
+                ? chatResponse.getResult().getOutput().getText()
+                : "";
     }
 
     @Recover
