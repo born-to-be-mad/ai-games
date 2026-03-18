@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type {
-  QaResponse, FinancialMetrics, MetricsGraphData, FinancialOutlook, PredictionMode, Quarter,
+  QaResponse, FinancialMetrics, MetricsGraphData, FinancialOutlook, PredictionMode, Quarter, EvalReport,
 } from '../types/api';
 
 const api = axios.create({ baseURL: '/api/v1' });
@@ -38,3 +38,9 @@ export const getMetricsGraph = (ticker: string) =>
 
 export const predict = (ticker: string, mode: PredictionMode) =>
   api.get<FinancialOutlook>(`/analysis/${ticker}`, { params: { mode } });
+
+export const runEvaluation = (topK: number) =>
+  api.post<EvalReport>('/eval/run', null, { params: { topK } });
+
+export const runEvaluationMatrix = () =>
+  api.post<EvalReport[]>('/eval/run/matrix');

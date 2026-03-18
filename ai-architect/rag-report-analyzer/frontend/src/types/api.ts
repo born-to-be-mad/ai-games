@@ -46,5 +46,31 @@ export interface FinancialOutlook {
   methodology: string;
 }
 
+export interface EvalScores {
+  contextPrecision: number;
+  contextRecall: number;
+  faithfulness: number;
+  answerRelevance: number;
+}
+
+export interface QuestionEvalResult {
+  question: string;
+  expectedAnswer: string;
+  generatedAnswer: string;
+  retrievedChunksCount: number;
+  scores: EvalScores;
+}
+
+export interface EvalReport {
+  topK: number;
+  results: QuestionEvalResult[];
+  avgContextPrecision: number;
+  avgContextRecall: number;
+  avgFaithfulness: number;
+  avgAnswerRelevance: number;
+  avgOverall: number;
+  evaluatedAt: string;
+}
+
 export type PredictionMode = 'NARRATIVE_PREDICTION' | 'LINEAR_REGRESSION' | 'HYBRID';
 export type Quarter = 'Annual' | 'Q1' | 'Q2' | 'Q3' | 'Q4';

@@ -5,6 +5,9 @@ import com.aiarchitect.rag.report.domain.model.eval.EvalScores;
 import com.aiarchitect.rag.report.domain.port.out.EvalJudgePort;
 import com.aiarchitect.rag.report.infrastructure.adapter.out.ai.LlmTokenMetrics;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Counter;
+import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +22,18 @@ import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
  * Outbound adapter: uses the active LLM to compute all four RAG evaluation scores in a single call.
  *
- * <p>Uses Spring AI's {@code ChatClient.call().entity(EvalScoresDto.class)} for structured output.
+ * <p>Uses Spring AI's {@code ChatClient.call().responseEntity(EvalScoresDto.class)} for structured output
+ * and to access provider token usage metadata.
  * System prompt loaded from {@code classpath:prompts/eval-judge.st}.
  *
  * <h3>Resilience</h3>
@@ -65,14 +72,16 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
                             .formatted(provider, chatClientsByProvider.keySet()));
         }
 
-        String context = retrievedChunks.stream()
+        List<Document> chunks = retrievedChunks != null ? retrievedChunks : List.of();
+
+        String context = chunks.stream()
                 .map(doc -> "Chunk [page=%s]:\n%s".formatted(
                         doc.getMetadata().getOrDefault("page_number", "?"),
                         doc.getText()))
                 .collect(Collectors.joining("\n\n---\n\n"));
 
         log.debug("Judging answer for question='{}' with {} context chunks via {}",
-                question, retrievedChunks.size(), provider);
+                question, chunks.size(), provider);
 
         var response = Timer.builder("llm.call.duration")
                 .tag("provider", provider)
@@ -95,7 +104,7 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
                                 .param("question", question)
                                 .param("expectedAnswer", expectedAnswer)
                                 .param("generatedAnswer", generatedAnswer)
-                                .param("chunkCount", String.valueOf(retrievedChunks.size()))
+                                .param("chunkCount", String.valueOf(chunks.size()))
                                 .param("context", context.isEmpty() ? "(no chunks retrieved)" : context))
                         .call()
                         .responseEntity(EvalScoresDto.class));
@@ -112,7 +121,7 @@ public class LlmEvalJudgeAdapter implements EvalJudgePort {
         double faithfulness = safeScore(dto.getFaithfulness());
         double relevance = safeScore(dto.getAnswerRelevance());
 
-        log.debug("Judge scores: precision={:.2f} recall={:.2f} faithfulness={:.2f} relevance={:.2f}",
+        log.debug("Judge scores: precision={} recall={} faithfulness={} relevance={}",
                 precision, recall, faithfulness, relevance);
 
         return new EvalScores(precision, recall, faithfulness, relevance);

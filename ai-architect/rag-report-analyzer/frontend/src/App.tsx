@@ -5,6 +5,7 @@ import QaInterface from './components/QaInterface';
 import MetricsDashboard from './components/MetricsDashboard';
 import KnowledgeGraph from './components/KnowledgeGraph';
 import PredictionPanel from './components/PredictionPanel';
+import EvaluationPanel from './components/EvaluationPanel';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -16,6 +17,7 @@ const TABS = [
   { id: 'metrics',    label: 'Metrics' },
   { id: 'graph',      label: 'Knowledge Graph' },
   { id: 'prediction', label: 'Prediction' },
+  { id: 'evaluation', label: 'Evaluation' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -50,6 +52,7 @@ function App() {
           {activeTab === 'metrics'    && <MetricsDashboard />}
           {activeTab === 'graph'      && <KnowledgeGraph />}
           {activeTab === 'prediction' && <PredictionPanel />}
+          {activeTab === 'evaluation' && <EvaluationPanel />}
         </main>
       </div>
     </QueryClientProvider>
