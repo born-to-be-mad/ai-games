@@ -33,6 +33,7 @@ spring:
       chat:
         options:
           model: llama3.2
+          num-predict: -1  # unlimited output tokens; prevents JSON truncation
       embedding:
         options:
           model: nomic-embed-text

@@ -42,6 +42,7 @@ public class ResilienceConfig {
     public CacheManager cacheManager() {
         CaffeineCacheManager manager = new CaffeineCacheManager("qa-answers");
         manager.setCaffeine(Caffeine.newBuilder()
+                .recordStats()
                 .maximumSize(500)
                 .expireAfterWrite(Duration.ofMinutes(30)));
         return manager;

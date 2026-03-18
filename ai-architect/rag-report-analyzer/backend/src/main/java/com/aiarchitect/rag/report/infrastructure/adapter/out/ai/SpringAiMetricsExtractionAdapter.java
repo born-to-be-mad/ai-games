@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -72,7 +73,7 @@ public class SpringAiMetricsExtractionAdapter implements MetricsExtractionPort {
         log.debug("Extracting metrics for {}/{}/{} using {} chunks via {}",
                 ticker, year, quarter, chunks.size(), provider);
 
-        FinancialMetricsDto dto = Timer.builder("llm.call.duration")
+        var response = Timer.builder("llm.call.duration")
                 .tag("provider", provider)
                 .tag("operation", "metrics_extraction")
                 .register(meterRegistry)
@@ -91,7 +92,14 @@ public class SpringAiMetricsExtractionAdapter implements MetricsExtractionPort {
                                 .param("quarter", quarter)
                                 .param("context", context))
                         .call()
-                        .entity(FinancialMetricsDto.class));
+                        .responseEntity(FinancialMetricsDto.class));
+
+        ChatResponse chatResponse = response != null ? response.response() : null;
+        LlmTokenMetrics.record(meterRegistry, provider, "metrics_extraction", chatResponse);
+        FinancialMetricsDto dto = response != null ? response.entity() : null;
+        if (dto == null) {
+            throw new LlmCallException("LLM returned empty structured response for metrics extraction");
+        }
 
         log.debug("Extracted: revenue={}, netIncome={}, eps={}",
                 dto.getRevenue(), dto.getNetIncome(), dto.getEps());

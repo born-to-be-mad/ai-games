@@ -4,10 +4,14 @@ import com.aiarchitect.rag.report.domain.model.FinancialMetrics;
 import com.aiarchitect.rag.report.domain.model.FinancialOutlook;
 import com.aiarchitect.rag.report.domain.model.PredictionMode;
 import com.aiarchitect.rag.report.domain.port.out.PredictionStrategy;
+import com.aiarchitect.rag.report.infrastructure.adapter.out.ai.LlmTokenMetrics;
 import com.aiarchitect.rag.report.infrastructure.props.AiProviderProperties;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -30,6 +34,7 @@ public class NarrativePredictionStrategy implements PredictionStrategy {
 
     private final Map<String, ChatClient> chatClientsByProvider;
     private final AiProviderProperties aiProviderProperties;
+    private final MeterRegistry meterRegistry;
 
     @Value("classpath:prompts/prediction-narrative.st")
     private Resource systemPromptResource;
@@ -52,20 +57,31 @@ public class NarrativePredictionStrategy implements PredictionStrategy {
         String metricsTable = formatMetricsTable(historicalMetrics);
         log.debug("Narrative prediction for {} with {} periods via {}", ticker, historicalMetrics.size(), provider);
 
-        FinancialOutlookDto dto = client.prompt()
-                .system(s -> s.text(systemPromptResource))
-                .user(u -> u.text("""
-                        Company: {ticker}
-                        Number of historical periods: {count}
+        var response = Timer.builder("llm.call.duration")
+                .tag("provider", provider)
+                .tag("operation", "prediction_narrative")
+                .register(meterRegistry)
+                .record(() -> client.prompt()
+                        .system(s -> s.text(systemPromptResource))
+                        .user(u -> u.text("""
+                                Company: {ticker}
+                                Number of historical periods: {count}
 
-                        Historical financial metrics (all monetary values in millions USD):
-                        {metricsTable}
-                        """)
-                        .param("ticker", ticker)
-                        .param("count", String.valueOf(historicalMetrics.size()))
-                        .param("metricsTable", metricsTable))
-                .call()
-                .entity(FinancialOutlookDto.class);
+                                Historical financial metrics (all monetary values in millions USD):
+                                {metricsTable}
+                                """)
+                                .param("ticker", ticker)
+                                .param("count", String.valueOf(historicalMetrics.size()))
+                                .param("metricsTable", metricsTable))
+                        .call()
+                        .responseEntity(FinancialOutlookDto.class));
+
+        ChatResponse chatResponse = response != null ? response.response() : null;
+        LlmTokenMetrics.record(meterRegistry, provider, "prediction_narrative", chatResponse);
+        FinancialOutlookDto dto = response != null ? response.entity() : null;
+        if (dto == null) {
+            throw new IllegalStateException("LLM returned empty narrative prediction response");
+        }
 
         return new FinancialOutlook(
                 dto.getTrend(),
