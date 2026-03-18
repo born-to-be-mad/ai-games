@@ -80,7 +80,7 @@ public class SpringAiLanguageAdapter implements LanguageModelPort {
         log.debug("Calling {} with {} context chunks for question='{}'",
                 provider, contextChunks.size(), question);
 
-        var response = Timer.builder("llm.call.duration")
+        ChatResponse chatResponse = Timer.builder("llm.call.duration")
                 .tag("provider", provider)
                 .tag("operation", "qa")
                 .register(meterRegistry)
@@ -95,20 +95,15 @@ public class SpringAiLanguageAdapter implements LanguageModelPort {
                                 .param("context", context)
                                 .param("question", question))
                         .call()
-                        .responseEntity(String.class));
+                        .chatResponse());
 
-        ChatResponse chatResponse = response != null ? response.response() : null;
         LlmTokenMetrics.record(meterRegistry, provider, "qa", chatResponse);
 
-        if (response == null) {
+        if (chatResponse == null || chatResponse.getResult() == null) {
             return "";
         }
-        if (response.entity() != null) {
-            return response.entity();
-        }
-        return chatResponse != null && chatResponse.getResult() != null
-                ? chatResponse.getResult().getOutput().getText()
-                : "";
+        String text = chatResponse.getResult().getOutput().getText();
+        return text != null ? text : "";
     }
 
     @Recover
