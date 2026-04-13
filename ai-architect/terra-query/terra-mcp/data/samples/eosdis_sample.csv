@@ -1,0 +1,26 @@
+Dis No,Disaster Type,Disaster Subtype,Country,Region,Start Year,Start Month,Start Day,End Year,End Month,End Day,Total Deaths,No Injured,Total Affected,Total Damage ('000 US$),Dis Mag Value
+1998-0001-BGD,Flood,Riverine flood,Bangladesh,Southern Asia,1998,7,1,1998,9,30,1050,,30000000,5900000,
+2004-0001-IDN,Earthquake,Ground movement,Indonesia,South-Eastern Asia,2004,12,26,2004,12,26,165708,127774,500000,10000000,9.1
+2005-0001-PAK,Earthquake,Ground movement,Pakistan,Southern Asia,2005,10,8,2005,10,8,73338,128000,3500000,5200000,7.6
+2010-0001-HTI,Earthquake,Ground movement,Haiti,Caribbean,2010,1,12,2010,1,12,222570,300000,3700000,8000000,7.0
+2010-0002-CHN,Flood,Flash flood,China,Eastern Asia,2010,8,7,2010,8,7,1765,347,5000000,17900000,
+2011-0001-JPN,Earthquake,Ground movement,Japan,Eastern Asia,2011,3,11,2011,3,11,19846,6152,368820,210000000,9.0
+2012-0001-USA,Storm,Tropical storm,United States,Northern America,2012,10,29,2012,11,2,159,1000,8100000,65000000,
+2013-0001-PHL,Storm,Tropical cyclone,Philippines,South-Eastern Asia,2013,11,8,2013,11,9,6300,28688,4100000,1500000,
+2015-0001-NPL,Earthquake,Ground movement,Nepal,Southern Asia,2015,4,25,2015,5,12,8831,23000,2800000,7000000,7.8
+2017-0001-MEX,Earthquake,Ground movement,Mexico,Central America,2017,9,19,2017,9,19,369,6000,250000,8000000,7.1
+2018-0001-IDN,Earthquake,Ground movement,Indonesia,South-Eastern Asia,2018,9,28,2018,9,28,4340,10679,1500000,531000,7.5
+2019-0001-AUS,Wildfire,,Australia,Australia and New Zealand,2019,9,1,2020,3,31,33,,,4400000,
+2019-0002-BGD,Storm,Tropical cyclone,Bangladesh,Southern Asia,2019,5,3,2019,5,4,12,50,2100000,130000,
+2020-0001-ZWE,Drought,,Zimbabwe,Eastern Africa,2020,1,1,2020,12,31,,,5700000,,
+2020-0002-USA,Wildfire,,United States,Northern America,2020,8,15,2020,12,1,,,,,
+1970-0001-BGD,Storm,Tropical cyclone,Bangladesh,Southern Asia,1970,11,12,1970,11,13,300000,,3600000,,
+1976-0001-CHN,Earthquake,Ground movement,China,Eastern Asia,1976,7,28,1976,7,28,255000,164000,793000,,7.8
+1991-0001-BGD,Storm,Tropical cyclone,Bangladesh,Southern Asia,1991,4,29,1991,4,30,138866,,10000000,,
+2000-0001-MOZ,Flood,Riverine flood,Mozambique,Eastern Africa,2000,2,1,2000,4,30,800,,4500000,,
+2003-0001-EUR,Extreme temperature,Heat wave,France,Western Europe,2003,8,1,2003,8,20,19490,,,,
+2005-0002-USA,Storm,Tropical cyclone,United States,Northern America,2005,8,29,2005,9,5,1833,,1000000,125000000,
+2008-0001-CHN,Earthquake,Ground movement,China,Eastern Asia,2008,5,12,2008,5,12,87476,374643,15000000,85000000,7.9
+2008-0002-MMR,Storm,Tropical cyclone,Myanmar,South-Eastern Asia,2008,5,2,2008,5,4,138366,,2420000,,
+2021-0001-DEU,Flood,Flash flood,Germany,Western Europe,2021,7,14,2021,7,15,222,,,,
+2021-0002-HAI,Earthquake,Ground movement,Haiti,Caribbean,2021,8,14,2021,8,14,2248,12763,800000,1600000,7.2
