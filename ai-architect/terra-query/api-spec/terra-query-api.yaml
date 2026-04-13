@@ -1,0 +1,361 @@
+openapi: 3.1.0
+info:
+  title: TerraQuery API
+  version: 0.1.0
+  description: |
+    REST API for TerraQuery — a natural disaster research agent powered by
+    true multi-agent behavior (Spring AI + FastMCP).
+
+    The API exposes chat, conversation history, and configuration endpoints.
+    Streaming responses use Server-Sent Events (SSE) with typed events:
+    TOOL_CALL_START, TOOL_CALL_END, AGENT_THINKING, ANSWER_CHUNK, ANSWER_COMPLETE.
+  contact:
+    name: btbm / ai-games
+    url: https://github.com/born-to-be-mad/ai-games
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: chat
+    description: Chat and streaming response endpoints
+  - name: conversations
+    description: Conversation history management
+  - name: config
+    description: Runtime configuration and health
+
+paths:
+  /api/v1/chat:
+    post:
+      tags: [chat]
+      summary: Send a chat message (blocking response)
+      operationId: chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Chat response with agent answer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/chat/stream:
+    post:
+      tags: [chat]
+      summary: Send a chat message (SSE streaming response)
+      operationId: streamChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: |
+            Server-Sent Events stream. Event types:
+            - `TOOL_CALL_START`: agent is calling an MCP tool
+            - `TOOL_CALL_END`: tool call completed with result preview
+            - `AGENT_THINKING`: agent is reasoning/synthesizing
+            - `ANSWER_CHUNK`: incremental text of the final answer
+            - `ANSWER_COMPLETE`: final event with sources and visualization hints
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/ChatEvent'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /api/v1/conversations:
+    get:
+      tags: [conversations]
+      summary: List all conversations
+      operationId: listConversations
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated list of conversations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationPage'
+
+  /api/v1/conversations/{conversationId}:
+    get:
+      tags: [conversations]
+      summary: Get conversation by ID
+      operationId: getConversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Conversation with message history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [conversations]
+      summary: Delete a conversation
+      operationId: deleteConversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Conversation deleted
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/config:
+    get:
+      tags: [config]
+      summary: Get current agent configuration
+      operationId: getConfig
+      responses:
+        '200':
+          description: Active configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentConfig'
+
+  /actuator/health:
+    get:
+      tags: [config]
+      summary: Health check
+      operationId: health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          example: "What were the deadliest earthquakes in the 21st century?"
+        conversationId:
+          type: string
+          format: uuid
+          description: Omit to start a new conversation
+
+    ChatResponse:
+      type: object
+      properties:
+        conversationId:
+          type: string
+          format: uuid
+        answer:
+          type: string
+          description: Final synthesized answer from AnalysisSynthesisAgent
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Source'
+        toolCallsSummary:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolCallSummary'
+        latencyMs:
+          type: integer
+
+    ChatEvent:
+      type: object
+      description: Single SSE event payload
+      properties:
+        type:
+          type: string
+          enum: [TOOL_CALL_START, TOOL_CALL_END, AGENT_THINKING, ANSWER_CHUNK, ANSWER_COMPLETE]
+        agent:
+          type: string
+          enum: [SupervisorAgent, DataRetrievalAgent, AnalysisSynthesisAgent]
+        tool:
+          type: string
+          description: Present for TOOL_CALL_* events
+        resultPreview:
+          type: string
+          description: Short preview for TOOL_CALL_END events
+        text:
+          type: string
+          description: Chunk text for ANSWER_CHUNK events
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/Source'
+          description: Present in ANSWER_COMPLETE event
+
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+
+    ConversationPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Conversation'
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        page:
+          type: integer
+        size:
+          type: integer
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [USER, ASSISTANT]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Source:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "EOSDIS"
+        eventId:
+          type: string
+        description:
+          type: string
+
+    ToolCallSummary:
+      type: object
+      properties:
+        toolName:
+          type: string
+        agent:
+          type: string
+        arguments:
+          type: object
+          additionalProperties: true
+        resultPreview:
+          type: string
+        latencyMs:
+          type: integer
+
+    AgentConfig:
+      type: object
+      properties:
+        maxSupervisorDelegations:
+          type: integer
+        maxRetrievalToolCalls:
+          type: integer
+        maxAnalysisToolCalls:
+          type: integer
+        contextWindowStrategy:
+          type: string
+          enum: [SLIDING_WINDOW, SUMMARIZING, HYBRID]
+        slidingWindowSize:
+          type: integer
+        maxQueriesPerMinute:
+          type: integer
+        agentTimeoutSeconds:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

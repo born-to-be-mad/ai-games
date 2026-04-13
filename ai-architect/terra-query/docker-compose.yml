@@ -1,0 +1,43 @@
+services:
+  terra-mcp:
+    build:
+      context: terra-mcp
+    ports:
+      - "8200:8080"
+    volumes:
+      - terra-indices:/data/indices
+      - terra-data:/app/data
+    environment:
+      MCP_TRANSPORT: streamable-http
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-base-en-v1.5}
+      INDEX_CACHE_DIR: /data/indices
+      DATA_DIR: /app/data
+      RRF_K: ${RRF_K:-60}
+      RRF_BM25_WEIGHT: ${RRF_BM25_WEIGHT:-1.0}
+      RRF_VECTOR_WEIGHT: ${RRF_VECTOR_WEIGHT:-1.0}
+    deploy:
+      resources:
+        limits:
+          # Set based on memory_profile.py output — default is conservative
+          # Run: python terra-mcp/scripts/memory_profile.py to tune
+          memory: 4g
+          cpus: "2.0"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import socket; s=socket.socket(); s.settimeout(5); s.connect(('127.0.0.1',8080)); s.close()"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    networks:
+      - terra-network
+
+volumes:
+  terra-indices:
+    driver: local
+  terra-data:
+    driver: local
+
+networks:
+  terra-network:
+    name: terra-query-network
