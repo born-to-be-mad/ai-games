@@ -7,7 +7,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.ToolCallingConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -15,8 +14,8 @@ import java.util.Arrays;
 
 /**
  * Specialized agent responsible for interpreting retrieved data and synthesizing answers.
- * Has access only to the semantic search (RAG) tool.
- * Budget: max {@code guardrails.maxAnalysisToolCalls()} tool calls per query.
+ * Has access only to the semantic search (RAG) tool for supplementary context lookup.
+ * Budget: max {@code guardrails.maxAnalysisToolCalls()} tool calls.
  */
 @Slf4j
 @Component
@@ -36,9 +35,11 @@ public class AnalysisSynthesisAgent {
             - Structure complex answers with clear sections when appropriate
             - Do NOT invent numbers — only report what the data shows
             - Include source attribution (EOSDIS, NOAA, NASA EONET) where relevant
+            - Do NOT make more than %d total tool calls in a single response
             """;
 
     private final ChatClient analysisClient;
+    private final ToolCallback[] ragTools;
     private final ToolProgressIndicator progressIndicator;
 
     public AnalysisSynthesisAgent(ChatModel chatModel,
@@ -49,25 +50,17 @@ public class AnalysisSynthesisAgent {
                                    ToolProgressIndicator progressIndicator) {
         this.progressIndicator = progressIndicator;
 
-        ToolCallback[] sanitizedRagTools = Arrays.stream(ragToolProvider.getToolCallbacks())
+        this.ragTools = Arrays.stream(ragToolProvider.getToolCallbacks())
                 .map(sanitizer::wrap)
                 .toArray(ToolCallback[]::new);
 
         this.analysisClient = ChatClient.builder(chatModel)
-                .defaultSystem(SYSTEM_PROMPT)
-                .defaultTools(sanitizedRagTools)
-                .defaultToolCallingConfig(ToolCallingConfig.builder()
-                        .maxIterations(guardrails.maxAnalysisToolCalls())
-                        .build())
+                .defaultSystem(SYSTEM_PROMPT.formatted(guardrails.maxAnalysisToolCalls()))
                 .build();
     }
 
     /**
      * Synthesize a final answer from the provided raw data.
-     *
-     * @param userQuery   the original user question (for context)
-     * @param rawData     structured data summary from DataRetrievalAgent
-     * @return final synthesized answer with citations
      */
     public String synthesize(String userQuery, String rawData) {
         log.info("[AnalysisSynthesisAgent] Synthesizing answer");
@@ -84,6 +77,7 @@ public class AnalysisSynthesisAgent {
 
         String answer = analysisClient.prompt()
                 .user(prompt)
+                .toolCallbacks(ragTools)
                 .call()
                 .content();
 

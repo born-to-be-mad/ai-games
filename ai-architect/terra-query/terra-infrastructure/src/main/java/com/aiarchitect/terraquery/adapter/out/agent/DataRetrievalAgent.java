@@ -7,7 +7,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallback;
-import org.springframework.ai.tool.ToolCallingConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +15,8 @@ import java.util.Arrays;
 /**
  * Specialized agent responsible for fetching raw disaster data via MCP tools.
  * Uses Spring AI's agentic loop — the LLM decides which tools to call and in what order.
- * Budget: max {@code guardrails.maxRetrievalToolCalls()} tool calls per query.
+ * Budget: max {@code guardrails.maxRetrievalToolCalls()} tool calls, enforced by Spring AI
+ * default tool-calling loop (Spring AI 2.x handles the iteration limit internally).
  */
 @Slf4j
 @Component
@@ -33,14 +33,17 @@ public class DataRetrievalAgent {
             - Use compare_disasters_across_countries for side-by-side country comparisons
             - Use get_deadliest_disasters for ranking by death toll
             - Use get_live_events only when the user explicitly asks about current or ongoing events
-            - Fetch only the data needed to answer the question — don't over-fetch
+            - Fetch only the data needed to answer the question — do not over-fetch
             - Return a concise structured summary of all data retrieved
 
             Do NOT interpret or analyze the data — that is the job of the analysis agent.
+            Do NOT make more than %d total tool calls in a single response.
             """;
 
     private final ChatClient retrievalClient;
+    private final ToolCallback[] tools;
     private final ToolProgressIndicator progressIndicator;
+    private final int maxToolCalls;
 
     public DataRetrievalAgent(ChatModel chatModel,
                                @Qualifier("dataRetrievalToolCallbackProvider")
@@ -49,34 +52,28 @@ public class DataRetrievalAgent {
                                ToolArgumentSanitizer sanitizer,
                                ToolProgressIndicator progressIndicator) {
         this.progressIndicator = progressIndicator;
+        this.maxToolCalls = guardrails.maxRetrievalToolCalls();
 
-        ToolCallback[] sanitizedTools = Arrays.stream(dataToolProvider.getToolCallbacks())
+        this.tools = Arrays.stream(dataToolProvider.getToolCallbacks())
                 .map(sanitizer::wrap)
                 .toArray(ToolCallback[]::new);
 
         this.retrievalClient = ChatClient.builder(chatModel)
-                .defaultSystem(SYSTEM_PROMPT)
-                .defaultTools(sanitizedTools)
-                .defaultToolCallingConfig(ToolCallingConfig.builder()
-                        .maxIterations(guardrails.maxRetrievalToolCalls())
-                        .build())
+                .defaultSystem(SYSTEM_PROMPT.formatted(guardrails.maxRetrievalToolCalls()))
                 .build();
     }
 
     /**
      * Fetch raw disaster data for the given query.
      * The LLM autonomously selects and chains tool calls (think→act→observe loop).
-     *
-     * @param query the data retrieval request (may be the original user query or
-     *              a directive from the SupervisorAgent)
-     * @return structured raw data summary ready for AnalysisSynthesisAgent
      */
     public String retrieve(String query) {
-        log.info("[DataRetrievalAgent] Starting retrieval for query: {}", query);
+        log.info("[DataRetrievalAgent] Starting retrieval for: {}", query);
         progressIndicator.agentThinking("DataRetrievalAgent", "Fetching disaster data...");
 
         String result = retrievalClient.prompt()
                 .user(query)
+                .toolCallbacks(tools)
                 .call()
                 .content();
 
