@@ -101,7 +101,7 @@ class HexagonalArchitectureTest {
     @Test
     void rule4_controllersAccessDomainOnlyViaUseCases() {
         ArchRule rule = noClasses()
-                .that().resideInPackage("com.aiarchitect.terraquery.adapter.in..")
+                .that().resideInAnyPackage("com.aiarchitect.terraquery.adapter.in..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage(
                         "com.aiarchitect.terraquery.adapter.out..",

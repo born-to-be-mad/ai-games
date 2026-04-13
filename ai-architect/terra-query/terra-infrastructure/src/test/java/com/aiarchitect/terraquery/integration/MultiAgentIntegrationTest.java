@@ -1,9 +1,11 @@
 package com.aiarchitect.terraquery.integration;
 
-import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.port.in.ChatUseCase;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.model.anthropic.autoconfigure.AnthropicChatAutoConfiguration;
+import org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -13,9 +15,11 @@ import static org.assertj.core.api.Assertions.*;
 /**
  * Full multi-agent integration test using WireMock stubs for MCP + LLM APIs.
  * No real API calls — validates plumbing and agent coordination.
+ * Excludes Anthropic + Ollama auto-config to avoid ambiguous ChatModel bean.
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@ImportAutoConfiguration(exclude = {AnthropicChatAutoConfiguration.class, OllamaChatAutoConfiguration.class})
 @TestPropertySource(properties = {
         "spring.ai.mcp.client.transport.streamable-http.connections.terra-mcp.url=http://localhost:8099/mcp",
         "spring.ai.openai.api-key=test-key",
