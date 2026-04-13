@@ -1,0 +1,87 @@
+spring:
+  application:
+    name: terra-query
+  datasource:
+    url: jdbc:h2:mem:terraquery;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # Spring AI MCP Client — connects to terra-mcp Python FastMCP server
+  ai:
+    mcp:
+      client:
+        transport:
+          streamable-http:
+            connections:
+              terra-mcp:
+                url: http://localhost:8200/mcp
+    # Default AI model provider (openai | anthropic | ollama)
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-4o
+          temperature: 0.1
+          max-tokens: 4096
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: claude-sonnet-4-6
+          temperature: 0.1
+          max-tokens: 4096
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+terra-query:
+  agent:
+    guardrails:
+      # Tool call limits per agent per query (prevents runaway loops)
+      max-supervisor-delegations: 3
+      max-retrieval-tool-calls: 8
+      max-analysis-tool-calls: 4
+      # Token budgets
+      max-output-tokens: 4096
+      max-context-window-usage-percent: 80
+      # Conversation context window strategy
+      # Options: SLIDING_WINDOW | SUMMARIZING | HYBRID
+      context-window-strategy: HYBRID
+      sliding-window-size: 10
+      # Cost and rate control
+      max-queries-per-minute: 20
+      daily-cost-cap-usd: 5.00
+      # Per-agent execution timeout
+      agent-timeout-seconds: 60
+
+  conversation:
+    # MESSAGES_ONLY: lightweight — user + assistant messages only
+    # FULL: debug-friendly — includes tool call arguments, raw results
+    persistence-scope: MESSAGES_ONLY
+
+  mcp:
+    embedding-model: bge-base-en-v1.5
+    embedding-cache-dir: /data/indices

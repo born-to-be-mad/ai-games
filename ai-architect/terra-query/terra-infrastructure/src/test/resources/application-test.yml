@@ -1,0 +1,31 @@
+spring:
+  ai:
+    mcp:
+      client:
+        transport:
+          streamable-http:
+            connections:
+              terra-mcp:
+                url: http://localhost:8099/mcp
+    openai:
+      api-key: test-key
+      base-url: http://localhost:8099
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+terra-query:
+  agent:
+    guardrails:
+      max-supervisor-delegations: 3
+      max-retrieval-tool-calls: 8
+      max-analysis-tool-calls: 4
+      max-output-tokens: 4096
+      max-context-window-usage-percent: 80
+      context-window-strategy: HYBRID
+      sliding-window-size: 10
+      max-queries-per-minute: 20
+      daily-cost-cap-usd: 5.00
+      agent-timeout-seconds: 30
+  conversation:
+    persistence-scope: MESSAGES_ONLY
