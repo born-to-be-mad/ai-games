@@ -1,10 +1,11 @@
+// All versions are the single source of truth in gradle/libs.versions.toml.
+// Gradle does NOT inject the version catalog extension into the ROOT project build script,
+// so versions here are string literals — keep them in sync with the [versions] table in the TOML.
 plugins {
     java
-    id("org.springframework.boot") version "4.0.3" apply false
-    id("io.spring.dependency-management") version "1.1.7"
-    // PIT mutation testing — gradle-pitest-plugin 1.15.0 does not support Gradle 9+.
-    // Tracked: https://github.com/szpak/gradle-pitest-plugin/issues — re-enable once a Gradle 9-compatible release lands.
-    // id("info.solidsoft.pitest") version "1.15.0" apply false
+    id("org.springframework.boot") version "4.0.5" apply false  // libs.versions.spring-boot
+    id("io.spring.dependency-management") version "1.1.7"       // libs.versions.spring-dependency-management
+    id("info.solidsoft.pitest") version "1.19.0" apply false    // libs.versions.pitest
 }
 
 allprojects {
@@ -24,28 +25,15 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(25)
+            languageVersion = JavaLanguageVersion.of(25)    // libs.versions.java
         }
     }
 
     the<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension>().apply {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.3")
-            mavenBom("org.springframework.ai:spring-ai-bom:2.0.0-M2")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.5")  // libs.versions.spring-boot
+            mavenBom("org.springframework.ai:spring-ai-bom:2.0.0-M4")           // libs.versions.spring-ai
         }
-    }
-
-    dependencies {
-        "implementation"("org.springframework.boot:spring-boot-starter")
-        "implementation"("org.slf4j:slf4j-api")
-        "testImplementation"("org.springframework.boot:spring-boot-starter-test")
-        "testImplementation"("org.junit.jupiter:junit-jupiter")
-        // Gradle 9 requires the launcher explicitly on the test runtime classpath
-        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
-        "compileOnly"("org.projectlombok:lombok")
-        "annotationProcessor"("org.projectlombok:lombok")
-        "testCompileOnly"("org.projectlombok:lombok")
-        "testAnnotationProcessor"("org.projectlombok:lombok")
     }
 
     tasks.named<Test>("test") {

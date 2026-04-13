@@ -1,0 +1,71 @@
+# Gradle 9 accessor convention: hyphens become dot-separated nested accessors.
+# e.g. spring-boot-starter → libs.spring.boot.starter
+#      spring-boot         → libs.versions.spring.boot.get()
+#      spring-boot         → libs.plugins.spring.boot (for plugins)
+[versions]
+java                        = "25"
+spring-boot                 = "4.0.5"
+spring-dependency-management = "1.1.7"
+spring-ai                   = "2.0.0-M4"
+pitest                      = "1.19.0"
+pitest-junit5-plugin        = "1.2.3"
+archunit                    = "1.4.1"
+bucket4j                    = "8.10.1"
+wiremock                    = "3.9.1"
+
+# ── Spring Boot starters (version pinned via BOM) ─────────────────────────────
+[libraries]
+spring-boot-starter              = { module = "org.springframework.boot:spring-boot-starter" }
+spring-boot-starter-web          = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-webflux      = { module = "org.springframework.boot:spring-boot-starter-webflux" }
+spring-boot-starter-data-jpa     = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-validation   = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-actuator     = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-aspectj      = { module = "org.springframework.boot:spring-boot-starter-aspectj" }
+spring-boot-starter-cache        = { module = "org.springframework.boot:spring-boot-starter-cache" }
+spring-boot-starter-test         = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-starter-webmvc-test  = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
+spring-boot-data-jpa-test        = { module = "org.springframework.boot:spring-boot-data-jpa-test" }
+
+# ── Spring AI starters (version pinned via BOM) ───────────────────────────────
+spring-ai-starter-model-openai     = { module = "org.springframework.ai:spring-ai-starter-model-openai" }
+spring-ai-starter-model-anthropic  = { module = "org.springframework.ai:spring-ai-starter-model-anthropic" }
+spring-ai-starter-model-ollama     = { module = "org.springframework.ai:spring-ai-starter-model-ollama" }
+spring-ai-starter-mcp-client       = { module = "org.springframework.ai:spring-ai-starter-mcp-client" }
+
+# ── Jackson (version pinned via BOM) ─────────────────────────────────────────
+jackson-databind     = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-annotations  = { module = "com.fasterxml.jackson.core:jackson-annotations" }
+
+# ── Lombok (version pinned via BOM) ──────────────────────────────────────────
+lombok = { module = "org.projectlombok:lombok" }
+
+# ── Database ──────────────────────────────────────────────────────────────────
+h2 = { module = "com.h2database:h2" }
+
+# ── Rate limiting ─────────────────────────────────────────────────────────────
+bucket4j-core = { module = "com.bucket4j:bucket4j-core", version.ref = "bucket4j" }
+
+# ── Metrics (version pinned via BOM) ─────────────────────────────────────────
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+
+# ── Logging (version pinned via BOM) ─────────────────────────────────────────
+slf4j-api = { module = "org.slf4j:slf4j-api" }
+
+# ── Test — BOM-managed ────────────────────────────────────────────────────────
+junit-jupiter            = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher  = { module = "org.junit.platform:junit-platform-launcher" }
+assertj-core             = { module = "org.assertj:assertj-core" }
+mockito-core             = { module = "org.mockito:mockito-core" }
+mockito-junit-jupiter    = { module = "org.mockito:mockito-junit-jupiter" }
+
+# ── Test — pinned ─────────────────────────────────────────────────────────────
+# archunit 1.4.1 is the first release to support Java 25 (class file major version 69)
+archunit-junit5      = { module = "com.tngtech.archunit:archunit-junit5",  version.ref = "archunit" }
+wiremock-standalone  = { module = "org.wiremock:wiremock-standalone",      version.ref = "wiremock" }
+
+# ── Gradle plugins ────────────────────────────────────────────────────────────
+[plugins]
+spring-boot                = { id = "org.springframework.boot",        version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+pitest                     = { id = "info.solidsoft.pitest",            version.ref = "pitest" }

@@ -1,8 +1,7 @@
 plugins {
-    id("org.springframework.boot") version "4.0.3"
-    // PIT mutation testing disabled: gradle-pitest-plugin 1.15.0 incompatible with Gradle 9+.
-    // Re-enable once a Gradle 9-compatible release is available.
-    // id("info.solidsoft.pitest")
+    // Spring Boot plugin declared in root plugins {} — apply here without version
+    id("org.springframework.boot")
+    id("info.solidsoft.pitest")
 }
 
 springBoot {
@@ -12,46 +11,65 @@ springBoot {
 dependencies {
     implementation(project(":terra-core"))
 
+    // Common (BOM-managed)
+    implementation(libs.spring.boot.starter)
+    implementation(libs.slf4j.api)
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    compileOnly(libs.lombok)
+    annotationProcessor(libs.lombok)
+    testCompileOnly(libs.lombok)
+    testAnnotationProcessor(libs.lombok)
+
     // Spring AI model providers
-    implementation("org.springframework.ai:spring-ai-starter-model-openai")
-    implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
-    implementation("org.springframework.ai:spring-ai-starter-model-ollama")
+    implementation(libs.spring.ai.starter.model.openai)
+    implementation(libs.spring.ai.starter.model.anthropic)
+    implementation(libs.spring.ai.starter.model.ollama)
 
     // Spring AI MCP client
-    implementation("org.springframework.ai:spring-ai-starter-mcp-client")
+    implementation(libs.spring.ai.starter.mcp.client)
 
     // Spring Boot starters
-    implementation("org.springframework.boot:spring-boot-starter-web")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-aspectj")
-    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.webflux)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.aspectj)
+    implementation(libs.spring.boot.starter.cache)
 
     // H2 (dev/test)
-    runtimeOnly("com.h2database:h2")
+    runtimeOnly(libs.h2)
 
     // Rate limiting
-    implementation("com.bucket4j:bucket4j-core:8.10.1")
+    implementation(libs.bucket4j.core)
 
     // Metrics
-    implementation("io.micrometer:micrometer-registry-prometheus")
+    implementation(libs.micrometer.registry.prometheus)
 
     // Jackson
-    implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation(libs.jackson.databind)
 
     // Test dependencies
-    // Spring Boot 4.x modularized test slices into separate artifacts
-    testImplementation("org.springframework.boot:spring-boot-web-test")          // @WebMvcTest
-    testImplementation("org.springframework.boot:spring-boot-data-jpa-test")     // @DataJpaTest (new pkg: o.s.b.data.jpa.test.autoconfigure)
+    // Spring Boot 4.x modularised test slices — packages renamed:
+    //   @WebMvcTest → org.springframework.boot.webmvc.test.autoconfigure (spring-boot-starter-webmvc-test)
+    //   @DataJpaTest → org.springframework.boot.data.jpa.test.autoconfigure (spring-boot-data-jpa-test)
+    testImplementation(libs.spring.boot.starter.webmvc.test)
+    testImplementation(libs.spring.boot.data.jpa.test)
     // spring-boot-starter-webflux needed for WebTestClient in streaming tests
-    testImplementation("org.springframework.boot:spring-boot-starter-webflux")
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
-    testImplementation("org.wiremock:wiremock-standalone:3.9.1")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.mockito:mockito-core")
-    testImplementation("org.mockito:mockito-junit-jupiter")
+    testImplementation(libs.spring.boot.starter.webflux)
+    // Exclude ArchUnit's transitive junit-platform-* (1.12.2) so JUnit Jupiter 6.0.3 owns the whole
+    // JUnit Platform classpath. ArchUnit 1.4.1 compiled against Platform 1.x APIs that are still
+    // present in 6.x, so the exclusion is safe for architecture tests.
+    testImplementation(libs.archunit.junit5) {
+        exclude(group = "org.junit.platform")
+        exclude(group = "org.junit", module = "junit-bom")
+    }
+    testImplementation(libs.wiremock.standalone)
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.junit.jupiter)
 }
 
 tasks.register<Test>("liveTest") {
@@ -61,12 +79,15 @@ tasks.register<Test>("liveTest") {
     systemProperty("spring.profiles.active", "live-test")
 }
 
-// pitest {
-//     targetClasses.set(listOf("com.aiarchitect.terraquery.domain.*", "com.aiarchitect.terraquery.service.*"))
-//     targetTests.set(listOf("com.aiarchitect.terraquery.*Test"))
-//     mutators.set(listOf("DEFAULTS"))
-//     timestampedReports.set(false)
-//     outputFormats.set(listOf("HTML", "XML"))
-//     threads.set(4)
-//     mutationThreshold.set(60)
-// }
+pitest {
+    targetClasses.set(listOf("com.aiarchitect.terraquery.domain.*", "com.aiarchitect.terraquery.service.*"))
+    targetTests.set(listOf("com.aiarchitect.terraquery.*Test"))
+    mutators.set(listOf("DEFAULTS"))
+    timestampedReports.set(false)
+    outputFormats.set(listOf("HTML", "XML"))
+    threads.set(4)
+    mutationThreshold.set(50)
+    // Auto-detection of JUnit 5/6 plugin fails when Jupiter version is 6.x;
+    // explicitly set the pitest-junit5-plugin version (works for both JUnit 5 and 6).
+    junit5PluginVersion.set(libs.versions.pitest.junit5.plugin.get())
+}
