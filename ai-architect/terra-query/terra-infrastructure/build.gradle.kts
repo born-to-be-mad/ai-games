@@ -41,7 +41,9 @@ dependencies {
     // Jackson
     implementation("com.fasterxml.jackson.core:jackson-databind")
 
-    // Test dependencies — spring-boot-starter-test (from root) provides @WebMvcTest / @DataJpaTest
+    // Test dependencies
+    // spring-boot-test-autoconfigure provides @WebMvcTest / @DataJpaTest test slices
+    testImplementation("org.springframework.boot:spring-boot-test-autoconfigure")
     // spring-boot-starter-webflux needed for WebTestClient in streaming tests
     testImplementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
