@@ -1,6 +1,8 @@
 plugins {
     id("org.springframework.boot") version "4.0.3"
-    id("info.solidsoft.pitest")
+    // PIT mutation testing disabled: gradle-pitest-plugin 1.15.0 incompatible with Gradle 9+.
+    // Re-enable once a Gradle 9-compatible release is available.
+    // id("info.solidsoft.pitest")
 }
 
 springBoot {
@@ -49,13 +51,6 @@ dependencies {
     testImplementation("org.mockito:mockito-junit-jupiter")
 }
 
-tasks.named<Test>("liveTest") {
-    useJUnitPlatform {
-        includeTags("live-llm")
-    }
-    systemProperty("spring.profiles.active", "live-test")
-}
-
 tasks.register<Test>("liveTest") {
     useJUnitPlatform {
         includeTags("live-llm")
@@ -63,12 +58,12 @@ tasks.register<Test>("liveTest") {
     systemProperty("spring.profiles.active", "live-test")
 }
 
-pitest {
-    targetClasses.set(listOf("com.aiarchitect.terraquery.domain.*", "com.aiarchitect.terraquery.service.*"))
-    targetTests.set(listOf("com.aiarchitect.terraquery.*Test"))
-    mutators.set(listOf("DEFAULTS"))
-    timestampedReports.set(false)
-    outputFormats.set(listOf("HTML", "XML"))
-    threads.set(4)
-    mutationThreshold.set(60)
-}
+// pitest {
+//     targetClasses.set(listOf("com.aiarchitect.terraquery.domain.*", "com.aiarchitect.terraquery.service.*"))
+//     targetTests.set(listOf("com.aiarchitect.terraquery.*Test"))
+//     mutators.set(listOf("DEFAULTS"))
+//     timestampedReports.set(false)
+//     outputFormats.set(listOf("HTML", "XML"))
+//     threads.set(4)
+//     mutationThreshold.set(60)
+// }

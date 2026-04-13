@@ -2,7 +2,9 @@ plugins {
     java
     id("org.springframework.boot") version "4.0.3" apply false
     id("io.spring.dependency-management") version "1.1.7"
-    id("info.solidsoft.pitest") version "1.15.0" apply false
+    // PIT mutation testing — gradle-pitest-plugin 1.15.0 does not support Gradle 9+.
+    // Tracked: https://github.com/szpak/gradle-pitest-plugin/issues — re-enable once a Gradle 9-compatible release lands.
+    // id("info.solidsoft.pitest") version "1.15.0" apply false
 }
 
 allprojects {
