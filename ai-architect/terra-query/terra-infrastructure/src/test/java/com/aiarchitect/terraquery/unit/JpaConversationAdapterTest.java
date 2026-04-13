@@ -1,6 +1,5 @@
 package com.aiarchitect.terraquery.unit;
 
-import com.aiarchitect.terraquery.adapter.out.persistence.ConversationJpaRepository;
 import com.aiarchitect.terraquery.adapter.out.persistence.JpaConversationAdapter;
 import com.aiarchitect.terraquery.config.PersistenceScopeConfig;
 import com.aiarchitect.terraquery.model.ChatMessage;
@@ -21,7 +20,6 @@ import static org.assertj.core.api.Assertions.*;
 class JpaConversationAdapterTest {
 
     @Autowired JpaConversationAdapter adapter;
-    @Autowired ConversationJpaRepository jpaRepository;
 
     @Test
     void save_newConversation_persistsToDatabase() {
@@ -30,7 +28,7 @@ class JpaConversationAdapterTest {
 
         adapter.save(conv);
 
-        assertThat(jpaRepository.findById(conv.id())).isPresent();
+        assertThat(adapter.findById(conv.id())).isPresent();
     }
 
     @Test
