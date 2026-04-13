@@ -1,0 +1,91 @@
+package com.aiarchitect.terraquery.config;
+
+import io.modelcontextprotocol.client.McpSyncClient;
+import org.springframework.ai.mcp.McpToolUtils;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
+import org.springframework.ai.tool.ToolCallback;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
+import java.util.Set;
+
+/**
+ * Configures MCP tool callback providers split by responsibility.
+ * All tools come from a single terra-mcp server; we split by tool name
+ * to give each agent access only to its relevant tools.
+ */
+@Configuration
+public class McpClientConfig {
+
+    /** Tool names for DataRetrievalAgent — structured search and statistics. */
+    private static final Set<String> DATA_RETRIEVAL_TOOL_NAMES = Set.of(
+            "query_disasters",
+            "get_disaster_statistics",
+            "get_deadliest_disasters",
+            "get_disaster_trends",
+            "compare_disasters_across_countries",
+            "get_live_events"
+    );
+
+    /** Tool name for AnalysisSynthesisAgent — semantic RAG search. */
+    private static final Set<String> RAG_TOOL_NAMES = Set.of("search_disasters_semantic");
+
+    /**
+     * All tool callbacks from the terra-mcp server filtered to data retrieval tools.
+     * Injected into DataRetrievalAgent.
+     */
+    @Bean("dataRetrievalToolCallbackProvider")
+    public SyncMcpToolCallbackProvider dataRetrievalToolCallbackProvider(
+            List<McpSyncClient> mcpSyncClients) {
+        List<McpSyncClient> terraMcpClients = mcpSyncClients.stream()
+                .filter(c -> c.getServerInfo().name().equals("terra-mcp"))
+                .toList();
+
+        List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
+        ToolCallback[] dataCallbacks = allCallbacks.stream()
+                .filter(cb -> DATA_RETRIEVAL_TOOL_NAMES.contains(cb.getToolDefinition().name()))
+                .toArray(ToolCallback[]::new);
+
+        // Wrap in a provider adapter
+        return new FilteredToolCallbackProvider(dataCallbacks);
+    }
+
+    /**
+     * All tool callbacks from the terra-mcp server filtered to RAG tool only.
+     * Injected into AnalysisSynthesisAgent.
+     */
+    @Bean("ragToolCallbackProvider")
+    public SyncMcpToolCallbackProvider ragToolCallbackProvider(
+            List<McpSyncClient> mcpSyncClients) {
+        List<McpSyncClient> terraMcpClients = mcpSyncClients.stream()
+                .filter(c -> c.getServerInfo().name().equals("terra-mcp"))
+                .toList();
+
+        List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
+        ToolCallback[] ragCallbacks = allCallbacks.stream()
+                .filter(cb -> RAG_TOOL_NAMES.contains(cb.getToolDefinition().name()))
+                .toArray(ToolCallback[]::new);
+
+        return new FilteredToolCallbackProvider(ragCallbacks);
+    }
+
+    /**
+     * Simple SyncMcpToolCallbackProvider adapter that serves a pre-filtered array of callbacks.
+     */
+    static class FilteredToolCallbackProvider extends SyncMcpToolCallbackProvider {
+
+        private final ToolCallback[] callbacks;
+
+        FilteredToolCallbackProvider(ToolCallback[] callbacks) {
+            super(List.of());
+            this.callbacks = callbacks;
+        }
+
+        @Override
+        public ToolCallback[] getToolCallbacks() {
+            return callbacks;
+        }
+    }
+}

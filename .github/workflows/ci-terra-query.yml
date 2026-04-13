@@ -1,0 +1,83 @@
+name: CI — terra-query - Backend
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ai-architect/terra-query/**"
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "ai-architect/terra-query/**"
+
+defaults:
+  run:
+    working-directory: ai-architect/terra-query
+
+jobs:
+  build-and-test:
+    name: Build & Test (Java 25)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build terra-core (domain, zero Spring)
+        run: ./gradlew :terra-core:build
+
+      - name: Run terra-core unit tests (target ≥90% coverage)
+        run: ./gradlew :terra-core:test --info
+
+      - name: Run terra-infrastructure unit + integration tests
+        run: ./gradlew :terra-infrastructure:test --info
+
+      - name: Run ArchUnit boundary checks (5 rules)
+        run: ./gradlew :terra-infrastructure:test --tests "*ArchitectureTest" --info
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ github.run_number }}
+          path: |
+            ai-architect/terra-query/terra-core/build/reports/tests/
+            ai-architect/terra-query/terra-infrastructure/build/reports/tests/
+
+  mutation-tests:
+    name: PIT Mutation Testing (terra-core, target ≥55% kill)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: "25"
+          distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run PIT mutation tests (terra-core, target ≥70% kill)
+        run: ./gradlew :terra-core:pitest
+
+      - name: Upload PIT report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pitest-report-${{ github.run_number }}
+          path: ai-architect/terra-query/terra-core/build/reports/pitest/
