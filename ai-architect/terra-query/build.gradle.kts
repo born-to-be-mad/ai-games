@@ -40,6 +40,8 @@ subprojects {
         "implementation"("org.slf4j:slf4j-api")
         "testImplementation"("org.springframework.boot:spring-boot-starter-test")
         "testImplementation"("org.junit.jupiter:junit-jupiter")
+        // Gradle 9 requires the launcher explicitly on the test runtime classpath
+        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
         "compileOnly"("org.projectlombok:lombok")
         "annotationProcessor"("org.projectlombok:lombok")
         "testCompileOnly"("org.projectlombok:lombok")
