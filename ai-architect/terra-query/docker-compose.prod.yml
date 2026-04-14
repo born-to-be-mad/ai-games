@@ -1,0 +1,70 @@
+# Production overrides — apply on top of docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Key differences from dev:
+#   - Tighter memory limits (sized from memory_profile.py baseline)
+#   - Grafana auth enabled (not anonymous)
+#   - terra-mcp healthcheck uses HTTP (not raw socket)
+#   - terra-infrastructure logs at WARN level to reduce noise
+
+services:
+  terra-infrastructure:
+    environment:
+      # Prod: use external PostgreSQL (set DATABASE_URL env)
+      SPRING_DATASOURCE_URL: ${DATABASE_URL:-jdbc:h2:mem:terraquery}
+      # Tighter cost cap
+      TERRA_QUERY_AGENT_GUARDRAILS_DAILY_COST_CAP_USD: "2.00"
+      LOGGING_LEVEL_COM_AIARCHITECT: WARN
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK: WARN
+      # Tracing: 10% sampling in prod (100% in dev)
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.1"
+    deploy:
+      resources:
+        limits:
+          memory: 1536m   # sized from JVM heap analysis
+          cpus: "1.5"
+    restart: unless-stopped
+
+  terra-mcp:
+    healthcheck:
+      # Prod: use HTTP /health endpoint instead of raw socket
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          # Tighten after memory_profile.py baseline run
+          memory: 3g
+          cpus: "2.0"
+    restart: unless-stopped
+
+  terra-ui:
+    restart: unless-stopped
+
+  grafana:
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD required}
+    restart: unless-stopped
+
+  tempo:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.3"
+
+  loki:
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.3"

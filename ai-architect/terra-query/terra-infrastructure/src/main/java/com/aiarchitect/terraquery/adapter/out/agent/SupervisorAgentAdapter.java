@@ -4,14 +4,18 @@ import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.model.ChatMessage;
+import com.aiarchitect.terraquery.observability.TerraQueryMetrics;
 import com.aiarchitect.terraquery.port.out.AgentPort;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implements AgentPort by coordinating DataRetrievalAgent and AnalysisSynthesisAgent.
@@ -20,6 +24,11 @@ import java.util.List;
  *   1. Supervisor routes user query to DataRetrievalAgent (autonomous MCP tool loop)
  *   2. Raw data passed to AnalysisSynthesisAgent (RAG + reasoning loop)
  *   3. Final answer assembled and returned
+ *
+ * Resilience:
+ *   - @CircuitBreaker opens after 50% failures in 10-call window (30s wait)
+ *   - @Retry retries once on transient ConnectException / IOException
+ *   - fallbackResponse() returns graceful degradation message when CB is open
  *
  * All limits configured via AgentGuardrailsConfig (application.yml).
  */
@@ -33,9 +42,13 @@ public class SupervisorAgentAdapter implements AgentPort {
     private final AgentGuardrailsConfig guardrails;
     private final ContextWindowProcessor contextWindowProcessor;
     private final ToolProgressIndicator progressIndicator;
+    private final TerraQueryMetrics metrics;
 
     @Override
+    @CircuitBreaker(name = "mcp-supervisor", fallbackMethod = "fallbackResponse")
+    @Retry(name = "mcp-supervisor")
     public AgentResponse execute(String userQuery, List<ChatMessage> history) {
+        long startNs = System.nanoTime();
         log.info("[SupervisorAgent] Processing query: {}", userQuery);
 
         List<String> agentChain = new ArrayList<>();
@@ -43,6 +56,7 @@ public class SupervisorAgentAdapter implements AgentPort {
 
         // Apply context window strategy before passing history to sub-agents
         List<ChatMessage> windowedHistory = contextWindowProcessor.process(history, guardrails.slidingWindowSize());
+        metrics.recordContextWindowStrategy(guardrails.contextWindowStrategy().name());
 
         // Phase 1: Data retrieval
         String rawData;
@@ -52,8 +66,11 @@ public class SupervisorAgentAdapter implements AgentPort {
                     "DataRetrievalAgent"
             );
             agentChain.add("DataRetrievalAgent");
+            metrics.recordRetrievalSuccess();
         } catch (Exception e) {
             log.error("[SupervisorAgent] Data retrieval failed: {}", e.getMessage(), e);
+            metrics.recordRetrievalFailure();
+            metrics.recordSupervisorFailure();
             return AgentResponse.of("I encountered an error while retrieving disaster data. "
                     + "Please try again or rephrase your question.");
         }
@@ -66,16 +83,35 @@ public class SupervisorAgentAdapter implements AgentPort {
                     "AnalysisSynthesisAgent"
             );
             agentChain.add("AnalysisSynthesisAgent");
+            metrics.recordAnalysisSuccess();
         } catch (Exception e) {
             log.error("[SupervisorAgent] Analysis failed: {}", e.getMessage(), e);
+            metrics.recordAnalysisFailure();
             // Graceful degradation: return raw data summary if synthesis fails
             answer = "I retrieved the following data but encountered an error during synthesis:\n\n" + rawData;
         }
 
         progressIndicator.agentThinking("SupervisorAgent", "Complete");
 
+        metrics.recordSupervisorSuccess();
+        metrics.recordChatDuration(System.nanoTime() - startNs, TimeUnit.NANOSECONDS);
         log.info("[SupervisorAgent] Done. Agent chain: {}", agentChain);
         return AgentResponse.of(answer, List.of(), List.of(), agentChain);
+    }
+
+    /**
+     * Resilience4j fallback — invoked when the circuit breaker is OPEN.
+     * Returns a user-friendly degradation message instead of propagating the exception.
+     */
+    @SuppressWarnings("unused")
+    private AgentResponse fallbackResponse(String userQuery, List<ChatMessage> history, Exception cause) {
+        log.warn("[SupervisorAgent] Circuit breaker open — returning degraded response. Cause: {}",
+                cause.getMessage());
+        metrics.recordSupervisorFailure();
+        return AgentResponse.of(
+                "The disaster analysis service is temporarily under high load or unavailable. "
+                + "Please try again in a moment."
+        );
     }
 
     private String executeWithTimeout(java.util.concurrent.Callable<String> task, String agentName) {

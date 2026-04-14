@@ -49,6 +49,17 @@ dependencies {
     // Metrics
     implementation(libs.micrometer.registry.prometheus)
 
+    // Distributed tracing — OTEL bridge + OTLP exporter (sends to Grafana Tempo)
+    implementation(libs.micrometer.tracing.bridge.otel)
+    implementation(libs.opentelemetry.exporter.otlp)
+
+    // Log shipping to Grafana Loki via Logback appender
+    implementation(libs.loki4j)
+
+    // Resilience4j — circuit breaker + retry with Spring AOP + Micrometer metrics
+    implementation(libs.resilience4j.spring.boot)
+    implementation(libs.resilience4j.micrometer)
+
     // Jackson
     implementation(libs.jackson.databind)
 

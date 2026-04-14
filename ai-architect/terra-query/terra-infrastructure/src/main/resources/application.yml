@@ -63,6 +63,44 @@ management:
     export:
       prometheus:
         enabled: true
+  # Distributed tracing — 100% sampling in dev; override to 0.1 in prod
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+
+# Resilience4j — circuit breaker + retry for the MCP supervisor call
+resilience4j:
+  circuitbreaker:
+    instances:
+      mcp-supervisor:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 80
+        slow-call-duration-threshold: 90s
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - java.net.ConnectException
+          - java.io.IOException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+  retry:
+    instances:
+      mcp-supervisor:
+        max-attempts: 2
+        wait-duration: 1s
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.io.IOException
+        ignore-exceptions:
+          - java.util.concurrent.TimeoutException
+          - java.lang.IllegalArgumentException
 
 terra-query:
   # Active LLM provider: openai (default) | anthropic | ollama
