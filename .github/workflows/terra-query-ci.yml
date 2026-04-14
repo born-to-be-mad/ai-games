@@ -1,4 +1,4 @@
-name: CI — terra-query - Backend
+name: terra-query: CI
 
 on:
   push:
@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Java 25
         uses: actions/setup-java@v4
@@ -39,11 +39,8 @@ jobs:
       - name: Run terra-core unit tests (target ≥90% coverage)
         run: ./gradlew :terra-core:test --info
 
-      - name: Run terra-infrastructure unit + integration tests
+      - name: Run terra-infrastructure unit + integration tests (includes ArchUnit)
         run: ./gradlew :terra-infrastructure:test --info
-
-      - name: Run ArchUnit boundary checks (5 rules)
-        run: ./gradlew :terra-infrastructure:test --tests "*ArchitectureTest" --info
 
       - name: Upload test reports
         if: always()
@@ -69,7 +66,23 @@ jobs:
         working-directory: ai-architect/terra-query/terra-mcp
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Check required API keys
+        id: check-secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          missing=()
+          [[ -z "$OPENAI_API_KEY" ]] && missing+=("OPENAI_API_KEY")
+          [[ -z "$ANTHROPIC_API_KEY" ]] && missing+=("ANTHROPIC_API_KEY")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::warning::Missing required secrets: ${missing[*]}. RAGAS canary eval will be skipped."
+            echo "has_keys=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_keys=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -81,10 +94,12 @@ jobs:
         run: pip install -r requirements-eval.txt
 
       - name: Start terra-mcp server
+        if: steps.check-secrets.outputs.has_keys == 'true'
         working-directory: ai-architect/terra-query
         run: docker compose up -d terra-mcp
 
       - name: Wait for terra-mcp healthy
+        if: steps.check-secrets.outputs.has_keys == 'true'
         working-directory: ai-architect/terra-query
         run: |
           for i in $(seq 1 30); do
@@ -94,6 +109,7 @@ jobs:
           done
 
       - name: Run RAGAS canary eval (10 questions)
+        if: steps.check-secrets.outputs.has_keys == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -133,7 +149,7 @@ jobs:
     needs: build-and-test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Set up Java 25
         uses: actions/setup-java@v4
@@ -144,7 +160,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run PIT mutation tests (terra-core, target ≥70% kill)
+      - name: Run PIT mutation tests (terra-core, target ≥55% kill)
         run: ./gradlew :terra-core:pitest
 
       - name: Upload PIT report

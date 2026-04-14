@@ -1,4 +1,4 @@
-name: Eval — TerraQuery RAGAS Evaluation
+name: terra-query: RAGAS Eval
 
 on:
   schedule:
@@ -25,12 +25,28 @@ defaults:
 
 jobs:
   ragas-eval:
-    name: RAGAS Evaluation (${{ github.event.inputs.subset || 'full' }})
+    name: RAGAS Eval (${{ github.event_name == 'push' && 'canary/push' || github.event.inputs.subset || 'full/nightly' }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Check required API keys
+        id: check-secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          missing=()
+          [[ -z "$OPENAI_API_KEY" ]] && missing+=("OPENAI_API_KEY")
+          [[ -z "$ANTHROPIC_API_KEY" ]] && missing+=("ANTHROPIC_API_KEY")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::warning::Missing required secrets: ${missing[*]}. RAGAS eval will be skipped."
+            echo "has_keys=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_keys=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -42,10 +58,12 @@ jobs:
         run: pip install -r requirements-eval.txt
 
       - name: Start terra-mcp server
+        if: steps.check-secrets.outputs.has_keys == 'true'
         working-directory: ai-architect/terra-query
         run: docker compose up -d terra-mcp
 
       - name: Wait for terra-mcp healthy
+        if: steps.check-secrets.outputs.has_keys == 'true'
         working-directory: ai-architect/terra-query
         run: |
           for i in $(seq 1 30); do
@@ -55,10 +73,12 @@ jobs:
           done
 
       - name: Run RAGAS evaluation
+        if: steps.check-secrets.outputs.has_keys == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          EVAL_SUBSET: ${{ github.event.inputs.subset || 'full' }}
+          # Push events run canary only (cheap fast check); schedule/dispatch use full
+          EVAL_SUBSET: ${{ github.event_name == 'push' && 'canary' || github.event.inputs.subset || 'full' }}
         run: |
           python -m eval.eval_runner \
             --subset "$EVAL_SUBSET" \
