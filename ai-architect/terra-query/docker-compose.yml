@@ -1,4 +1,33 @@
 services:
+  terra-ui:
+    build:
+      context: terra-ui
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - terra-infrastructure
+    networks:
+      - terra-network
+
+  terra-infrastructure:
+    build:
+      context: .
+      dockerfile: terra-infrastructure/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      TERRA_QUERY_AI_PROVIDER: ${TERRA_QUERY_AI_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      SPRING_AI_MCP_CLIENT_TRANSPORT_STREAMABLE_HTTP_CONNECTIONS_TERRA_MCP_URL: http://terra-mcp:8080/mcp
+    depends_on:
+      terra-mcp:
+        condition: service_healthy
+    networks:
+      - terra-network
+
   terra-mcp:
     build:
       context: terra-mcp
