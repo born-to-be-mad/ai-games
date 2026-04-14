@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-terra-500;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.slate.700') transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 rounded-full;
+  }
+}
+
+/* Blinking cursor for streaming text */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.streaming-cursor::after {
+  content: '▋';
+  display: inline-block;
+  animation: blink 1s step-start infinite;
+  @apply text-terra-500 ml-0.5;
+}
+
+/* Markdown content styles */
+.prose-terra {
+  @apply text-sm leading-relaxed text-slate-200 max-w-none;
+}
+
+.prose-terra h1, .prose-terra h2, .prose-terra h3 {
+  @apply font-semibold text-slate-100 mt-4 mb-2;
+}
+
+.prose-terra h1 { @apply text-lg; }
+.prose-terra h2 { @apply text-base; }
+.prose-terra h3 { @apply text-sm; }
+
+.prose-terra p { @apply mb-3; }
+.prose-terra p:last-child { @apply mb-0; }
+
+.prose-terra ul { @apply list-disc pl-5 mb-3 space-y-1; }
+.prose-terra ol { @apply list-decimal pl-5 mb-3 space-y-1; }
+.prose-terra li { @apply text-slate-300; }
+
+.prose-terra strong { @apply font-semibold text-slate-100; }
+.prose-terra em { @apply italic text-slate-300; }
+
+.prose-terra code {
+  @apply bg-slate-700 px-1 py-0.5 rounded text-terra-100 text-xs font-mono;
+}
+
+.prose-terra pre {
+  @apply bg-slate-900 border border-slate-700 rounded-lg p-3 mb-3 overflow-x-auto;
+}
+
+.prose-terra pre code {
+  @apply bg-transparent p-0;
+}
+
+.prose-terra blockquote {
+  @apply border-l-2 border-terra-500 pl-3 text-slate-400 italic my-3;
+}
+
+.prose-terra a {
+  @apply text-terra-400 underline underline-offset-2 hover:text-terra-300;
+}
+
+.prose-terra table { @apply w-full text-xs mb-3; }
+.prose-terra th { @apply text-left font-semibold text-slate-300 pb-1 border-b border-slate-700; }
+.prose-terra td { @apply py-1 border-b border-slate-800/50; }
