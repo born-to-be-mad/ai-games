@@ -1,0 +1,91 @@
+{
+  "name": "MCP tools/list",
+  "request": {
+    "method": "POST",
+    "urlPath": "/mcp",
+    "bodyPatterns": [
+      { "matchesJsonPath": "$[?(@.method == 'tools/list')]" }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "result": {
+        "tools": [
+          {
+            "name": "query_disasters",
+            "description": "Query disaster events by type, country, or date range.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "disaster_type": { "type": "string" },
+                "country": { "type": "string" },
+                "year_from": { "type": "integer" },
+                "year_to": { "type": "integer" },
+                "limit": { "type": "integer" }
+              }
+            }
+          },
+          {
+            "name": "get_disaster_statistics",
+            "description": "Get aggregate statistics for disaster events.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "disaster_type": { "type": "string" },
+                "country": { "type": "string" }
+              }
+            }
+          },
+          {
+            "name": "get_deadliest_disasters",
+            "description": "Get the N deadliest disaster events.",
+            "inputSchema": {
+              "type": "object",
+              "properties": { "n": { "type": "integer" } }
+            }
+          },
+          {
+            "name": "get_disaster_trends",
+            "description": "Get year-by-year disaster frequency trends.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "disaster_type": { "type": "string" },
+                "country": { "type": "string" }
+              }
+            }
+          },
+          {
+            "name": "compare_disasters_across_countries",
+            "description": "Compare disasters across multiple countries.",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "disaster_type": { "type": "string" },
+                "countries": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          {
+            "name": "get_live_events",
+            "description": "Get current ongoing disaster events from NASA EONET.",
+            "inputSchema": { "type": "object", "properties": {} }
+          },
+          {
+            "name": "search_disasters_semantic",
+            "description": "Semantic search over disaster data using hybrid BM25+FAISS retrieval.",
+            "inputSchema": {
+              "type": "object",
+              "properties": { "query": { "type": "string" } },
+              "required": ["query"]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ package com.aiarchitect.terraquery.unit;
 import com.aiarchitect.terraquery.adapter.out.agent.AnalysisSynthesisAgent;
 import com.aiarchitect.terraquery.adapter.out.agent.DataRetrievalAgent;
 import com.aiarchitect.terraquery.adapter.out.agent.SupervisorAgentAdapter;
+import com.aiarchitect.terraquery.adapter.out.agent.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
@@ -24,6 +25,7 @@ class SupervisorAgentAdapterTest {
 
     @Mock DataRetrievalAgent dataRetrievalAgent;
     @Mock AnalysisSynthesisAgent analysisSynthesisAgent;
+    @Mock ContextWindowProcessor contextWindowProcessor;
     @Mock ToolProgressIndicator progressIndicator;
 
     AgentGuardrailsConfig guardrails;
@@ -36,8 +38,11 @@ class SupervisorAgentAdapterTest {
                 AgentGuardrailsConfig.ContextWindowStrategy.HYBRID,
                 10, 20, new BigDecimal("5.00"), 60
         );
+        // By default context processor passes history through unchanged
+        when(contextWindowProcessor.process(anyList(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
         supervisor = new SupervisorAgentAdapter(
-                dataRetrievalAgent, analysisSynthesisAgent, guardrails, progressIndicator);
+                dataRetrievalAgent, analysisSynthesisAgent, guardrails,
+                contextWindowProcessor, progressIndicator);
     }
 
     @Test

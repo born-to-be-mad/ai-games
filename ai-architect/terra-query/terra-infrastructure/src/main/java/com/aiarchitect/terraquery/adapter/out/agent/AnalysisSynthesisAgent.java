@@ -42,7 +42,7 @@ public class AnalysisSynthesisAgent {
     private final ToolCallback[] ragTools;
     private final ToolProgressIndicator progressIndicator;
 
-    public AnalysisSynthesisAgent(ChatModel chatModel,
+    public AnalysisSynthesisAgent(@Qualifier("selectedChatModel") ChatModel chatModel,
                                    @Qualifier("ragToolCallbackProvider")
                                    SyncMcpToolCallbackProvider ragToolProvider,
                                    AgentGuardrailsConfig guardrails,

@@ -45,7 +45,7 @@ public class DataRetrievalAgent {
     private final ToolProgressIndicator progressIndicator;
     private final int maxToolCalls;
 
-    public DataRetrievalAgent(ChatModel chatModel,
+    public DataRetrievalAgent(@Qualifier("selectedChatModel") ChatModel chatModel,
                                @Qualifier("dataRetrievalToolCallbackProvider")
                                SyncMcpToolCallbackProvider dataToolProvider,
                                AgentGuardrailsConfig guardrails,

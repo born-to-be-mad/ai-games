@@ -12,6 +12,7 @@ pitest-junit5-plugin        = "1.2.3"
 archunit                    = "1.4.1"
 bucket4j                    = "8.10.1"
 wiremock                    = "3.9.1"
+gatling                     = "3.13.1"
 
 # ── Spring Boot starters (version pinned via BOM) ─────────────────────────────
 [libraries]
@@ -64,8 +65,12 @@ mockito-junit-jupiter    = { module = "org.mockito:mockito-junit-jupiter" }
 archunit-junit5      = { module = "com.tngtech.archunit:archunit-junit5",  version.ref = "archunit" }
 wiremock-standalone  = { module = "org.wiremock:wiremock-standalone",      version.ref = "wiremock" }
 
+# ── Gatling (performance tests) ───────────────────────────────────────────────
+gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }
+
 # ── Gradle plugins ────────────────────────────────────────────────────────────
 [plugins]
 spring-boot                = { id = "org.springframework.boot",        version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 pitest                     = { id = "info.solidsoft.pitest",            version.ref = "pitest" }
+gatling                    = { id = "io.gatling.gradle",                version.ref = "gatling" }

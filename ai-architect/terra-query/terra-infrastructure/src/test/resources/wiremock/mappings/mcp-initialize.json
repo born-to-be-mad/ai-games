@@ -1,0 +1,23 @@
+{
+  "name": "MCP initialize",
+  "request": {
+    "method": "POST",
+    "urlPath": "/mcp",
+    "bodyPatterns": [
+      { "matchesJsonPath": "$[?(@.method == 'initialize')]" }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "jsonrpc": "2.0",
+      "id": 1,
+      "result": {
+        "protocolVersion": "2024-11-05",
+        "serverInfo": { "name": "terra-mcp", "version": "1.0.0" },
+        "capabilities": { "tools": {} }
+      }
+    }
+  }
+}

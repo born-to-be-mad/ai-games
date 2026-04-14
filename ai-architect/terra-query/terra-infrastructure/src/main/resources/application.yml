@@ -28,7 +28,7 @@ spring:
             connections:
               terra-mcp:
                 url: http://localhost:8200/mcp
-    # Default AI model provider (openai | anthropic | ollama)
+      # Default AI model provider (openai | anthropic | ollama)
     openai:
       api-key: ${OPENAI_API_KEY:}
       chat:
@@ -43,6 +43,13 @@ spring:
           model: claude-sonnet-4-6
           temperature: 0.1
           max-tokens: 4096
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${OLLAMA_MODEL:llama3.2}
+          temperature: 0.1
+          num-predict: 4096
 
 management:
   endpoints:
@@ -58,6 +65,11 @@ management:
         enabled: true
 
 terra-query:
+  # Active LLM provider: openai (default) | anthropic | ollama
+  # Switch with env var: TERRA_QUERY_AI_PROVIDER=anthropic
+  ai:
+    provider: ${TERRA_QUERY_AI_PROVIDER:openai}
+
   agent:
     guardrails:
       # Tool call limits per agent per query (prevents runaway loops)

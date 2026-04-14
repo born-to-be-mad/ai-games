@@ -2,6 +2,7 @@ plugins {
     // Spring Boot plugin declared in root plugins {} — apply here without version
     id("org.springframework.boot")
     id("info.solidsoft.pitest")
+    id("io.gatling.gradle")
 }
 
 springBoot {
@@ -70,6 +71,9 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+
+    // Gatling — performance baseline simulations
+    gatling(libs.gatling.charts.highcharts)
 }
 
 tasks.register<Test>("liveTest") {
