@@ -22,7 +22,7 @@ import java.util.Arrays;
 @Component
 public class DataRetrievalAgent {
 
-    static final String SYSTEM_PROMPT = """
+    public static final String SYSTEM_PROMPT = """
             You are a data retrieval specialist for natural disaster research.
             Your role is to fetch raw factual data about natural disasters using the available tools.
 

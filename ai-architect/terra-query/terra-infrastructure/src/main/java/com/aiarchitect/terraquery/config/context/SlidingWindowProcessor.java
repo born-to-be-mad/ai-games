@@ -1,4 +1,4 @@
-package com.aiarchitect.terraquery.adapter.out.agent.context;
+package com.aiarchitect.terraquery.config.context;
 
 import com.aiarchitect.terraquery.model.ChatMessage;
 import lombok.extern.slf4j.Slf4j;

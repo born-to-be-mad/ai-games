@@ -1,4 +1,4 @@
-package com.aiarchitect.terraquery.adapter.out.agent.context;
+package com.aiarchitect.terraquery.config.context;
 
 import com.aiarchitect.terraquery.model.ChatMessage;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Summarizes messages that fall outside the sliding window using an LLM call.
- * The summary is injected as a SYSTEM message prepended to the windowed history,
+ * The summary is injected as a USER message prepended to the windowed history,
  * preserving context from the dropped portion without exceeding token limits.
  *
  * Trade-off: one extra LLM call per turn when history exceeds the window.
@@ -49,7 +49,7 @@ public class SummarizingWindowProcessor implements ContextWindowProcessor {
         String summary = summarize(older);
         log.debug("[SummarizingWindow] Summarized {} old messages into context prefix", older.size());
 
-        // Inject summary as a synthetic SYSTEM message at the front
+        // Inject summary as a synthetic USER message at the front
         List<ChatMessage> result = new ArrayList<>();
         result.add(ChatMessage.userMessage(
                 recent.get(0).conversationId(),
@@ -71,7 +71,6 @@ public class SummarizingWindowProcessor implements ContextWindowProcessor {
                     .content();
         } catch (Exception e) {
             log.warn("[SummarizingWindow] Summary LLM call failed, falling back to truncation: {}", e.getMessage());
-            // Graceful degradation: return a plain truncation notice
             return "Earlier conversation contained " + messages.size() + " messages (summary unavailable).";
         }
     }

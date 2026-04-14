@@ -12,7 +12,7 @@ pitest-junit5-plugin        = "1.2.3"
 archunit                    = "1.4.1"
 bucket4j                    = "8.10.1"
 wiremock                    = "3.9.1"
-gatling                     = "3.13.1"
+gatling                     = "3.15.0"
 
 # ── Spring Boot starters (version pinned via BOM) ─────────────────────────────
 [libraries]

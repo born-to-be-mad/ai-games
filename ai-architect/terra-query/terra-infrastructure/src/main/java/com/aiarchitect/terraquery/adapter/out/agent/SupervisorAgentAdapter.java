@@ -1,6 +1,6 @@
 package com.aiarchitect.terraquery.adapter.out.agent;
 
-import com.aiarchitect.terraquery.adapter.out.agent.context.ContextWindowProcessor;
+import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.model.ChatMessage;

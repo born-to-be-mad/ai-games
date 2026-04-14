@@ -1,9 +1,9 @@
 package com.aiarchitect.terraquery.config;
 
-import com.aiarchitect.terraquery.adapter.out.agent.context.ContextWindowProcessor;
-import com.aiarchitect.terraquery.adapter.out.agent.context.HybridWindowProcessor;
-import com.aiarchitect.terraquery.adapter.out.agent.context.SlidingWindowProcessor;
-import com.aiarchitect.terraquery.adapter.out.agent.context.SummarizingWindowProcessor;
+import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
+import com.aiarchitect.terraquery.config.context.HybridWindowProcessor;
+import com.aiarchitect.terraquery.config.context.SlidingWindowProcessor;
+import com.aiarchitect.terraquery.config.context.SummarizingWindowProcessor;
 import com.aiarchitect.terraquery.port.out.ConversationRepository;
 import com.aiarchitect.terraquery.port.in.ChatUseCase;
 import com.aiarchitect.terraquery.port.in.ConversationUseCase;

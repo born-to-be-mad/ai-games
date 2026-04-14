@@ -3,7 +3,7 @@ package com.aiarchitect.terraquery.unit;
 import com.aiarchitect.terraquery.adapter.out.agent.AnalysisSynthesisAgent;
 import com.aiarchitect.terraquery.adapter.out.agent.DataRetrievalAgent;
 import com.aiarchitect.terraquery.adapter.out.agent.SupervisorAgentAdapter;
-import com.aiarchitect.terraquery.adapter.out.agent.context.ContextWindowProcessor;
+import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;

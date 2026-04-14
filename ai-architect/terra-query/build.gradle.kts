@@ -6,7 +6,7 @@ plugins {
     id("org.springframework.boot") version "4.0.5" apply false  // libs.versions.spring-boot
     id("io.spring.dependency-management") version "1.1.7"       // libs.versions.spring-dependency-management
     id("info.solidsoft.pitest") version "1.19.0" apply false    // libs.versions.pitest
-    id("io.gatling.gradle") version "3.13.1" apply false        // libs.versions.gatling
+    id("io.gatling.gradle") version "3.15.0" apply false        // libs.versions.gatling
 }
 
 allprojects {
