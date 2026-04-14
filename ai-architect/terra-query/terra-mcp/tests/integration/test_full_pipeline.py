@@ -9,8 +9,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from data.loaders.eosdis_loader import EosdisLoader
 from data.loaders.noaa_loader import NoaaLoader
-from data.quality.deduplicator import CrossSourceDeduplicator
-from data.quality.normalizer import DataNormalizer
 from data.repository import DisasterRepository
 from search.hierarchical_chunker import HierarchicalChunker
 

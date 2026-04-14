@@ -1,7 +1,6 @@
 """Async HTTP client for NASA EONET (Earth Observatory Natural Event Tracker)."""
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx

@@ -16,8 +16,7 @@ Does NOT retry:
 """
 
 import logging
-from functools import wraps
-from typing import Any, Callable
+from typing import Callable
 
 import httpx
 

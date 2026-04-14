@@ -1,6 +1,4 @@
 """Unit tests for disaster_query tool logic."""
-import pytest
-
 from tools.disaster_query import query_disasters_logic
 
 

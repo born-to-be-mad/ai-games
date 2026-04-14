@@ -1,6 +1,4 @@
 """Unit tests for get_live_events tool logic."""
-import pytest
-
 from tools.live_events import get_live_events_logic
 
 
