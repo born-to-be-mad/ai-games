@@ -54,6 +54,78 @@ jobs:
             ai-architect/terra-query/terra-core/build/reports/tests/
             ai-architect/terra-query/terra-infrastructure/build/reports/tests/
 
+  ragas-canary:
+    name: RAGAS Canary Eval (10 questions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-and-test
+    # Only run on PRs with real API keys available (skip on forks without secrets)
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+
+    defaults:
+      run:
+        working-directory: ai-architect/terra-query/terra-mcp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install eval dependencies
+        run: pip install -r requirements-eval.txt
+
+      - name: Start terra-mcp server
+        working-directory: ai-architect/terra-query
+        run: docker compose up -d terra-mcp
+
+      - name: Wait for terra-mcp healthy
+        working-directory: ai-architect/terra-query
+        run: |
+          for i in $(seq 1 30); do
+            python -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('localhost',8200)); s.close(); print('MCP ready')" 2>/dev/null && break
+            echo "Waiting ($i/30)..."
+            sleep 10
+          done
+
+      - name: Run RAGAS canary eval (10 questions)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python -m eval.eval_runner --subset canary --output-file ragas-canary.json
+
+      - name: Publish canary results to summary
+        if: always()
+        run: |
+          if [ -f ragas-canary.json ]; then
+            echo "## RAGAS Canary (10 Q)" >> $GITHUB_STEP_SUMMARY
+            python -c "
+          import json
+          with open('ragas-canary.json') as f: d = json.load(f)
+          for m in d['metrics']:
+              icon = '✅' if m['status'] == 'PASS' else ('⚠️' if m['status'] == 'WARN' else '❌')
+              print(f\"{icon} **{m['name']}**: {m['score']:.3f}\")
+          " >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload canary results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragas-canary-${{ github.run_number }}
+          path: ai-architect/terra-query/terra-mcp/ragas-canary.json
+
+      - name: Tear down MCP server
+        if: always()
+        working-directory: ai-architect/terra-query
+        run: docker compose down
+
   mutation-tests:
     name: PIT Mutation Testing (terra-core, target ≥55% kill)
     runs-on: ubuntu-latest

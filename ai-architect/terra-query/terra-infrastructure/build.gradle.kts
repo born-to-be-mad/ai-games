@@ -81,6 +81,7 @@ tasks.register<Test>("liveTest") {
         includeTags("live-llm")
     }
     systemProperty("spring.profiles.active", "live-test")
+    systemProperty("eval.subset", findProperty("subset") ?: "canary")
 }
 
 pitest {

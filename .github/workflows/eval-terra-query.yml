@@ -1,0 +1,95 @@
+name: Eval — TerraQuery RAGAS Evaluation
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # Nightly at 02:00 UTC (full 30-question eval)
+  workflow_dispatch:
+    inputs:
+      subset:
+        description: "Question subset to evaluate"
+        required: false
+        default: "full"
+        type: choice
+        options:
+          - full
+          - canary
+  push:
+    branches: [ main ]
+    paths:
+      - "ai-architect/terra-query/terra-mcp/eval/**"
+      - "ai-architect/terra-query/terra-mcp/eval/golden_dataset.json"
+
+defaults:
+  run:
+    working-directory: ai-architect/terra-query/terra-mcp
+
+jobs:
+  ragas-eval:
+    name: RAGAS Evaluation (${{ github.event.inputs.subset || 'full' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install eval dependencies
+        run: pip install -r requirements-eval.txt
+
+      - name: Start terra-mcp server
+        working-directory: ai-architect/terra-query
+        run: docker compose up -d terra-mcp
+
+      - name: Wait for terra-mcp healthy
+        working-directory: ai-architect/terra-query
+        run: |
+          for i in $(seq 1 30); do
+            python -c "import socket; s=socket.socket(); s.settimeout(3); s.connect(('localhost',8200)); s.close(); print('MCP server ready')" 2>/dev/null && break
+            echo "Waiting for MCP server ($i/30)..."
+            sleep 10
+          done
+
+      - name: Run RAGAS evaluation
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EVAL_SUBSET: ${{ github.event.inputs.subset || 'full' }}
+        run: |
+          python -m eval.eval_runner \
+            --subset "$EVAL_SUBSET" \
+            --output-file ragas-results.json
+
+      - name: Publish results to GitHub Actions summary
+        if: always()
+        run: |
+          if [ -f ragas-results.json ]; then
+            echo "## RAGAS Evaluation — $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+            python -c "
+          import json, sys
+          with open('ragas-results.json') as f:
+              data = json.load(f)
+          print(f\"**Subset:** {data['subset']} ({data['sample_count']} samples)\n\")
+          print('| Metric | Score | Target | Min | Status |')
+          print('|--------|-------|--------|-----|--------|')
+          for m in data['metrics']:
+              icon = '✅' if m['status'] == 'PASS' else ('⚠️' if m['status'] == 'WARN' else '❌')
+              print(f\"| {m['name']} | {m['score']:.3f} | ≥{m['threshold']:.2f} | ≥{m['min_threshold']:.2f} | {icon} {m['status']} |\")
+          " >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload RAGAS results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ragas-results-${{ github.run_number }}
+          path: ai-architect/terra-query/terra-mcp/ragas-results.json
+
+      - name: Tear down MCP server
+        if: always()
+        working-directory: ai-architect/terra-query
+        run: docker compose down

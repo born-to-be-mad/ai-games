@@ -1,0 +1,212 @@
+[
+  {
+    "id": "gd-001",
+    "question": "How many flood events were recorded in Bangladesh between 1990 and 2021?",
+    "ground_truth": "Bangladesh experienced over 100 flood events between 1990 and 2021 according to EM-DAT records. Flood frequency increased over this period, with approximately 8 events per year in the 1990s rising to around 14 events per year in the 2010s. Bangladesh is among the most flood-prone countries globally due to its delta geography.",
+    "context_docs": ["EM-DAT flood events Bangladesh 1990-2021", "EOSDIS flood records South Asia"],
+    "verification_sources": ["EM-DAT", "Wikipedia: Floods in Bangladesh"]
+  },
+  {
+    "id": "gd-002",
+    "question": "How many earthquake disasters occurred in Asia between 2000 and 2020?",
+    "ground_truth": "Asia recorded hundreds of significant earthquake disasters between 2000 and 2020 per EM-DAT. The region is seismically the most active in the world, with major events including the 2004 Indian Ocean earthquake (Mw 9.1), the 2008 Sichuan earthquake (Mw 7.9), the 2011 Tōhoku earthquake (Mw 9.0), and the 2015 Nepal earthquake (Mw 7.8).",
+    "context_docs": ["EM-DAT earthquake events Asia 2000-2020", "USGS earthquake catalog Asia"],
+    "verification_sources": ["EM-DAT", "USGS Earthquake Hazards Program"]
+  },
+  {
+    "id": "gd-003",
+    "question": "Which year had the most recorded natural disaster deaths globally in the 21st century?",
+    "ground_truth": "2004 was among the deadliest years for natural disasters in the 21st century, primarily due to the Indian Ocean tsunami on December 26 which killed over 227,000 people across 14 countries. Other extremely deadly years include 2008 (Cyclone Nargis + Sichuan earthquake) and 2010 (Haiti earthquake, which killed over 220,000 people).",
+    "context_docs": ["EM-DAT annual disaster statistics 2000-2021", "OFDA/CRED global disaster data"],
+    "verification_sources": ["EM-DAT", "Wikipedia: List of deadliest natural disasters"]
+  },
+  {
+    "id": "gd-004",
+    "question": "How many tropical storm events hit the Caribbean region between 1990 and 2010?",
+    "ground_truth": "The Caribbean experienced dozens of significant tropical storms and hurricanes between 1990 and 2010. Notable events include Hurricane Georges (1998), Hurricane Mitch (1998, killed ~11,000), Hurricane Ivan (2004), Hurricane Katrina (2005, affected Caribbean before hitting the US), and Hurricane Dean (2007). The Atlantic hurricane season produces an average of 12 named storms per year.",
+    "context_docs": ["NOAA Atlantic hurricane records 1990-2010", "EM-DAT storm events Caribbean"],
+    "verification_sources": ["NOAA National Hurricane Center", "EM-DAT"]
+  },
+  {
+    "id": "gd-005",
+    "question": "How many drought events were recorded in Africa during the 2000s?",
+    "ground_truth": "Africa recorded numerous significant drought events during the 2000s per EM-DAT. Major droughts affected the Sahel, Horn of Africa (particularly 2002-2003 and 2005-2006), and Southern Africa. The 2002-2003 southern African drought affected over 14 million people across multiple countries. Africa consistently accounts for the highest number of drought-affected people globally.",
+    "context_docs": ["EM-DAT drought events Africa 2000-2009", "FEWS NET drought records Africa"],
+    "verification_sources": ["EM-DAT", "FAO drought assessments Africa"]
+  },
+  {
+    "id": "gd-006",
+    "question": "How many volcanic eruptions were recorded globally since 1990 that caused casualties?",
+    "ground_truth": "Since 1990, dozens of volcanic eruptions have caused casualties globally according to EM-DAT and the Smithsonian Global Volcanism Program. Major deadly eruptions include Pinatubo (1991, Philippines, ~800 deaths), Ruapehu (1996, New Zealand), Merapi (2010, Indonesia, ~350 deaths), and Ontake (2014, Japan, 57 deaths). Indonesia, Philippines, and Japan account for the majority of deadly eruptions.",
+    "context_docs": ["EM-DAT volcanic eruption records 1990-2023", "Smithsonian Global Volcanism Program"],
+    "verification_sources": ["EM-DAT", "Smithsonian Global Volcanism Program"]
+  },
+  {
+    "id": "gd-007",
+    "question": "What was the deadliest earthquake of the 21st century in terms of fatalities?",
+    "ground_truth": "The 2010 Haiti earthquake (magnitude 7.0, January 12) is the deadliest earthquake of the 21st century, killing an estimated 220,000–316,000 people. It struck near Port-au-Prince. The second deadliest was the 2004 Indian Ocean earthquake and tsunami (magnitude 9.1) which caused over 227,000 deaths across 14 countries.",
+    "context_docs": ["EM-DAT earthquake deaths 2000-2021", "USGS earthquake catalog"],
+    "verification_sources": ["EM-DAT", "USGS", "Wikipedia: 2010 Haiti earthquake"]
+  },
+  {
+    "id": "gd-008",
+    "question": "How many people were killed by the 2004 Indian Ocean tsunami?",
+    "ground_truth": "The 2004 Indian Ocean tsunami (triggered by a magnitude 9.1 earthquake off the coast of Sumatra on December 26) killed approximately 227,898 people across 14 countries. Indonesia suffered the most deaths (~167,000), followed by Sri Lanka (~35,000), India (~12,400), and Thailand (~5,400). It is the deadliest tsunami in recorded history.",
+    "context_docs": ["EM-DAT 2004 Indian Ocean disaster", "USGS 2004 Sumatra earthquake"],
+    "verification_sources": ["EM-DAT", "USGS", "Wikipedia: 2004 Indian Ocean earthquake and tsunami"]
+  },
+  {
+    "id": "gd-009",
+    "question": "What disaster caused the highest death toll in Haiti's recorded history?",
+    "ground_truth": "The 2010 Haiti earthquake (January 12, magnitude 7.0) caused the highest death toll in Haiti's history, killing an estimated 220,000 to 316,000 people. It also injured approximately 300,000, displaced 1.5 million, and caused around $8 billion in economic damage. The earthquake struck near Port-au-Prince and was devastating due to poor building construction and high urban density.",
+    "context_docs": ["EM-DAT Haiti disaster history", "USGS 2010 Haiti earthquake"],
+    "verification_sources": ["EM-DAT", "Wikipedia: 2010 Haiti earthquake", "World Bank Haiti"]
+  },
+  {
+    "id": "gd-010",
+    "question": "How many people were killed by Hurricane Katrina in 2005?",
+    "ground_truth": "Hurricane Katrina caused approximately 1,833 direct deaths in the United States in August–September 2005, making it the deadliest Atlantic hurricane since 1928. The majority of deaths occurred in Louisiana (1,577), particularly in New Orleans where levee failures caused catastrophic flooding. It also caused about $125 billion in economic damage, making it one of the costliest natural disasters in US history.",
+    "context_docs": ["NOAA Hurricane Katrina 2005 data", "EM-DAT storm USA 2005"],
+    "verification_sources": ["NOAA National Hurricane Center", "EM-DAT", "Wikipedia: Hurricane Katrina"]
+  },
+  {
+    "id": "gd-011",
+    "question": "What was the death toll from the 1998 Bangladesh floods?",
+    "ground_truth": "The 1998 Bangladesh floods were among the worst in the country's history, lasting from July to September and submerging about two-thirds of the country. The floods killed approximately 1,000–1,100 people directly and left about 30 million people homeless. Economic damage was estimated at nearly $6 billion. The disaster prompted major flood management investments in Bangladesh.",
+    "context_docs": ["EM-DAT Bangladesh flood 1998", "EOSDIS 1998 Bangladesh flood"],
+    "verification_sources": ["EM-DAT", "Wikipedia: 1998 Bangladesh floods", "ReliefWeb"]
+  },
+  {
+    "id": "gd-012",
+    "question": "How many people died in the 2008 Sichuan earthquake in China?",
+    "ground_truth": "The 2008 Sichuan earthquake (magnitude 7.9, May 12) killed approximately 69,197 people, with 374,171 injured and 18,222 missing. It was the deadliest earthquake in China since the 1976 Tangshan earthquake. The disaster caused an estimated $85 billion in economic damage. School collapses drew international criticism, contributing to subsequent building code reforms in China.",
+    "context_docs": ["EM-DAT China earthquake 2008", "USGS 2008 Sichuan earthquake"],
+    "verification_sources": ["EM-DAT", "USGS", "Wikipedia: 2008 Sichuan earthquake"]
+  },
+  {
+    "id": "gd-013",
+    "question": "What was the most economically damaging storm in US history?",
+    "ground_truth": "Hurricane Katrina (2005) is generally considered the most economically damaging storm in US history, causing approximately $125 billion in damage (2005 USD), or over $180 billion in 2023 dollars. Hurricane Harvey (2017) is close behind with ~$125 billion in damage. Other extremely costly storms include Hurricane Maria (2017, ~$90 billion) and Hurricane Sandy (2012, ~$65 billion).",
+    "context_docs": ["NOAA US billion-dollar disaster database", "EM-DAT storm USA economic damage"],
+    "verification_sources": ["NOAA NCEI Billion-Dollar Disasters", "EM-DAT"]
+  },
+  {
+    "id": "gd-014",
+    "question": "How much economic damage did the 2011 Japan earthquake and tsunami cause?",
+    "ground_truth": "The 2011 Tōhoku earthquake and tsunami (March 11, magnitude 9.0) caused approximately $235 billion in economic damage, making it the costliest natural disaster in history at the time. The World Bank estimated reconstruction costs at $235 billion. The event killed approximately 15,899 people and triggered the Fukushima Daiichi nuclear disaster.",
+    "context_docs": ["EM-DAT Japan earthquake tsunami 2011", "World Bank Japan disaster assessment 2011"],
+    "verification_sources": ["EM-DAT", "World Bank", "Wikipedia: 2011 Tōhoku earthquake"]
+  },
+  {
+    "id": "gd-015",
+    "question": "What was the total economic damage from floods globally in the 2010s?",
+    "ground_truth": "Global flood damage totaled hundreds of billions of dollars during the 2010s. The 2011 Thailand floods alone caused approximately $40 billion in damage. NOAA and Munich Re data suggest global flood losses averaged over $40 billion per year during the 2010s. Asia (particularly China, India, and Thailand) accounted for the majority of flood economic losses during this period.",
+    "context_docs": ["EM-DAT global flood economic damage 2010-2019", "Munich Re NatCat flood data 2010s"],
+    "verification_sources": ["EM-DAT", "Munich Re NatCatSERVICE", "Swiss Re sigma report"]
+  },
+  {
+    "id": "gd-016",
+    "question": "How does economic damage from storms compare to floods in North America?",
+    "ground_truth": "In North America, storms (hurricanes, tornadoes, severe thunderstorms) typically cause far more economic damage than floods. NOAA data shows storms account for roughly 70-80% of total natural disaster economic losses in the US, while floods account for 10-15%. Hurricanes like Katrina ($125B), Harvey ($125B), and Maria ($90B) dwarf individual flood events in economic impact.",
+    "context_docs": ["NOAA billion-dollar disaster types USA", "EM-DAT storm vs flood North America"],
+    "verification_sources": ["NOAA NCEI Billion-Dollar Disasters", "EM-DAT"]
+  },
+  {
+    "id": "gd-017",
+    "question": "Which country suffered the most economic damage from natural disasters in the 2000s?",
+    "ground_truth": "The United States suffered the most absolute economic damage from natural disasters in the 2000s, primarily from Hurricane Katrina (2005, ~$125B) and other major storms. However, relative to GDP, developing nations fared worse. China also experienced enormous losses from the 2008 Sichuan earthquake (~$85B). Japan, Haiti, and Indonesia also suffered catastrophic losses relative to their economies.",
+    "context_docs": ["EM-DAT economic damage by country 2000-2009", "Munich Re disaster economics 2000s"],
+    "verification_sources": ["EM-DAT", "Munich Re NatCatSERVICE", "Swiss Re"]
+  },
+  {
+    "id": "gd-018",
+    "question": "What was the economic impact of the 2010 Haiti earthquake?",
+    "ground_truth": "The 2010 Haiti earthquake caused approximately $7.8–$8 billion in economic damage, equivalent to over 100% of Haiti's GDP at the time. The World Bank estimated reconstruction needs at $11.5 billion. Port-au-Prince's infrastructure was devastated, including government buildings, hospitals, and over 100,000 homes. Haiti received roughly $13 billion in international aid pledges for reconstruction.",
+    "context_docs": ["EM-DAT Haiti earthquake 2010 economic impact", "World Bank Haiti post-disaster assessment"],
+    "verification_sources": ["EM-DAT", "World Bank", "Wikipedia: 2010 Haiti earthquake"]
+  },
+  {
+    "id": "gd-019",
+    "question": "Which disaster type causes more average deaths per event: earthquakes or storms?",
+    "ground_truth": "Earthquakes historically cause more deaths per event than storms on average, primarily because major earthquakes strike without warning and can cause catastrophic building collapse. EM-DAT data shows earthquakes average thousands of deaths per significant event (e.g., 2010 Haiti ~220,000; 2004 Indian Ocean ~228,000). Storms cause more deaths in aggregate annually but are more survivable individually, especially in countries with early warning systems.",
+    "context_docs": ["EM-DAT deaths by disaster type comparison", "CRED disaster statistics mortality"],
+    "verification_sources": ["EM-DAT / CRED", "UNDRR Global Assessment Report"]
+  },
+  {
+    "id": "gd-020",
+    "question": "How do floods compare to droughts in terms of people affected globally?",
+    "ground_truth": "Droughts affect far more people globally than floods in terms of total affected population. EM-DAT data shows droughts affect hundreds of millions annually, particularly in Africa and Asia, because they impact large agricultural areas over extended periods. Floods, while causing more deaths and economic damage, typically affect smaller geographic areas. Droughts accounted for roughly 35-40% of all disaster-affected people globally in the 2000s-2010s.",
+    "context_docs": ["EM-DAT affected population floods vs droughts", "CRED disaster type statistics"],
+    "verification_sources": ["EM-DAT", "CRED", "UNDRR Global Assessment Report"]
+  },
+  {
+    "id": "gd-021",
+    "question": "Which disaster type is most common in Southeast Asia?",
+    "ground_truth": "Floods are the most common disaster type in Southeast Asia by event count, according to EM-DAT. The region's monsoon climate, low-lying deltas (Mekong, Irrawaddy, Chao Phraya), and dense coastal populations make flooding the dominant hazard. Storms (tropical cyclones) are the second most frequent and most deadly disaster type. The Philippines, Vietnam, Indonesia, and Bangladesh are among the most disaster-affected countries in the region.",
+    "context_docs": ["EM-DAT Southeast Asia disaster types", "UNDRR Asia Pacific disaster data"],
+    "verification_sources": ["EM-DAT", "UNDRR", "ESCAP Disaster Statistics"]
+  },
+  {
+    "id": "gd-022",
+    "question": "Are wildfires or storms more frequent in North America?",
+    "ground_truth": "Storms are significantly more frequent than wildfires as recorded disaster events in North America. NOAA data shows the US alone averages 10–15 billion-dollar storm events per year, while wildfires average 1–3. However, wildfire frequency has increased dramatically since 2010 in western North America due to drought and climate change. The 2017-2020 California wildfire seasons were record-breaking, with 2020 burning over 4 million acres.",
+    "context_docs": ["NOAA US disaster frequency storms vs wildfires", "EM-DAT North America wildfire storm events"],
+    "verification_sources": ["NOAA NCEI Billion-Dollar Disasters", "Cal Fire statistics", "EM-DAT"]
+  },
+  {
+    "id": "gd-023",
+    "question": "How do earthquake mortality rates differ between developed and developing countries?",
+    "ground_truth": "Earthquake mortality rates are dramatically higher in developing countries than in developed ones for comparable-magnitude events. The 2010 Haiti earthquake (M7.0) killed ~220,000 people; a similar-magnitude event in California (e.g., 1989 Loma Prieta, M6.9) killed 63. This disparity reflects building construction quality, enforcement of seismic codes, emergency response capacity, and healthcare infrastructure. Japan's M9.0 2011 earthquake caused ~15,900 deaths; a similar event in an unprep country could cause millions.",
+    "context_docs": ["EM-DAT earthquake mortality developed vs developing", "USGS seismic risk global comparison"],
+    "verification_sources": ["EM-DAT", "USGS", "World Bank seismic risk report"]
+  },
+  {
+    "id": "gd-024",
+    "question": "Which region experiences the most earthquake events globally?",
+    "ground_truth": "The Asia-Pacific region (including the Ring of Fire countries: Japan, Indonesia, Philippines, China, New Zealand) experiences the most earthquake events globally by frequency and total energy released. Indonesia and Japan are the most earthquake-prone countries. The Ring of Fire accounts for approximately 90% of the world's earthquakes and about 80% of the world's largest earthquakes. Chile, Peru, and the western US also experience high seismic activity.",
+    "context_docs": ["USGS global earthquake frequency by region", "EM-DAT earthquake events by region"],
+    "verification_sources": ["USGS Earthquake Hazards Program", "EM-DAT", "British Geological Survey"]
+  },
+  {
+    "id": "gd-025",
+    "question": "Has the frequency of natural disasters increased since 1990?",
+    "ground_truth": "Recorded natural disaster events increased substantially from 1990 to approximately 2005, then plateaued and slightly declined in reported events. EM-DAT data shows recorded disasters rose from ~200/year in 1990 to a peak of ~450/year around 2000–2005, partly reflecting improved reporting. Climate-sensitive disasters (floods, storms, extreme temperatures) have increased in frequency, while geological disasters (earthquakes, volcanoes) show no long-term trend.",
+    "context_docs": ["EM-DAT disaster frequency 1990-2021 annual statistics", "CRED disaster trends report"],
+    "verification_sources": ["EM-DAT", "CRED", "UNDRR Global Assessment Report 2022"]
+  },
+  {
+    "id": "gd-026",
+    "question": "Are storm intensities increasing over time due to climate change?",
+    "ground_truth": "Scientific consensus indicates that while total storm frequency may not be increasing significantly, the proportion of high-intensity storms (Category 4–5 hurricanes) is increasing due to warmer ocean temperatures. The 2021 IPCC AR6 report states with high confidence that the proportion of intense tropical cyclones and associated heavy precipitation have increased globally since the 1980s. Economic losses from storms have grown significantly due to both increased intensity and coastal development.",
+    "context_docs": ["NOAA historical hurricane intensity trends", "EM-DAT storm damage trends 1990-2021"],
+    "verification_sources": ["IPCC AR6 2021", "NOAA National Hurricane Center", "Nature Climate Change studies"]
+  },
+  {
+    "id": "gd-027",
+    "question": "How has flood frequency in South Asia changed over the past 30 years?",
+    "ground_truth": "Flood frequency and severity in South Asia has increased significantly over the past 30 years. EM-DAT data shows India, Bangladesh, and Pakistan report increasing numbers of significant flood events annually. The 2022 Pakistan super-floods affected one-third of the country (33 million people). Attribution studies link increased monsoon intensity to climate change. Bangladesh flood frequency roughly doubled between the 1990s and 2010s.",
+    "context_docs": ["EM-DAT South Asia flood frequency 1990-2022", "EOSDIS flood events India Bangladesh Pakistan"],
+    "verification_sources": ["EM-DAT", "ReliefWeb", "IPCC AR6 Chapter 11"]
+  },
+  {
+    "id": "gd-028",
+    "question": "What trends exist in disaster-related deaths over the past two decades?",
+    "ground_truth": "Disaster-related deaths show a declining long-term trend over the past two decades despite increasing event frequency, reflecting improved early warning systems, disaster preparedness, and resilience investments. EM-DAT data shows average annual deaths declined from ~100,000/year in the 1990s to ~60,000/year in the 2010s (excluding outlier years like 2004 and 2010). However, heat-related deaths are increasing, and climate impacts are projected to reverse these gains.",
+    "context_docs": ["EM-DAT global annual disaster deaths 2000-2021", "CRED disaster statistics mortality trends"],
+    "verification_sources": ["EM-DAT", "CRED", "UNDRR Global Assessment Report 2022"]
+  },
+  {
+    "id": "gd-029",
+    "question": "How has economic damage from natural disasters changed over the past 30 years?",
+    "ground_truth": "Economic losses from natural disasters have increased substantially over the past 30 years. Munich Re and Swiss Re data show global insured losses grew from an average of ~$50 billion/year in the 1990s to ~$100 billion/year in the 2010s (2023 USD). Total economic losses (insured + uninsured) roughly tripled over this period. Drivers include increased disaster intensity (climate change), rapid urbanization in risk zones, and rising asset values — not just increased reporting.",
+    "context_docs": ["EM-DAT global economic damage trend 1990-2021", "Munich Re NatCat annual report"],
+    "verification_sources": ["Munich Re NatCatSERVICE", "Swiss Re sigma", "EM-DAT"]
+  },
+  {
+    "id": "gd-030",
+    "question": "Are drought events becoming more frequent and severe in Africa?",
+    "ground_truth": "Yes, drought frequency and severity is increasing in parts of Africa, particularly in the Horn of Africa and southern Africa. The 2011 Horn of Africa drought was the worst in 60 years, affecting 13 million people. The 2022 Horn of Africa drought (5th consecutive failed rainy season) was declared the worst in 40 years. The IPCC AR6 projects higher drought frequency and intensity across most of Africa under all warming scenarios, with the southern Africa and Sahel regions most at risk.",
+    "context_docs": ["EM-DAT Africa drought events 1990-2022", "FEWS NET drought severity Africa"],
+    "verification_sources": ["EM-DAT", "FEWS NET", "IPCC AR6 Chapter 9 (Africa)"]
+  }
+]

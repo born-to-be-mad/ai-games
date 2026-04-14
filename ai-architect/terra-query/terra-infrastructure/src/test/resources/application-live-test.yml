@@ -1,0 +1,44 @@
+spring:
+  ai:
+    mcp:
+      client:
+        transport:
+          streamable-http:
+            connections:
+              terra-mcp:
+                url: http://localhost:8200/mcp
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.0
+          max-tokens: 1024
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-haiku-4-5-20251001
+          temperature: 0.0
+          max-tokens: 256
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+terra-query:
+  ai:
+    provider: openai
+  agent:
+    guardrails:
+      max-supervisor-delegations: 3
+      max-retrieval-tool-calls: 8
+      max-analysis-tool-calls: 4
+      max-output-tokens: 1024
+      max-context-window-usage-percent: 80
+      context-window-strategy: HYBRID
+      sliding-window-size: 10
+      max-queries-per-minute: 60
+      daily-cost-cap-usd: 10.00
+      agent-timeout-seconds: 60
+  conversation:
+    persistence-scope: MESSAGES_ONLY
