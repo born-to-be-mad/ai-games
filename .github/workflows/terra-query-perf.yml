@@ -1,4 +1,4 @@
-name: terra-query: Performance Tests
+name: terra-query - Performance Tests
 
 on:
   workflow_dispatch:

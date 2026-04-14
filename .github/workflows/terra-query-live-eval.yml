@@ -1,4 +1,4 @@
-name: terra-query: Live LLM Eval
+name: terra-query - Live LLM Eval
 
 on:
   schedule:

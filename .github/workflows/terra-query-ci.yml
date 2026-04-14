@@ -1,4 +1,4 @@
-name: terra-query: CI
+name: terra-query - CI
 
 on:
   push:

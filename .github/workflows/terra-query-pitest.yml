@@ -1,4 +1,4 @@
-name: terra-query: Mutation Tests
+name: terra-query - Mutation Tests
 
 on:
   schedule:

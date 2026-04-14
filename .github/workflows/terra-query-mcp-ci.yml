@@ -1,4 +1,4 @@
-name: terra-query: MCP CI
+name: terra-query - MCP CI
 
 on:
   push:

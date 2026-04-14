@@ -1,4 +1,4 @@
-name: terra-query: RAGAS Eval
+name: terra-query - RAGAS Eval
 
 on:
   schedule:
