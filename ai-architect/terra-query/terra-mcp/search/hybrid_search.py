@@ -110,7 +110,6 @@ class HybridSearchEngine:
             return []
         try:
             import os
-            from sentence_transformers import SentenceTransformer
             model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
             model = _get_cached_model(model_name)
             embedding = model.encode([query], normalize_embeddings=True)

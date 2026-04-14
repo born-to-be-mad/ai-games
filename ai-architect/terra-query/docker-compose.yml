@@ -1,4 +1,7 @@
 services:
+
+  # ── Application services ────────────────────────────────────────────────────
+
   terra-ui:
     build:
       context: terra-ui
@@ -6,9 +9,21 @@ services:
     ports:
       - "5173:80"
     depends_on:
-      - terra-infrastructure
+      terra-infrastructure:
+        condition: service_healthy
     networks:
       - terra-network
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+          cpus: "0.5"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
 
   terra-infrastructure:
     build:
@@ -22,11 +37,32 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       SPRING_AI_MCP_CLIENT_TRANSPORT_STREAMABLE_HTTP_CONNECTIONS_TERRA_MCP_URL: http://terra-mcp:8080/mcp
+      # OpenTelemetry — send traces to Tempo
+      MANAGEMENT_TRACING_ENABLED: "true"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      # Loki log shipping
+      LOKI_URL: http://loki:3100
     depends_on:
       terra-mcp:
         condition: service_healthy
+      tempo:
+        condition: service_started
+      loki:
+        condition: service_started
     networks:
       - terra-network
+    deploy:
+      resources:
+        limits:
+          # JVM with Spring AI + embedding context; tune with heap analysis
+          memory: 2g
+          cpus: "2.0"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   terra-mcp:
     build:
@@ -61,10 +97,72 @@ services:
     networks:
       - terra-network
 
+  # ── Observability stack ─────────────────────────────────────────────────────
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    command: ["-config.file=/etc/tempo/config.yml"]
+    volumes:
+      - ./docker/tempo/config.yml:/etc/tempo/config.yml:ro
+      - terra-tempo:/var/tempo
+    ports:
+      - "3200:3200"   # Tempo HTTP API
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+    networks:
+      - terra-network
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
+  loki:
+    image: grafana/loki:3.4.3
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./docker/loki/config.yml:/etc/loki/config.yml:ro
+      - terra-loki:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - terra-network
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - tempo
+      - loki
+    networks:
+      - terra-network
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+
 volumes:
   terra-indices:
     driver: local
   terra-data:
+    driver: local
+  terra-tempo:
+    driver: local
+  terra-loki:
     driver: local
 
 networks:

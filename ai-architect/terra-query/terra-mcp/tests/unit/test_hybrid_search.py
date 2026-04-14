@@ -1,6 +1,4 @@
 """Unit tests for HybridSearchEngine and RRFConfig."""
-import pytest
-
 from search.rrf_config import RRFConfig
 
 
@@ -52,7 +50,7 @@ class TestHybridSearchEngine:
 
     def test_rrf_scores_sum_correctly(self):
         """RRF score formula: weight / (k + rank + 1) — verify with bm25 only."""
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
         import numpy as np
         from search.hybrid_search import HybridSearchEngine
 

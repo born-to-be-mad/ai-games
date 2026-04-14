@@ -13,9 +13,7 @@ Existing files are skipped unless --force is passed.
 """
 import argparse
 import logging
-import os
 import sys
-import zipfile
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -84,7 +82,8 @@ def download_noaa(data_dir: Path, force: bool = False) -> None:
                 for chunk in r.iter_bytes(chunk_size=8192):
                     f.write(chunk)
 
-    import gzip, shutil
+    import gzip
+    import shutil
     logger.info("Extracting %s → %s", gz_path, out_path)
     with gzip.open(gz_path, "rb") as gz_in, open(out_path, "wb") as csv_out:
         shutil.copyfileobj(gz_in, csv_out)

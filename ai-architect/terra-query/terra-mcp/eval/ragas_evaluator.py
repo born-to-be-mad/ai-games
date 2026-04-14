@@ -124,7 +124,7 @@ class RagasEvaluator:
             Faithfulness,
             ResponseRelevancy,
         )
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_openai import OpenAIEmbeddings
         from langchain_anthropic import ChatAnthropic
 
         evaluator_llm = LangchainLLMWrapper(

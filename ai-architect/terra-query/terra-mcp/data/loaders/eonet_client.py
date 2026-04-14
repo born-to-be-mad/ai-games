@@ -1,10 +1,12 @@
 """Async HTTP client for NASA EONET (Earth Observatory Natural Event Tracker)."""
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
+
+from resilience.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
+from resilience.retry_decorator import retry_on_network_error
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +30,27 @@ _CATEGORY_MAP = {
 
 
 class EonetClient:
-    """Fetches currently active natural disaster events from NASA EONET API v3."""
+    """
+    Fetches currently active natural disaster events from NASA EONET API v3.
+
+    Resilience:
+      - Circuit breaker (5-failure threshold, 60s reset): isolates EONET outages
+        so the rest of the server stays healthy.
+      - Retry (3 attempts, exponential backoff): handles transient network blips.
+    """
+
+    # Module-level circuit breaker — shared across all EonetClient instances
+    _circuit_breaker = CircuitBreaker(
+        name="eonet",
+        failure_threshold=5,
+        reset_timeout_s=60.0,
+        success_threshold=2,
+    )
 
     def __init__(self, timeout: float = 15.0) -> None:
         self._timeout = timeout
 
+    @retry_on_network_error(max_attempts=3, wait_seconds=1.0)
     async def get_active_events(
         self,
         disaster_type: str | None = None,
@@ -68,6 +86,9 @@ class EonetClient:
         except httpx.HTTPStatusError as exc:
             logger.warning("EONET API returned %s", exc.response.status_code)
             return []
+        except CircuitBreakerOpenError as exc:
+            logger.warning("EONET circuit breaker open: %s", exc)
+            return []
         except Exception as exc:
             logger.warning("EONET API error: %s", exc)
             return []
@@ -78,20 +99,32 @@ class EonetClient:
     def get_active_events_sync(
         self, disaster_type: str | None = None, days: int = 30
     ) -> list[dict[str, Any]]:
-        """Synchronous wrapper for use in non-async contexts (FastMCP tools)."""
+        """
+        Synchronous wrapper for use in non-async contexts (FastMCP tools).
+        Delegates to the circuit breaker so CB state is shared with async callers.
+        """
+        async def _inner():
+            return await self.get_active_events(disaster_type, days)
+
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as pool:
-                    future = pool.submit(
-                        asyncio.run, self.get_active_events(disaster_type, days)
-                    )
-                    return future.result(timeout=self._timeout + 5)
-            return loop.run_until_complete(self.get_active_events(disaster_type, days))
+            return self._circuit_breaker.call(
+                lambda: asyncio.get_event_loop().run_until_complete(_inner())
+                if not asyncio.get_event_loop().is_running()
+                else _run_in_thread(_inner, timeout=self._timeout + 5)
+            )
+        except CircuitBreakerOpenError as exc:
+            logger.warning("EONET circuit breaker open (sync): %s", exc)
+            return []
         except Exception as exc:
             logger.warning("EONET sync wrapper error: %s", exc)
             return []
+
+
+def _run_in_thread(coro_fn, timeout: float) -> list:
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        future = pool.submit(asyncio.run, coro_fn())
+        return future.result(timeout=timeout)
 
     def _normalize_event(self, raw: dict) -> dict | None:
         categories = raw.get("categories", [])

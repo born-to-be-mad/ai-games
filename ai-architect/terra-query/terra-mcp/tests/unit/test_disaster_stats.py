@@ -1,6 +1,4 @@
 """Unit tests for disaster_stats tool logic."""
-import pytest
-
 from tools.disaster_stats import (
     compare_disasters_across_countries_logic,
     get_deadliest_disasters_logic,

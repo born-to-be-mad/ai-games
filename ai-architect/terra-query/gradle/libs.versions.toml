@@ -13,6 +13,8 @@ archunit                    = "1.4.1"
 bucket4j                    = "8.10.1"
 wiremock                    = "3.9.1"
 gatling                     = "3.15.0"
+loki4j                      = "1.5.2"
+resilience4j                = "2.3.0"
 
 # ── Spring Boot starters (version pinned via BOM) ─────────────────────────────
 [libraries]
@@ -64,6 +66,17 @@ mockito-junit-jupiter    = { module = "org.mockito:mockito-junit-jupiter" }
 # archunit 1.4.1 is the first release to support Java 25 (class file major version 69)
 archunit-junit5      = { module = "com.tngtech.archunit:archunit-junit5",  version.ref = "archunit" }
 wiremock-standalone  = { module = "org.wiremock:wiremock-standalone",      version.ref = "wiremock" }
+
+# ── Observability — distributed tracing (BOM-managed via Spring Boot) ─────────
+micrometer-tracing-bridge-otel  = { module = "io.micrometer:micrometer-tracing-bridge-otel" }
+opentelemetry-exporter-otlp     = { module = "io.opentelemetry:opentelemetry-exporter-otlp" }
+
+# ── Logging to Loki (NOT in Spring Boot BOM) ──────────────────────────────────
+loki4j = { module = "com.github.loki4j:loki-logback-appender", version.ref = "loki4j" }
+
+# ── Resilience4j (BOM-managed via Spring Boot 3+) ────────────────────────────
+resilience4j-spring-boot = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "resilience4j" }
+resilience4j-micrometer  = { module = "io.github.resilience4j:resilience4j-micrometer",   version.ref = "resilience4j" }
 
 # ── Gatling (performance tests) ───────────────────────────────────────────────
 gatling-charts-highcharts = { module = "io.gatling.highcharts:gatling-charts-highcharts", version.ref = "gatling" }

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from data.loaders.base_loader import BaseLoader, NORMALIZED_SCHEMA
+from data.loaders.base_loader import BaseLoader
 from data.quality.normalizer import DataNormalizer
 
 logger = logging.getLogger(__name__)

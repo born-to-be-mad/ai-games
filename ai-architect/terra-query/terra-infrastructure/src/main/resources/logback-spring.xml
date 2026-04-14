@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Console appender (all environments) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!--
+        Loki appender — ships structured logs to Grafana Loki.
+        Active in all profiles except "test".
+        In production (Docker), LOKI_URL is injected via docker-compose env vars.
+        In local dev, LOKI_URL is unset → Loki4j logs a connection error but does not crash the app.
+    -->
+    <springProfile name="!test">
+        <springProperty name="lokiUrl" source="loki.url" defaultValue="${LOKI_URL:-}"/>
+
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${lokiUrl}/loki/api/v1/push</url>
+                <connectionTimeoutMs>5000</connectionTimeoutMs>
+                <requestTimeoutMs>5000</requestTimeoutMs>
+            </http>
+            <format>
+                <label>
+                    <pattern>service_name=terra-query,host=${HOSTNAME:-local},level=%level</pattern>
+                </label>
+                <message class="com.github.loki4j.logback.JsonLayout">
+                    <additionalFields>
+                        service_name=terra-query
+                    </additionalFields>
+                </message>
+                <sortByTime>true</sortByTime>
+            </format>
+            <batchMaxItems>100</batchMaxItems>
+            <batchTimeoutMs>2000</batchTimeoutMs>
+            <sendQueueMaxBytes>41943040</sendQueueMaxBytes>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
+        </root>
+    </springProfile>
+
+    <!-- Tests: console only, no Loki -->
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Suppress noisy Spring AI / Hibernate DEBUG logs -->
+    <logger name="org.springframework.ai" level="INFO"/>
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="com.aiarchitect.terraquery" level="DEBUG"/>
+</configuration>

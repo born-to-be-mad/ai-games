@@ -45,7 +45,6 @@ def profile_startup(data_dir: Path) -> dict:
     from data.index.index_builder import build_indices
     from data.index.index_cache import IndexCache
     from search.hierarchical_chunker import HierarchicalChunker
-    from search.rrf_config import RRFConfig
     from search.hybrid_search import HybridSearchEngine
 
     repo = DisasterRepository(loaders=[EosdisLoader(data_dir), NoaaLoader(data_dir)])
