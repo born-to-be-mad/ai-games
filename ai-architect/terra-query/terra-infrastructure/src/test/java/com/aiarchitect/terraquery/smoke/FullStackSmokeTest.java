@@ -7,19 +7,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.ai.model.anthropic.autoconfigure.AnthropicChatAutoConfiguration;
 import org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfiguration;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -65,8 +61,14 @@ class FullStackSmokeTest {
     @LocalServerPort
     int port;
 
-    @Autowired
-    TestRestTemplate restTemplate;
+    private WebTestClient webTestClient;
+
+    @BeforeEach
+    void setUpClient() {
+        this.webTestClient = WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + port)
+                .build();
+    }
 
     @BeforeEach
     void stubDependencies() {
@@ -118,42 +120,33 @@ class FullStackSmokeTest {
 
     @Test
     void chat_fullStack_returns200WithAnswer() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(
-                """{"message": "How many earthquakes occurred in Chile in the last decade?"}""",
-                headers
-        );
+        Map<String, Object> body = webTestClient.post()
+                .uri("/api/v1/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"message\": \"How many earthquakes occurred in Chile in the last decade?\"}")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+                .returnResult().getResponseBody();
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                "http://localhost:" + port + "/api/v1/chat",
-                request,
-                Map.class
-        );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).containsKey("answer");
-        assertThat(response.getBody().get("answer").toString()).isNotBlank();
-        assertThat(response.getBody()).containsKey("agentChain");
+        assertThat(body).containsKey("answer");
+        assertThat(body.get("answer").toString()).isNotBlank();
+        assertThat(body).containsKey("agentChain");
     }
 
     @Test
     void chat_agentChain_containsAllThreeAgents() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>(
-                """{"message": "How many earthquakes occurred in Chile in the last decade?"}""",
-                headers
-        );
-
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                "http://localhost:" + port + "/api/v1/chat",
-                request,
-                Map.class
-        );
+        Map<String, Object> body = webTestClient.post()
+                .uri("/api/v1/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"message\": \"How many earthquakes occurred in Chile in the last decade?\"}")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+                .returnResult().getResponseBody();
 
         @SuppressWarnings("unchecked")
-        var chain = (java.util.List<String>) response.getBody().get("agentChain");
+        var chain = (List<String>) body.get("agentChain");
         assertThat(chain).containsExactly("SupervisorAgent", "DataRetrievalAgent", "AnalysisSynthesisAgent");
     }
 
@@ -161,26 +154,28 @@ class FullStackSmokeTest {
 
     @Test
     void actuator_health_returnsUp() {
-        ResponseEntity<Map> response = restTemplate.getForEntity(
-                "http://localhost:" + port + "/actuator/health",
-                Map.class
-        );
+        Map<String, Object> body = webTestClient.get()
+                .uri("/actuator/health")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {})
+                .returnResult().getResponseBody();
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().get("status")).isEqualTo("UP");
+        assertThat(body.get("status")).isEqualTo("UP");
     }
 
     // ── 3. Prometheus metrics ─────────────────────────────────────────────────
 
     @Test
     void actuator_prometheus_exposesMetrics() {
-        ResponseEntity<String> response = restTemplate.getForEntity(
-                "http://localhost:" + port + "/actuator/prometheus",
-                String.class
-        );
+        String body = webTestClient.get()
+                .uri("/actuator/prometheus")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult().getResponseBody();
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody())
+        assertThat(body)
                 .contains("jvm_memory_used_bytes")
                 .contains("http_server_requests_seconds");
     }
@@ -189,16 +184,11 @@ class FullStackSmokeTest {
 
     @Test
     void chat_blankMessage_returns400() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> request = new HttpEntity<>("""{"message": ""}""", headers);
-
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                "http://localhost:" + port + "/api/v1/chat",
-                request,
-                Map.class
-        );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        webTestClient.post()
+                .uri("/api/v1/chat")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"message\": \"\"}")
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 }

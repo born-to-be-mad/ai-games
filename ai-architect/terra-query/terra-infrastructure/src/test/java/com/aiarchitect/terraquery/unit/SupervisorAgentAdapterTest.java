@@ -6,6 +6,7 @@ import com.aiarchitect.terraquery.adapter.out.agent.SupervisorAgentAdapter;
 import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
+import com.aiarchitect.terraquery.observability.TerraQueryMetrics;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ class SupervisorAgentAdapterTest {
     @Mock AnalysisSynthesisAgent analysisSynthesisAgent;
     @Mock ContextWindowProcessor contextWindowProcessor;
     @Mock ToolProgressIndicator progressIndicator;
+    @Mock TerraQueryMetrics metrics;
 
     AgentGuardrailsConfig guardrails;
     SupervisorAgentAdapter supervisor;
@@ -42,7 +44,7 @@ class SupervisorAgentAdapterTest {
         when(contextWindowProcessor.process(anyList(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
         supervisor = new SupervisorAgentAdapter(
                 dataRetrievalAgent, analysisSynthesisAgent, guardrails,
-                contextWindowProcessor, progressIndicator);
+                contextWindowProcessor, progressIndicator, metrics);
     }
 
     @Test

@@ -8,6 +8,7 @@ import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.*;
  * Verifies the SSE event sequence emitted by /api/v1/chat/stream.
  * Checks that ANSWER_CHUNK and ANSWER_COMPLETE events are emitted correctly.
  */
+@ActiveProfiles("test")
 @WebMvcTest(ChatController.class)
 class StreamingIntegrationTest {
 

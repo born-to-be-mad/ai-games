@@ -2,7 +2,7 @@
 <configuration>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <!-- Console appender (dev default) -->
+    <!-- Console appender (all environments) -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
@@ -12,46 +12,47 @@
 
     <!--
         Loki appender — ships structured logs to Grafana Loki.
-        Activated when LOKI_URL env var is set (injected by docker-compose).
-        Disabled in local / test runs (LOKI_URL is unset).
+        Active in all profiles except "test".
+        In production (Docker), LOKI_URL is injected via docker-compose env vars.
+        In local dev, LOKI_URL is unset → Loki4j logs a connection error but does not crash the app.
     -->
-    <springProperty name="lokiUrl" source="loki.url" defaultValue="${LOKI_URL:-}"/>
+    <springProfile name="!test">
+        <springProperty name="lokiUrl" source="loki.url" defaultValue="${LOKI_URL:-}"/>
 
-    <if condition='property("lokiUrl").length() > 0'>
-        <then>
-            <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-                <http>
-                    <url>${lokiUrl}/loki/api/v1/push</url>
-                    <connectionTimeoutMs>5000</connectionTimeoutMs>
-                    <requestTimeoutMs>5000</requestTimeoutMs>
-                </http>
-                <format>
-                    <label>
-                        <pattern>service_name=terra-query,host=${HOSTNAME:-local},level=%level</pattern>
-                    </label>
-                    <message class="com.github.loki4j.logback.JsonLayout">
-                        <additionalFields>
-                            service_name=terra-query
-                        </additionalFields>
-                    </message>
-                    <sortByTime>true</sortByTime>
-                </format>
-                <batchMaxItems>100</batchMaxItems>
-                <batchTimeoutMs>2000</batchTimeoutMs>
-                <sendQueueMaxBytes>41943040</sendQueueMaxBytes>
-            </appender>
+        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+            <http>
+                <url>${lokiUrl}/loki/api/v1/push</url>
+                <connectionTimeoutMs>5000</connectionTimeoutMs>
+                <requestTimeoutMs>5000</requestTimeoutMs>
+            </http>
+            <format>
+                <label>
+                    <pattern>service_name=terra-query,host=${HOSTNAME:-local},level=%level</pattern>
+                </label>
+                <message class="com.github.loki4j.logback.JsonLayout">
+                    <additionalFields>
+                        service_name=terra-query
+                    </additionalFields>
+                </message>
+                <sortByTime>true</sortByTime>
+            </format>
+            <batchMaxItems>100</batchMaxItems>
+            <batchTimeoutMs>2000</batchTimeoutMs>
+            <sendQueueMaxBytes>41943040</sendQueueMaxBytes>
+        </appender>
 
-            <root level="INFO">
-                <appender-ref ref="CONSOLE"/>
-                <appender-ref ref="LOKI"/>
-            </root>
-        </then>
-        <else>
-            <root level="INFO">
-                <appender-ref ref="CONSOLE"/>
-            </root>
-        </else>
-    </if>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="LOKI"/>
+        </root>
+    </springProfile>
+
+    <!-- Tests: console only, no Loki -->
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 
     <!-- Suppress noisy Spring AI / Hibernate DEBUG logs -->
     <logger name="org.springframework.ai" level="INFO"/>
