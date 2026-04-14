@@ -15,6 +15,9 @@ spring:
       ddl-auto: create-drop
 
 terra-query:
+  ai:
+    provider: openai
+
   agent:
     guardrails:
       max-supervisor-delegations: 3

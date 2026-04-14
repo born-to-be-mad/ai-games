@@ -1,19 +1,17 @@
 package com.aiarchitect.terraquery.adapter.out.agent;
 
+import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.model.ChatMessage;
 import com.aiarchitect.terraquery.port.out.AgentPort;
-import com.aiarchitect.terraquery.streaming.ChatEvent;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Implements AgentPort by coordinating DataRetrievalAgent and AnalysisSynthesisAgent.
@@ -33,6 +31,7 @@ public class SupervisorAgentAdapter implements AgentPort {
     private final DataRetrievalAgent dataRetrievalAgent;
     private final AnalysisSynthesisAgent analysisSynthesisAgent;
     private final AgentGuardrailsConfig guardrails;
+    private final ContextWindowProcessor contextWindowProcessor;
     private final ToolProgressIndicator progressIndicator;
 
     @Override
@@ -42,11 +41,14 @@ public class SupervisorAgentAdapter implements AgentPort {
         List<String> agentChain = new ArrayList<>();
         agentChain.add("SupervisorAgent");
 
+        // Apply context window strategy before passing history to sub-agents
+        List<ChatMessage> windowedHistory = contextWindowProcessor.process(history, guardrails.slidingWindowSize());
+
         // Phase 1: Data retrieval
         String rawData;
         try {
             rawData = executeWithTimeout(
-                    () -> dataRetrievalAgent.retrieve(buildRetrievalPrompt(userQuery, history)),
+                    () -> dataRetrievalAgent.retrieve(buildRetrievalPrompt(userQuery, windowedHistory)),
                     "DataRetrievalAgent"
             );
             agentChain.add("DataRetrievalAgent");

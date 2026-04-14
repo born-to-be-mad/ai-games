@@ -21,7 +21,7 @@ import java.util.Arrays;
 @Component
 public class AnalysisSynthesisAgent {
 
-    static final String SYSTEM_PROMPT = """
+    public static final String SYSTEM_PROMPT = """
             You are an expert analyst specializing in natural disaster research and communication.
             You receive raw disaster data collected by a retrieval agent and must synthesize it
             into a clear, accurate, well-structured answer for the user.
@@ -42,7 +42,7 @@ public class AnalysisSynthesisAgent {
     private final ToolCallback[] ragTools;
     private final ToolProgressIndicator progressIndicator;
 
-    public AnalysisSynthesisAgent(ChatModel chatModel,
+    public AnalysisSynthesisAgent(@Qualifier("selectedChatModel") ChatModel chatModel,
                                    @Qualifier("ragToolCallbackProvider")
                                    SyncMcpToolCallbackProvider ragToolProvider,
                                    AgentGuardrailsConfig guardrails,

@@ -1,0 +1,27 @@
+{
+  "name": "MCP tools/call",
+  "request": {
+    "method": "POST",
+    "urlPath": "/mcp",
+    "bodyPatterns": [
+      { "matchesJsonPath": "$[?(@.method == 'tools/call')]" }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "jsonBody": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Found 142 flood events in Bangladesh between 1990 and 2021. The deadliest was in 1998 with 3,200 deaths and 30 million affected. Trend shows increasing frequency: 8 events/year in 1990s vs 14 events/year in 2010s. Sources: EOSDIS, NOAA."
+          }
+        ],
+        "isError": false
+      }
+    }
+  }
+}

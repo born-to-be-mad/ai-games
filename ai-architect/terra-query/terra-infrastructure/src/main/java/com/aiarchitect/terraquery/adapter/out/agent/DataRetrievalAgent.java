@@ -22,7 +22,7 @@ import java.util.Arrays;
 @Component
 public class DataRetrievalAgent {
 
-    static final String SYSTEM_PROMPT = """
+    public static final String SYSTEM_PROMPT = """
             You are a data retrieval specialist for natural disaster research.
             Your role is to fetch raw factual data about natural disasters using the available tools.
 
@@ -45,7 +45,7 @@ public class DataRetrievalAgent {
     private final ToolProgressIndicator progressIndicator;
     private final int maxToolCalls;
 
-    public DataRetrievalAgent(ChatModel chatModel,
+    public DataRetrievalAgent(@Qualifier("selectedChatModel") ChatModel chatModel,
                                @Qualifier("dataRetrievalToolCallbackProvider")
                                SyncMcpToolCallbackProvider dataToolProvider,
                                AgentGuardrailsConfig guardrails,
