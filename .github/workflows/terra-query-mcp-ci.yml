@@ -1,0 +1,91 @@
+name: terra-query: MCP CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "ai-architect/terra-query/terra-mcp/**"
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "ai-architect/terra-query/terra-mcp/**"
+
+defaults:
+  run:
+    working-directory: ai-architect/terra-query/terra-mcp
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt ruff mypy
+
+      - name: Run ruff lint
+        run: ruff check .
+
+      - name: Run ruff format check
+        run: ruff format --check .
+
+      - name: Run mypy type check
+        run: mypy server.py tools/ search/ validation/ --ignore-missing-imports
+
+  unit-tests:
+    name: Unit Tests (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short --cov=. --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-coverage-${{ github.run_number }}
+          path: ai-architect/terra-query/terra-mcp/coverage.xml
+
+  integration-tests:
+    name: Integration Tests (Python 3.11)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: unit-tests
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --tb=short

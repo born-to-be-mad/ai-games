@@ -1,4 +1,4 @@
-name: Live LLM Test Suite — terra-query
+name: terra-query: Live LLM Eval
 
 on:
   schedule:
@@ -25,7 +25,23 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Check required API keys
+        id: check-secrets
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          missing=()
+          [[ -z "$OPENAI_API_KEY" ]] && missing+=("OPENAI_API_KEY")
+          [[ -z "$ANTHROPIC_API_KEY" ]] && missing+=("ANTHROPIC_API_KEY")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::warning::Missing required secrets: ${missing[*]}. Live LLM eval will be skipped."
+            echo "has_keys=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_keys=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up Java 25
         uses: actions/setup-java@v4
@@ -37,9 +53,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Start terra-mcp server with real data
+        if: steps.check-secrets.outputs.has_keys == 'true'
         run: docker compose up -d terra-mcp
 
       - name: Wait for terra-mcp healthy
+        if: steps.check-secrets.outputs.has_keys == 'true'
         run: |
           for i in $(seq 1 30); do
             curl -sf http://localhost:8200/health && echo "MCP server ready" && break
@@ -48,6 +66,7 @@ jobs:
           done
 
       - name: Run live LLM answer quality tests
+        if: steps.check-secrets.outputs.has_keys == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
