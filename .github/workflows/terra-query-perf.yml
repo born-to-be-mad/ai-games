@@ -1,14 +1,25 @@
 name: terra-query - Performance Tests
 
 on:
+  schedule:
+    # Every Monday at 06:00 UTC — catches regressions before the week starts
+    - cron: '0 6 * * 1'
   workflow_dispatch:
     inputs:
+      simulation:
+        description: "Simulation class to run"
+        required: false
+        default: "com.aiarchitect.terraquery.TerraQueryBaselineSimulation"
+        type: choice
+        options:
+          - com.aiarchitect.terraquery.TerraQueryBaselineSimulation
+          - com.aiarchitect.terraquery.TerraQuerySpikeSimulation
       users:
-        description: "Number of concurrent users"
+        description: "Number of concurrent users (baseline sim only)"
         required: false
         default: "10"
       duration:
-        description: "Test duration in seconds"
+        description: "Test duration in seconds (baseline sim only)"
         required: false
         default: "60"
 
@@ -18,7 +29,7 @@ defaults:
 
 jobs:
   gatling:
-    name: Gatling Baseline Simulation (${{ inputs.users }} users, ${{ inputs.duration }}s)
+    name: Gatling — ${{ github.event.inputs.simulation || 'TerraQueryBaselineSimulation' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -52,13 +63,18 @@ jobs:
 
       - name: Start full stack
         if: steps.check-secrets.outputs.has_keys == 'true'
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TERRA_QUERY_AI_PROVIDER: openai
         run: docker compose up -d terra-mcp terra-infrastructure
 
       - name: Wait for terra-infrastructure healthy
         if: steps.check-secrets.outputs.has_keys == 'true'
         run: |
           for i in $(seq 1 30); do
-            curl -sf http://localhost:8080/actuator/health && echo "Backend ready" && break
+            STATUS=$(curl -sf http://localhost:8080/actuator/health \
+              | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || echo "")
+            [ "$STATUS" = "UP" ] && echo "Backend ready" && break
             echo "Waiting for backend ($i/30)..."
             sleep 10
           done
@@ -68,11 +84,43 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          GATLING_USERS: ${{ inputs.users }}
-          GATLING_DURATION: ${{ inputs.duration }}
-        run: ./gradlew :terra-infrastructure:gatlingRun-com.aiarchitect.terraquery.TerraQueryBaselineSimulation
+          GATLING_USERS: ${{ inputs.users || '10' }}
+          GATLING_DURATION: ${{ inputs.duration || '60' }}
+        run: |
+          SIMULATION="${{ github.event.inputs.simulation || 'com.aiarchitect.terraquery.TerraQueryBaselineSimulation' }}"
+          ./gradlew :terra-infrastructure:gatlingRun \
+            --simulation "$SIMULATION" \
+            -DTERRA_QUERY_BASE_URL=http://localhost:8080 \
+            --no-daemon
 
-      - name: Upload Gatling report
+      - name: Publish results to Job Summary
+        if: always()
+        run: |
+          REPORT_DIR=$(ls -td terra-infrastructure/build/reports/gatling/*/ 2>/dev/null | head -1)
+          if [ -d "$REPORT_DIR" ]; then
+            STATS="$REPORT_DIR/js/stats.json"
+            echo "## Gatling Results" >> $GITHUB_STEP_SUMMARY
+            echo "**Simulation:** \`${{ github.event.inputs.simulation || 'TerraQueryBaselineSimulation' }}\`" >> $GITHUB_STEP_SUMMARY
+            if [ -f "$STATS" ]; then
+              python3 -c "
+          import json
+          with open('$STATS') as f: d = json.load(f)
+          root = d.get('stats', {})
+          ok  = root.get('numberOfRequests', {}).get('ok', 0)
+          ko  = root.get('numberOfRequests', {}).get('ko', 0)
+          p95 = root.get('percentiles3', {}).get('total', '—')
+          p50 = root.get('percentiles2', {}).get('total', '—')
+          print(f'| Metric | Value |')
+          print(f'|---|---|')
+          print(f'| Requests OK | {ok} |')
+          print(f'| Requests KO | {ko} |')
+          print(f'| p50 (ms) | {p50} |')
+          print(f'| p95 (ms) | {p95} |')
+          " >> $GITHUB_STEP_SUMMARY || true
+            fi
+          fi
+
+      - name: Upload Gatling HTML report
         if: always()
         uses: actions/upload-artifact@v4
         with:
