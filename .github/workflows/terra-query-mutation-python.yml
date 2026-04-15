@@ -1,0 +1,142 @@
+name: terra-query - Python Mutation Tests
+
+on:
+  schedule:
+    - cron: "0 2 * * *"   # Nightly at 02:00 UTC
+  workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "ai-architect/terra-query/terra-mcp/**"
+
+defaults:
+  run:
+    working-directory: ai-architect/terra-query/terra-mcp
+
+jobs:
+  mutmut:
+    name: mutmut — terra-mcp (kill rate ≥ 65%)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run unit tests baseline (must pass before mutation)
+        run: python -m pytest tests/unit/ -q --tb=short
+
+      - name: Run mutmut
+        # Paths come from pyproject.toml [tool.mutmut] (mutmut 3.x) /
+        # setup.cfg [mutmut] (mutmut 2.x).
+        # mutmut exits non-zero when mutants survive — capture for threshold check.
+        run: mutmut run || true
+
+      - name: Export mutmut results to JSON
+        run: |
+          python - <<'EOF'
+          import sqlite3, json, os, subprocess
+
+          cache = ".mutmut-cache"
+          if os.path.exists(cache):
+              # mutmut 3.x — results in SQLite
+              conn = sqlite3.connect(cache)
+              try:
+                  rows = conn.execute(
+                      "SELECT status, COUNT(*) FROM mutant GROUP BY status"
+                  ).fetchall()
+                  counts = {r[0]: r[1] for r in rows}
+              finally:
+                  conn.close()
+              killed   = counts.get("killed", 0)
+              survived = counts.get("survived", 0) + counts.get("suspicious", 0)
+              total    = sum(counts.values())
+          else:
+              # mutmut 2.x fallback — parse text output
+              out = subprocess.run(["mutmut", "results"], capture_output=True, text=True)
+              lines = out.stdout.strip().splitlines()
+              killed   = sum(1 for l in lines if "killed"   in l.lower())
+              survived = sum(1 for l in lines if "survived" in l.lower())
+              total    = killed + survived
+
+          rate = killed / total if total else 0.0
+          with open("mutmut-results.json", "w") as f:
+              json.dump({"killed": killed, "survived": survived,
+                         "total": total, "kill_rate": rate}, f)
+          print(f"Exported: {killed}/{total} killed ({rate:.1%})")
+          EOF
+
+      - name: Enforce ≥ 65% kill rate
+        run: |
+          python - <<'EOF'
+          import json, sys
+
+          with open("mutmut-results.json") as f:
+              data = json.load(f)
+
+          kill_rate = data.get("kill_rate", 0.0)
+          killed    = data.get("killed", 0)
+          survived  = data.get("survived", 0)
+          total     = data.get("total", 0)
+
+          print(f"Mutation results: {killed}/{total} killed ({kill_rate:.1%})")
+
+          THRESHOLD = 0.65
+          if kill_rate < THRESHOLD:
+              print(f"::error::Kill rate {kill_rate:.1%} is below threshold {THRESHOLD:.0%}. "
+                    f"{survived} mutants survived — see artifact for details.")
+              sys.exit(1)
+
+          print(f"::notice::Kill rate {kill_rate:.1%} meets threshold ≥{THRESHOLD:.0%}. ✓")
+          EOF
+
+      - name: Publish summary
+        if: always()
+        run: |
+          python - <<'EOF'
+          import json, os
+
+          results_file = "mutmut-results.json"
+          if not os.path.exists(results_file):
+              print("No results file found.")
+              exit()
+
+          with open(results_file) as f:
+              data = json.load(f)
+
+          kill_rate = data.get("kill_rate", 0.0)
+          killed    = data.get("killed", 0)
+          survived  = data.get("survived", 0)
+          total     = data.get("total", 0)
+          status    = "✅ PASS" if kill_rate >= 0.65 else "❌ FAIL"
+
+          summary = f"""## Python Mutation Tests — terra-mcp
+
+          | Metric | Value |
+          |--------|-------|
+          | Total mutants | {total} |
+          | Killed | {killed} |
+          | Survived | {survived} |
+          | Kill rate | {kill_rate:.1%} |
+          | Target | ≥ 65% |
+          | Status | {status} |
+          """
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write(summary)
+          EOF
+
+      - name: Upload mutmut results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutmut-results-${{ github.run_number }}
+          path: ai-architect/terra-query/terra-mcp/mutmut-results.json

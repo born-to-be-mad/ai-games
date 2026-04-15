@@ -1,0 +1,4 @@
+[tool.mutmut]
+paths_to_mutate = "search/,tools/,validation/,resilience/"
+tests_dir = "tests/"
+runner = "python -m pytest"
