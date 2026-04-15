@@ -7,7 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"       // libs.versions.spring-dependency-management
     id("info.solidsoft.pitest") version "1.19.0" apply false    // libs.versions.pitest
     id("io.gatling.gradle") version "3.15.0" apply false        // libs.versions.gatling
-    id("org.openapi.generator") version "7.12.0" apply false    // libs.versions.openapi-generator
+    id("org.openapi.generator") version "7.21.0" apply false    // libs.versions.openapi-generator
 }
 
 allprojects {
