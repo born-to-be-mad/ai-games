@@ -35,9 +35,10 @@ jobs:
         run: python -m pytest tests/unit/ -q --tb=short
 
       - name: Run mutmut
-        # Pass source paths explicitly so both mutmut 2.x and 3.x pick them up.
-        # mutmut exits non-zero when mutants survive — capture exit code for threshold check.
-        run: mutmut run search/ tools/ validation/ resilience/ || true
+        # Paths come from pyproject.toml [tool.mutmut] (mutmut 3.x) /
+        # setup.cfg [mutmut] (mutmut 2.x).
+        # mutmut exits non-zero when mutants survive — capture for threshold check.
+        run: mutmut run || true
 
       - name: Export mutmut results to JSON
         run: |
