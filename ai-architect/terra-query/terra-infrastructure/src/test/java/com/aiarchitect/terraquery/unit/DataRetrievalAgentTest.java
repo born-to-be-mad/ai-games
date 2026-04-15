@@ -52,10 +52,10 @@ class DataRetrievalAgentTest {
         var response = mockChatResponse("Found 142 flood records in Bangladesh 1990–2021.");
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class))).thenReturn(response);
 
-        String result = agent.retrieve("How many floods occurred in Bangladesh?");
+        var result = agent.retrieve("How many floods occurred in Bangladesh?");
 
-        assertThat(result).contains("142");
-        assertThat(result).contains("Bangladesh");
+        assertThat(result.content()).contains("142");
+        assertThat(result.content()).contains("Bangladesh");
     }
 
     @Test
@@ -63,9 +63,9 @@ class DataRetrievalAgentTest {
         var response = mockChatResponse("No data found.");
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class))).thenReturn(response);
 
-        String result = agent.retrieve("What happened?");
+        var result = agent.retrieve("What happened?");
 
-        assertThat(result).isNotBlank();
+        assertThat(result.content()).isNotBlank();
     }
 
     @Test

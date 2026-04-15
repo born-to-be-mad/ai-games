@@ -45,7 +45,7 @@ public class McpClientConfig {
 
         List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
         ToolCallback[] dataCallbacks = allCallbacks.stream()
-                .filter(cb -> DATA_RETRIEVAL_TOOL_NAMES.contains(cb.getToolDefinition().name()))
+                .filter(cb -> DATA_RETRIEVAL_TOOL_NAMES.contains(normalizeToolName(cb.getToolDefinition().name())))
                 .toArray(ToolCallback[]::new);
 
         // Wrap in a provider adapter
@@ -65,7 +65,7 @@ public class McpClientConfig {
 
         List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
         ToolCallback[] ragCallbacks = allCallbacks.stream()
-                .filter(cb -> RAG_TOOL_NAMES.contains(cb.getToolDefinition().name()))
+                .filter(cb -> RAG_TOOL_NAMES.contains(normalizeToolName(cb.getToolDefinition().name())))
                 .toArray(ToolCallback[]::new);
 
         return new FilteredToolCallbackProvider(ragCallbacks);
@@ -87,5 +87,16 @@ public class McpClientConfig {
         public ToolCallback[] getToolCallbacks() {
             return callbacks;
         }
+    }
+
+    private static String normalizeToolName(String toolName) {
+        if (toolName == null || toolName.isBlank()) {
+            return "";
+        }
+        int idx = toolName.lastIndexOf("__");
+        if (idx >= 0 && idx < toolName.length() - 2) {
+            return toolName.substring(idx + 2);
+        }
+        return toolName;
     }
 }

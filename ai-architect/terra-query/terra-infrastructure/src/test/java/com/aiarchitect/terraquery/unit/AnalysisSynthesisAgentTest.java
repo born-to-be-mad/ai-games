@@ -53,11 +53,11 @@ class AnalysisSynthesisAgentTest {
         when(chatModel.call(any(org.springframework.ai.chat.prompt.Prompt.class)))
                 .thenReturn(mockChatResponse(answer));
 
-        String result = agent.synthesize("Are floods increasing in Bangladesh?",
+        var result = agent.synthesize("Are floods increasing in Bangladesh?",
                 "142 flood records found; 1998 was the deadliest with 3,200 deaths.");
 
-        assertThat(result).contains("Bangladesh");
-        assertThat(result).contains("flood");
+        assertThat(result.content()).contains("Bangladesh");
+        assertThat(result.content()).contains("flood");
     }
 
     @Test

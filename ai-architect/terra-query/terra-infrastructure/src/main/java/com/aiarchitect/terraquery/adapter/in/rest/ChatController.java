@@ -5,6 +5,7 @@ import com.aiarchitect.terraquery.api.model.ChatResponse;
 import com.aiarchitect.terraquery.api.model.Source;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.port.in.ChatUseCase;
+import com.aiarchitect.terraquery.resilience.SimpleRequestRateLimiter;
 import com.aiarchitect.terraquery.streaming.ChatEvent;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,12 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.List;
+import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 
 @Slf4j
 @RestController
@@ -30,9 +33,11 @@ public class ChatController {
 
     private final ChatUseCase chatUseCase;
     private final ToolProgressIndicator progressIndicator;
+    private final SimpleRequestRateLimiter rateLimiter;
 
     @PostMapping
     public ResponseEntity<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
+        enforceRateLimit();
         log.info("Received chat request, conversationId={}", request.getConversationId());
         String conversationId = request.getConversationId() != null
                 ? request.getConversationId().toString() : null;
@@ -42,6 +47,7 @@ public class ChatController {
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<ChatEvent>> streamChat(@Valid @RequestBody ChatRequest request) {
+        enforceRateLimit();
         log.info("Received streaming chat request, conversationId={}", request.getConversationId());
         String conversationId = request.getConversationId() != null
                 ? request.getConversationId().toString() : null;
@@ -82,5 +88,14 @@ public class ChatController {
                 .sources(sources)
                 .toolsUsed(agentResponse.toolsUsed())
                 .agentChain(agentResponse.agentChain());
+    }
+
+    private void enforceRateLimit() {
+        if (!rateLimiter.tryAcquire()) {
+            throw new ResponseStatusException(
+                    TOO_MANY_REQUESTS,
+                    "Rate limit exceeded. Please retry shortly."
+            );
+        }
     }
 }

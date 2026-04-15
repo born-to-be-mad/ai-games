@@ -52,11 +52,24 @@ class EosdisLoader(BaseLoader):
         return "eosdis"
 
     def load(self) -> pd.DataFrame:
+        enforce_real = _require_real_dataset()
         if not self._path.exists():
-            logger.warning("EOSDIS file not found at %s — skipping", self._path)
+            if enforce_real:
+                raise FileNotFoundError(
+                    "EOSDIS real dataset is required but missing. "
+                    f"Expected file: {self._path.parent / 'eosdis.csv'}"
+                )
+            logger.warning(
+                "EOSDIS file not found at %s — using empty frame (dev/test mode)",
+                self._path,
+            )
             return self._empty_frame()
 
-        logger.info("Loading EOSDIS data from %s", self._path)
+        logger.info(
+            "Loading EOSDIS data from %s (mode=%s)",
+            self._path,
+            "real-required" if enforce_real else "dev-fallback-allowed",
+        )
         try:
             raw = pd.read_csv(self._path, low_memory=False)
         except Exception as exc:
@@ -114,3 +127,17 @@ class EosdisLoader(BaseLoader):
             except Exception:
                 dates.append(pd.NaT)
         return pd.Series(dates)
+
+
+def _require_real_dataset() -> bool:
+    """
+    Enforce real EOSDIS dataset outside local/dev/test unless explicitly disabled.
+    Controls:
+      - REQUIRE_REAL_EOSDIS=true|false (highest priority)
+      - APP_ENV/TERRA_QUERY_ENV in {dev,test,local} allows sample fallback
+    """
+    explicit = os.getenv("REQUIRE_REAL_EOSDIS")
+    if explicit is not None:
+        return explicit.strip().lower() in {"1", "true", "yes", "on"}
+    env = os.getenv("TERRA_QUERY_ENV", os.getenv("APP_ENV", "dev")).strip().lower()
+    return env not in {"dev", "test", "local"}
