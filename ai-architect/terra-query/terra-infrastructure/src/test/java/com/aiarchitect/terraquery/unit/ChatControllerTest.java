@@ -75,15 +75,16 @@ class ChatControllerTest {
     @Test
     void postChat_withConversationId_passesItToUseCase() throws Exception {
         var response = AgentResponse.of("answer");
-        when(chatUseCase.chat(anyString(), eq("conv-123"))).thenReturn(response);
+        String convId = "550e8400-e29b-41d4-a716-446655440000";
+        when(chatUseCase.chat(anyString(), eq(convId))).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/chat")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"message": "Continue.", "conversationId": "conv-123"}
+                                {"message": "Continue.", "conversationId": "550e8400-e29b-41d4-a716-446655440000"}
                                 """))
                 .andExpect(status().isOk());
 
-        verify(chatUseCase).chat("Continue.", "conv-123");
+        verify(chatUseCase).chat("Continue.", convId);
     }
 }

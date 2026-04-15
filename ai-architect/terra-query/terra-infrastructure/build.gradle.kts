@@ -3,10 +3,41 @@ plugins {
     id("org.springframework.boot")
     id("info.solidsoft.pitest")
     id("io.gatling.gradle")
+    id("org.openapi.generator")
 }
 
 springBoot {
     mainClass = "com.aiarchitect.terraquery.TerraQueryApplication"
+}
+
+// ── OpenAPI code generation ───────────────────────────────────────────────────
+openApiGenerate {
+    generatorName.set("spring")
+    inputSpec.set("${rootDir}/api-spec/terra-query-api.yaml")
+    cleanupOutput.set(true)
+    outputDir.set(layout.buildDirectory.dir("generated/openapi").get().asFile.path)
+    apiPackage.set("com.aiarchitect.terraquery.api")
+    modelPackage.set("com.aiarchitect.terraquery.api.model")
+    configOptions.set(mapOf(
+        "interfaceOnly"           to "true",
+        "useSpringBoot3"          to "true",
+        "reactive"                to "false",
+        "useTags"                 to "true",
+        "useBeanValidation"       to "true",
+        "performBeanValidation"   to "true",
+        "dateLibrary"             to "java8",
+        "serializationLibrary"    to "jackson",
+        "openApiNullable"         to "false",
+        "hideGenerationTimestamp" to "true",
+    ))
+}
+
+sourceSets.main {
+    java.srcDir(layout.buildDirectory.dir("generated/openapi/src/main/java"))
+}
+
+tasks.compileJava {
+    dependsOn(tasks.named("openApiGenerate"))
 }
 
 dependencies {
@@ -62,6 +93,9 @@ dependencies {
 
     // Jackson
     implementation(libs.jackson.databind)
+
+    // OpenAPI Generator — annotations used by generated interfaces
+    compileOnly(libs.swagger.annotations)
 
     // Test dependencies
     // Spring Boot 4.x modularised test slices — packages renamed:
