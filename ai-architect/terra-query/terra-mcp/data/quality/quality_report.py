@@ -1,4 +1,5 @@
 """Data quality report logged at startup."""
+
 import logging
 from typing import Any
 
@@ -7,7 +8,9 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def log_quality_report(df: pd.DataFrame, source_stats: dict[str, dict[str, Any]]) -> None:
+def log_quality_report(
+    df: pd.DataFrame, source_stats: dict[str, dict[str, Any]]
+) -> None:
     """Log a concise data quality report after loading and merging all sources."""
     logger.info("=== TerraQuery Data Quality Report ===")
 
@@ -18,7 +21,11 @@ def log_quality_report(df: pd.DataFrame, source_stats: dict[str, dict[str, Any]]
         dup_ids = stats.get("duplicate_event_ids", 0)
         logger.info(
             "%s: %d records loaded, %d with missing death toll (%.1f%%), %d duplicate event_ids",
-            source.upper(), count, missing_deaths, missing_pct, dup_ids,
+            source.upper(),
+            count,
+            missing_deaths,
+            missing_pct,
+            dup_ids,
         )
 
     total_before = sum(s.get("count", 0) for s in source_stats.values())
@@ -26,7 +33,9 @@ def log_quality_report(df: pd.DataFrame, source_stats: dict[str, dict[str, Any]]
     deduped = total_before - total_after
     logger.info(
         "Merged: %d total → %d after dedup (%d cross-source duplicates)",
-        total_before, total_after, deduped,
+        total_before,
+        total_after,
+        deduped,
     )
 
     # Coverage gap analysis: countries with long gaps
@@ -50,12 +59,18 @@ def _log_coverage_gaps(df: pd.DataFrame) -> None:
         years = sorted(grp["year"].dropna().unique())
         if len(years) < 2:
             continue
-        gaps = [(years[i], years[i + 1]) for i in range(len(years) - 1)
-                if years[i + 1] - years[i] > 5]
+        gaps = [
+            (years[i], years[i + 1])
+            for i in range(len(years) - 1)
+            if years[i + 1] - years[i] > 5
+        ]
         for start_yr, end_yr in gaps[:2]:  # log at most 2 gaps per country
             logger.info(
                 "Coverage gap: %s %d–%d (%d years, likely data gap not reality)",
-                country, start_yr, end_yr, end_yr - start_yr,
+                country,
+                start_yr,
+                end_yr,
+                end_yr - start_yr,
             )
 
 
@@ -63,7 +78,9 @@ def compute_source_stats(df: pd.DataFrame) -> dict[str, Any]:
     """Compute quality stats for a single-source DataFrame."""
     count = len(df)
     missing_deaths = int(df["deaths"].isna().sum()) if "deaths" in df.columns else 0
-    duplicate_ids = int(df["event_id"].duplicated().sum()) if "event_id" in df.columns else 0
+    duplicate_ids = (
+        int(df["event_id"].duplicated().sum()) if "event_id" in df.columns else 0
+    )
     return {
         "count": count,
         "missing_deaths": missing_deaths,

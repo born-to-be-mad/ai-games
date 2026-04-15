@@ -1,4 +1,5 @@
 """Unified in-memory disaster data store backed by pandas."""
+
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -44,7 +45,9 @@ class DisasterRepository:
             return
 
         combined = pd.concat(list(source_frames.values()), ignore_index=True)
-        source_stats = {name: compute_source_stats(df) for name, df in source_frames.items()}
+        source_stats = {
+            name: compute_source_stats(df) for name, df in source_frames.items()
+        }
 
         deduplicator = CrossSourceDeduplicator()
         self._df = deduplicator.deduplicate(combined)
@@ -77,10 +80,9 @@ class DisasterRepository:
 
         if country:
             country_lower = country.lower()
-            mask = (
-                result["country"].str.lower().str.contains(country_lower, na=False)
-                | result["country_iso3"].str.lower().str.contains(country_lower, na=False)
-            )
+            mask = result["country"].str.lower().str.contains(
+                country_lower, na=False
+            ) | result["country_iso3"].str.lower().str.contains(country_lower, na=False)
             result = result[mask]
 
         if year_from is not None and "start_date" in result.columns:

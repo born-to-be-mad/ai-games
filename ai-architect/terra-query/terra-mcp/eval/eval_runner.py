@@ -12,6 +12,7 @@ Exit codes:
   1  any metric < min threshold (HARD FAIL — blocks CI)
   2  some metrics below target but above min (WARN — prints but does not block)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -59,7 +60,9 @@ def build_retriever(config):
         chunker = HierarchicalChunker()
         cache = IndexCache()
         data_files = repo.get_data_file_paths()
-        data_hash = IndexCache.compute_data_hash(*data_files) if data_files else "default"
+        data_hash = (
+            IndexCache.compute_data_hash(*data_files) if data_files else "default"
+        )
         indices = cache.get_or_build(data_hash, lambda: build_indices(repo.df, chunker))
         repo.set_indices(indices)
         engine = HybridSearchEngine(indices=indices, config=RRFConfig.from_env())
@@ -108,7 +111,9 @@ def main(argv: list[str] | None = None) -> int:
     logger.info("Running %s eval — %d questions", args.subset, len(entries))
 
     retriever = build_retriever(config)
-    generator_fn = build_openai_generator_fn(config.generator_model, config.openai_api_key)
+    generator_fn = build_openai_generator_fn(
+        config.generator_model, config.openai_api_key
+    )
     generator = AnswerGenerator(retriever, generator_fn)
 
     logger.info("Generating answers with %s...", config.generator_model)

@@ -1,4 +1,5 @@
 """Unit tests for CrossSourceDeduplicator."""
+
 import pandas as pd
 import pytest
 
@@ -25,10 +26,22 @@ class TestDeduplicate:
 
     def test_single_source_no_dedup(self, deduplicator):
         rows = [
-            _make_row(event_id="a1", disaster_type="flood", country="Bangladesh",
-                      source="eosdis", start_date=pd.Timestamp("1998-07-01"), deaths=1000),
-            _make_row(event_id="a2", disaster_type="flood", country="Bangladesh",
-                      source="eosdis", start_date=pd.Timestamp("1998-07-05"), deaths=500),
+            _make_row(
+                event_id="a1",
+                disaster_type="flood",
+                country="Bangladesh",
+                source="eosdis",
+                start_date=pd.Timestamp("1998-07-01"),
+                deaths=1000,
+            ),
+            _make_row(
+                event_id="a2",
+                disaster_type="flood",
+                country="Bangladesh",
+                source="eosdis",
+                start_date=pd.Timestamp("1998-07-05"),
+                deaths=500,
+            ),
         ]
         df = pd.DataFrame(rows)
         result = deduplicator.deduplicate(df)
@@ -37,10 +50,22 @@ class TestDeduplicate:
 
     def test_cross_source_duplicate_merged(self, deduplicator):
         rows = [
-            _make_row(event_id="a1", disaster_type="earthquake", country="Indonesia",
-                      source="eosdis", start_date=pd.Timestamp("2004-12-26"), deaths=165708),
-            _make_row(event_id="b1", disaster_type="earthquake", country="Indonesia",
-                      source="noaa", start_date=pd.Timestamp("2004-12-27"), deaths=150000),
+            _make_row(
+                event_id="a1",
+                disaster_type="earthquake",
+                country="Indonesia",
+                source="eosdis",
+                start_date=pd.Timestamp("2004-12-26"),
+                deaths=165708,
+            ),
+            _make_row(
+                event_id="b1",
+                disaster_type="earthquake",
+                country="Indonesia",
+                source="noaa",
+                start_date=pd.Timestamp("2004-12-27"),
+                deaths=150000,
+            ),
         ]
         df = pd.DataFrame(rows)
         result = deduplicator.deduplicate(df)
@@ -50,10 +75,22 @@ class TestDeduplicate:
 
     def test_different_countries_not_merged(self, deduplicator):
         rows = [
-            _make_row(event_id="a1", disaster_type="flood", country="Bangladesh",
-                      source="eosdis", start_date=pd.Timestamp("2020-06-01"), deaths=100),
-            _make_row(event_id="b1", disaster_type="flood", country="India",
-                      source="noaa", start_date=pd.Timestamp("2020-06-01"), deaths=200),
+            _make_row(
+                event_id="a1",
+                disaster_type="flood",
+                country="Bangladesh",
+                source="eosdis",
+                start_date=pd.Timestamp("2020-06-01"),
+                deaths=100,
+            ),
+            _make_row(
+                event_id="b1",
+                disaster_type="flood",
+                country="India",
+                source="noaa",
+                start_date=pd.Timestamp("2020-06-01"),
+                deaths=200,
+            ),
         ]
         df = pd.DataFrame(rows)
         result = deduplicator.deduplicate(df)
@@ -61,10 +98,22 @@ class TestDeduplicate:
 
     def test_date_too_far_apart_not_merged(self, deduplicator):
         rows = [
-            _make_row(event_id="a1", disaster_type="flood", country="India",
-                      source="eosdis", start_date=pd.Timestamp("2020-01-01"), deaths=50),
-            _make_row(event_id="b1", disaster_type="flood", country="India",
-                      source="noaa", start_date=pd.Timestamp("2020-06-01"), deaths=60),
+            _make_row(
+                event_id="a1",
+                disaster_type="flood",
+                country="India",
+                source="eosdis",
+                start_date=pd.Timestamp("2020-01-01"),
+                deaths=50,
+            ),
+            _make_row(
+                event_id="b1",
+                disaster_type="flood",
+                country="India",
+                source="noaa",
+                start_date=pd.Timestamp("2020-06-01"),
+                deaths=60,
+            ),
         ]
         df = pd.DataFrame(rows)
         result = deduplicator.deduplicate(df)
@@ -72,10 +121,22 @@ class TestDeduplicate:
 
     def test_source_field_combined(self, deduplicator):
         rows = [
-            _make_row(event_id="a1", disaster_type="earthquake", country="Japan",
-                      source="eosdis", start_date=pd.Timestamp("2011-03-11"), deaths=19846),
-            _make_row(event_id="b1", disaster_type="earthquake", country="Japan",
-                      source="noaa", start_date=pd.Timestamp("2011-03-11"), deaths=18000),
+            _make_row(
+                event_id="a1",
+                disaster_type="earthquake",
+                country="Japan",
+                source="eosdis",
+                start_date=pd.Timestamp("2011-03-11"),
+                deaths=19846,
+            ),
+            _make_row(
+                event_id="b1",
+                disaster_type="earthquake",
+                country="Japan",
+                source="noaa",
+                start_date=pd.Timestamp("2011-03-11"),
+                deaths=18000,
+            ),
         ]
         df = pd.DataFrame(rows)
         result = deduplicator.deduplicate(df)

@@ -1,4 +1,5 @@
 """IndexCache: disk-persisted FAISS + BM25 indices with MD5 hash-based invalidation."""
+
 import hashlib
 import logging
 import os

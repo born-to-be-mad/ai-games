@@ -1,4 +1,5 @@
 """CrossSourceDeduplicator: fuzzy dedup of events across data sources."""
+
 import logging
 from typing import Any
 
@@ -6,8 +7,8 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-SIMILARITY_THRESHOLD = 85   # rapidfuzz score 0–100
-DATE_TOLERANCE_DAYS = 7     # events within 7 days = potential duplicate
+SIMILARITY_THRESHOLD = 85  # rapidfuzz score 0–100
+DATE_TOLERANCE_DAYS = 7  # events within 7 days = potential duplicate
 
 
 class CrossSourceDeduplicator:
@@ -33,7 +34,9 @@ class CrossSourceDeduplicator:
         removed = before - len(result)
         logger.info(
             "Deduplication: %d → %d records (%d cross-source duplicates merged)",
-            before, len(result), removed,
+            before,
+            len(result),
+            removed,
         )
         return result
 
@@ -88,6 +91,7 @@ class CrossSourceDeduplicator:
     def _merge_records(a: dict, b: dict) -> dict:
         """Merge two duplicate records; prefer non-null and higher numeric values."""
         from data.loaders.base_loader import NORMALIZED_SCHEMA
+
         merged: dict = {}
         for col in NORMALIZED_SCHEMA:
             val_a, val_b = a.get(col), b.get(col)
@@ -105,7 +109,9 @@ class CrossSourceDeduplicator:
                     merged[col] = max(float(val_a), float(val_b))
             else:
                 # Prefer non-null value from a
-                merged[col] = val_a if (val_a is not None and not _is_na(val_a)) else val_b
+                merged[col] = (
+                    val_a if (val_a is not None and not _is_na(val_a)) else val_b
+                )
 
         # Track merged sources
         src_a = str(a.get("source", ""))

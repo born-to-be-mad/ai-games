@@ -1,4 +1,5 @@
 """Unit tests for HierarchicalChunker."""
+
 import pytest
 
 from search.hierarchical_chunker import HierarchicalChunker
@@ -28,6 +29,7 @@ class TestEnrichText:
 
     def test_missing_deaths_says_unknown(self, chunker):
         import pandas as pd
+
         record = {
             "disaster_type": "drought",
             "country": "Zimbabwe",

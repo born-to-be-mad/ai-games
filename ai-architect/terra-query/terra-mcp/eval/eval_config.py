@@ -1,4 +1,5 @@
 """Evaluation configuration: thresholds, provider selection, dataset sizing."""
+
 from __future__ import annotations
 
 import os
@@ -51,8 +52,12 @@ class EvalConfig:
 
     generator_model: str = "gpt-4o-mini"
     evaluator_model: str = "claude-haiku-4-5-20251001"
-    openai_api_key: str = field(default_factory=lambda: os.environ.get("OPENAI_API_KEY", ""))
-    anthropic_api_key: str = field(default_factory=lambda: os.environ.get("ANTHROPIC_API_KEY", ""))
+    openai_api_key: str = field(
+        default_factory=lambda: os.environ.get("OPENAI_API_KEY", "")
+    )
+    anthropic_api_key: str = field(
+        default_factory=lambda: os.environ.get("ANTHROPIC_API_KEY", "")
+    )
     thresholds: EvalThresholds = field(default_factory=EvalThresholds)
     canary_size: int = 10
     full_size: int = 30
@@ -65,6 +70,10 @@ class EvalConfig:
     def validate(self) -> None:
         """Raise ValueError if required API keys are missing."""
         if not self.openai_api_key:
-            raise ValueError("OPENAI_API_KEY not set — required for generator (gpt-4o-mini)")
+            raise ValueError(
+                "OPENAI_API_KEY not set — required for generator (gpt-4o-mini)"
+            )
         if not self.anthropic_api_key:
-            raise ValueError("ANTHROPIC_API_KEY not set — required for evaluator (claude-haiku)")
+            raise ValueError(
+                "ANTHROPIC_API_KEY not set — required for evaluator (claude-haiku)"
+            )

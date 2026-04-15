@@ -46,7 +46,9 @@ def search_disasters_semantic_logic(
                 year = _get_year(row.get("start_date"))
                 deaths = row.get("deaths")
                 death_str = f", {_fmt_num(deaths)} deaths" if not _is_na(deaths) else ""
-                lines.append(f"  {i}. [score={score:.3f}] {dtype} in {country} ({year}){death_str}")
+                lines.append(
+                    f"  {i}. [score={score:.3f}] {dtype} in {country} ({year}){death_str}"
+                )
                 continue
 
         snippet = text[:120].rstrip() + ("..." if len(text) > 120 else "")
@@ -85,6 +87,7 @@ def _get_year(val) -> str:
         return "unknown"
     try:
         import pandas as pd
+
         if pd.isna(val):
             return "unknown"
         return str(pd.Timestamp(val).year)
@@ -95,6 +98,7 @@ def _get_year(val) -> str:
 def _is_na(val) -> bool:
     try:
         import pandas as pd
+
         return pd.isna(val)
     except (TypeError, ImportError):
         return val is None

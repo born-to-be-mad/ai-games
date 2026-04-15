@@ -1,4 +1,5 @@
 """TerraQuery MCP server — FastMCP entry point."""
+
 import logging
 import os
 import sys
@@ -55,7 +56,9 @@ def startup() -> tuple[DisasterRepository, HybridSearchEngine | None, EonetClien
 
     engine: HybridSearchEngine | None = None
     if not repo.df.empty:
-        data_hash = IndexCache.compute_data_hash(*data_files) if data_files else "default"
+        data_hash = (
+            IndexCache.compute_data_hash(*data_files) if data_files else "default"
+        )
         indices = cache.get_or_build(
             data_hash,
             lambda: build_indices(repo.df, chunker),
@@ -63,10 +66,15 @@ def startup() -> tuple[DisasterRepository, HybridSearchEngine | None, EonetClien
         repo.set_indices(indices)
         rrf_config = RRFConfig.from_env()
         engine = HybridSearchEngine(indices=indices, config=rrf_config)
-        logger.info("Search engine ready (BM25=%s, FAISS=%s)",
-                    indices.bm25 is not None, indices.faiss_index is not None)
+        logger.info(
+            "Search engine ready (BM25=%s, FAISS=%s)",
+            indices.bm25 is not None,
+            indices.faiss_index is not None,
+        )
     else:
-        logger.warning("No disaster data loaded — search tools will return empty results")
+        logger.warning(
+            "No disaster data loaded — search tools will return empty results"
+        )
 
     eonet_client = EonetClient()
     logger.info("=== TerraQuery MCP Server ready ===")

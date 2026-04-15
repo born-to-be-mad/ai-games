@@ -1,4 +1,5 @@
 """Integration tests: server tool registration and module import smoke tests."""
+
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -63,6 +64,7 @@ class TestLogicFunctionsImport:
 
     def test_query_logic_importable(self):
         from tools.disaster_query import query_disasters_logic
+
         assert callable(query_disasters_logic)
 
     def test_stats_logic_importable(self):
@@ -72,6 +74,7 @@ class TestLogicFunctionsImport:
             get_disaster_trends_logic,
             compare_disasters_across_countries_logic,
         )
+
         for fn in (
             get_disaster_statistics_logic,
             get_deadliest_disasters_logic,
@@ -82,8 +85,10 @@ class TestLogicFunctionsImport:
 
     def test_rag_logic_importable(self):
         from tools.disaster_rag import search_disasters_semantic_logic
+
         assert callable(search_disasters_semantic_logic)
 
     def test_live_events_logic_importable(self):
         from tools.live_events import get_live_events_logic
+
         assert callable(get_live_events_logic)

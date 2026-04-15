@@ -1,4 +1,5 @@
 """Loader for NOAA Storm Events database CSV."""
+
 import logging
 import os
 from pathlib import Path
@@ -113,7 +114,9 @@ class NoaaLoader(BaseLoader):
             logger.error("Failed to read NOAA CSV: %s", exc)
             return self._empty_frame()
 
-        df = raw.rename(columns={k: v for k, v in _COLUMN_MAP.items() if k in raw.columns})
+        df = raw.rename(
+            columns={k: v for k, v in _COLUMN_MAP.items() if k in raw.columns}
+        )
 
         # Deaths = direct + indirect
         d_dir = pd.to_numeric(df.get("_deaths_direct", 0), errors="coerce").fillna(0)
@@ -121,7 +124,9 @@ class NoaaLoader(BaseLoader):
         df["deaths"] = (d_dir + d_ind).where(d_dir + d_ind > 0, other=pd.NA)
 
         i_dir = pd.to_numeric(df.get("_injuries_direct", 0), errors="coerce").fillna(0)
-        i_ind = pd.to_numeric(df.get("_injuries_indirect", 0), errors="coerce").fillna(0)
+        i_ind = pd.to_numeric(df.get("_injuries_indirect", 0), errors="coerce").fillna(
+            0
+        )
         df["injured"] = (i_dir + i_ind).where(i_dir + i_ind > 0, other=pd.NA)
 
         # Property + crop damage → economic_damage_usd

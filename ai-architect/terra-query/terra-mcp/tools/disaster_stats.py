@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # Logic functions (testable without FastMCP)
 # -------------------------------------------------------------------------
 
+
 def get_disaster_statistics_logic(
     repo: "DisasterRepository",
     disaster_type: Optional[str] = None,
@@ -30,8 +31,10 @@ def get_disaster_statistics_logic(
 ) -> str:
     try:
         params = DisasterStatsParams(
-            disaster_type=disaster_type, country=country,
-            year_from=year_from, year_to=year_to,
+            disaster_type=disaster_type,
+            country=country,
+            year_from=year_from,
+            year_to=year_to,
         )
     except Exception as exc:
         return f"Invalid parameters: {exc}"
@@ -50,7 +53,9 @@ def get_disaster_statistics_logic(
     total_deaths = _safe_sum(df, "deaths")
     total_affected = _safe_sum(df, "affected")
     total_damage = _safe_sum(df, "economic_damage_usd")
-    avg_deaths = (total_deaths / total_events) if total_events > 0 and total_deaths else None
+    avg_deaths = (
+        (total_deaths / total_events) if total_events > 0 and total_deaths else None
+    )
 
     worst_idx = df["deaths"].idxmax() if not df["deaths"].isna().all() else None
     worst_event = _describe_event(df.loc[worst_idx]) if worst_idx is not None else "N/A"
@@ -82,6 +87,7 @@ def get_deadliest_disasters_logic(
     n = max(1, min(n, 50))
     try:
         from validation.tool_params import DisasterQueryParams
+
         params = DisasterQueryParams(
             disaster_type=disaster_type,
             year_from=year_from,
@@ -100,7 +106,9 @@ def get_deadliest_disasters_logic(
     if df.empty:
         return "No records found."
 
-    df_sorted = df.dropna(subset=["deaths"]).sort_values("deaths", ascending=False).head(n)
+    df_sorted = (
+        df.dropna(subset=["deaths"]).sort_values("deaths", ascending=False).head(n)
+    )
     if df_sorted.empty:
         return "No records with known death tolls found."
 
@@ -123,8 +131,10 @@ def get_disaster_trends_logic(
 ) -> str:
     try:
         params = TrendParams(
-            disaster_type=disaster_type, country=country,
-            year_from=year_from, year_to=year_to,
+            disaster_type=disaster_type,
+            country=country,
+            year_from=year_from,
+            year_to=year_to,
         )
     except Exception as exc:
         return f"Invalid parameters: {exc}"
@@ -144,7 +154,11 @@ def get_disaster_trends_logic(
 
     yearly = (
         df.groupby("year")
-        .agg(events=("event_id", "count"), deaths=("deaths", "sum"), affected=("affected", "sum"))
+        .agg(
+            events=("event_id", "count"),
+            deaths=("deaths", "sum"),
+            affected=("affected", "sum"),
+        )
         .reindex(range(params.year_from, params.year_to + 1), fill_value=0)
     )
 
@@ -162,13 +176,21 @@ def get_disaster_trends_logic(
         )
 
     mid = (params.year_from + params.year_to) // 2
-    first_half = yearly.loc[params.year_from:mid, "events"].mean()
-    second_half = yearly.loc[mid + 1:params.year_to, "events"].mean()
+    first_half = yearly.loc[params.year_from : mid, "events"].mean()
+    second_half = yearly.loc[mid + 1 : params.year_to, "events"].mean()
     if first_half > 0:
         change_pct = (second_half - first_half) / first_half * 100
-        direction = "increased" if change_pct > 5 else "decreased" if change_pct < -5 else "remained stable"
-        lines.append(f"\nTrend: {params.disaster_type} frequency has {direction} "
-                     f"({change_pct:+.0f}% from first half to second half of period).")
+        direction = (
+            "increased"
+            if change_pct > 5
+            else "decreased"
+            if change_pct < -5
+            else "remained stable"
+        )
+        lines.append(
+            f"\nTrend: {params.disaster_type} frequency has {direction} "
+            f"({change_pct:+.0f}% from first half to second half of period)."
+        )
     return "\n".join(lines)
 
 
@@ -181,8 +203,10 @@ def compare_disasters_across_countries_logic(
 ) -> str:
     try:
         params = CompareCountriesParams(
-            disaster_type=disaster_type, countries=countries,
-            year_from=year_from, year_to=year_to,
+            disaster_type=disaster_type,
+            countries=countries,
+            year_from=year_from,
+            year_to=year_to,
         )
     except Exception as exc:
         return f"Invalid parameters: {exc}"
@@ -219,6 +243,7 @@ def compare_disasters_across_countries_logic(
 # FastMCP registration
 # -------------------------------------------------------------------------
 
+
 def register_stats_tools(mcp, repo: "DisasterRepository") -> None:
     """Register all statistics-related tools on the FastMCP instance."""
 
@@ -230,7 +255,9 @@ def register_stats_tools(mcp, repo: "DisasterRepository") -> None:
             "Accepted values: 'flood', 'earthquake', 'storm', 'drought', 'wildfire', "
             "'volcano', 'landslide', 'epidemic', 'extreme_temperature'. Leave None for all types.",
         ] = None,
-        country: Annotated[Optional[str], "ISO 3166-1 alpha-3 country code or full country name."] = None,
+        country: Annotated[
+            Optional[str], "ISO 3166-1 alpha-3 country code or full country name."
+        ] = None,
         year_from: Annotated[Optional[int], "Start year (inclusive)."] = None,
         year_to: Annotated[Optional[int], "End year (inclusive)."] = None,
     ) -> str:
@@ -240,12 +267,16 @@ def register_stats_tools(mcp, repo: "DisasterRepository") -> None:
         average deaths per event, worst single event, most frequent disaster type.
         Use this tool when the user asks about scale, totals, averages, or comparative impact.
         """
-        return get_disaster_statistics_logic(repo, disaster_type, country, year_from, year_to)
+        return get_disaster_statistics_logic(
+            repo, disaster_type, country, year_from, year_to
+        )
 
     @mcp.tool()
     def get_deadliest_disasters(
         n: Annotated[int, "Number of top deadliest events to return (1–50)."] = 10,
-        disaster_type: Annotated[Optional[str], "Optional filter by disaster type."] = None,
+        disaster_type: Annotated[
+            Optional[str], "Optional filter by disaster type."
+        ] = None,
         year_from: Annotated[Optional[int], "Start year (inclusive)."] = None,
         year_to: Annotated[Optional[int], "End year (inclusive)."] = None,
     ) -> str:
@@ -264,7 +295,9 @@ def register_stats_tools(mcp, repo: "DisasterRepository") -> None:
             "Valid: 'flood', 'earthquake', 'storm', 'drought', 'wildfire', "
             "'volcano', 'landslide', 'epidemic', 'extreme_temperature'.",
         ],
-        country: Annotated[Optional[str], "Country to scope the trend. Leave None for global."] = None,
+        country: Annotated[
+            Optional[str], "Country to scope the trend. Leave None for global."
+        ] = None,
         year_from: Annotated[int, "Start year for trend window."] = 1970,
         year_to: Annotated[int, "End year for trend window."] = 2021,
     ) -> str:
@@ -273,7 +306,9 @@ def register_stats_tools(mcp, repo: "DisasterRepository") -> None:
         given disaster type. Use this when the user asks 'are floods increasing?',
         'how has the frequency of hurricanes changed?', or any question involving trends over time.
         """
-        return get_disaster_trends_logic(repo, disaster_type, country, year_from, year_to)
+        return get_disaster_trends_logic(
+            repo, disaster_type, country, year_from, year_to
+        )
 
     @mcp.tool()
     def compare_disasters_across_countries(
@@ -287,12 +322,15 @@ def register_stats_tools(mcp, repo: "DisasterRepository") -> None:
         Returns a table with per-country totals: events, deaths, affected, economic damage.
         Use when the user asks to compare how different countries are affected by a specific disaster type.
         """
-        return compare_disasters_across_countries_logic(repo, disaster_type, countries, year_from, year_to)
+        return compare_disasters_across_countries_logic(
+            repo, disaster_type, countries, year_from, year_to
+        )
 
 
 # -------------------------------------------------------------------------
 # helpers
 # -------------------------------------------------------------------------
+
 
 def _safe_sum(df: pd.DataFrame, col: str):
     if col not in df.columns or df[col].isna().all():

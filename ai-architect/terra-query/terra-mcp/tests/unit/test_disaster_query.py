@@ -1,4 +1,5 @@
 """Unit tests for disaster_query tool logic."""
+
 from tools.disaster_query import query_disasters_logic
 
 
@@ -31,7 +32,9 @@ class TestQueryDisasters:
         assert "1 disaster" in result.lower()
 
     def test_no_results_graceful(self, mock_repo):
-        result = query_disasters_logic(mock_repo, disaster_type="epidemic", country="Antarctica")
+        result = query_disasters_logic(
+            mock_repo, disaster_type="epidemic", country="Antarctica"
+        )
         assert "no" in result.lower()
 
     def test_sorted_most_recent_first(self, mock_repo):

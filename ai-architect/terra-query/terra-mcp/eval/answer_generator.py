@@ -1,4 +1,5 @@
 """Answer generator: retrieves contexts from MCP, produces answers via generator LLM."""
+
 from __future__ import annotations
 
 import logging
@@ -23,8 +24,7 @@ class EvalSample:
 class ContextRetriever(Protocol):
     """Pluggable context-retrieval strategy (injectable for testing)."""
 
-    def retrieve(self, question: str) -> list[str]:
-        ...
+    def retrieve(self, question: str) -> list[str]: ...
 
 
 class McpDirectRetriever:
@@ -37,7 +37,9 @@ class McpDirectRetriever:
 
     def retrieve(self, question: str) -> list[str]:
         if self._engine is None:
-            logger.warning("No search engine — contexts will be empty for question: %s", question)
+            logger.warning(
+                "No search engine — contexts will be empty for question: %s", question
+            )
             return []
         results = self._engine.search(question)
         texts: list[str] = []
@@ -115,14 +117,18 @@ class AnswerGenerator:
         self._retriever = retriever
         self._generate = generator_llm_fn
 
-    def generate_sample(self, question_id: str, question: str, ground_truth: str) -> EvalSample:
+    def generate_sample(
+        self, question_id: str, question: str, ground_truth: str
+    ) -> EvalSample:
         contexts = self._retriever.retrieve(question)
         if not contexts:
-            logger.warning("No contexts retrieved for question %s: %s", question_id, question)
+            logger.warning(
+                "No contexts retrieved for question %s: %s", question_id, question
+            )
             answer = "Insufficient context to answer this question."
         else:
             prompt = self._PROMPT_TEMPLATE.format(
-                context="\n\n".join(f"[{i+1}] {c}" for i, c in enumerate(contexts)),
+                context="\n\n".join(f"[{i + 1}] {c}" for i, c in enumerate(contexts)),
                 question=question,
             )
             answer = self._generate(prompt)
@@ -143,7 +149,9 @@ class AnswerGenerator:
             qid = entry["id"]
             logger.info("Generating answer for %s", qid)
             try:
-                sample = self.generate_sample(qid, entry["question"], entry["ground_truth"])
+                sample = self.generate_sample(
+                    qid, entry["question"], entry["ground_truth"]
+                )
                 samples.append(sample)
             except Exception as exc:
                 logger.error("Failed to generate sample for %s: %s", qid, exc)

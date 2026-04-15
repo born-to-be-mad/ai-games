@@ -1,4 +1,5 @@
 """Unit tests for HybridSearchEngine and RRFConfig."""
+
 from search.rrf_config import RRFConfig
 
 
@@ -32,13 +33,18 @@ class TestHybridSearchEngine:
     def test_empty_query_returns_empty(self):
         from unittest.mock import MagicMock
         from search.hybrid_search import HybridSearchEngine
-        engine = HybridSearchEngine(indices=MagicMock(bm25=None, faiss_index=None,
-                                                       enriched_texts=[], record_ids=[]))
+
+        engine = HybridSearchEngine(
+            indices=MagicMock(
+                bm25=None, faiss_index=None, enriched_texts=[], record_ids=[]
+            )
+        )
         assert engine.search("") == []
 
     def test_no_indices_returns_empty(self):
         from unittest.mock import MagicMock
         from search.hybrid_search import HybridSearchEngine
+
         indices = MagicMock()
         indices.bm25 = None
         indices.faiss_index = None

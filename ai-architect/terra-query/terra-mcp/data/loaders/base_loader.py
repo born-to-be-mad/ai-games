@@ -1,4 +1,5 @@
 """Abstract base class for all disaster data loaders."""
+
 from abc import ABC, abstractmethod
 import pandas as pd
 

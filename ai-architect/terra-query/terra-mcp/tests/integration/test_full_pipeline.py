@@ -1,4 +1,5 @@
 """Integration tests: load → normalize → deduplicate → index → search pipeline."""
+
 import sys
 from pathlib import Path
 
@@ -54,10 +55,12 @@ class TestLoaderPipeline:
 class TestRepositoryPipeline:
     @pytest.fixture()
     def repo(self):
-        r = DisasterRepository(loaders=[
-            EosdisLoader(data_dir=SAMPLES_DIR),
-            NoaaLoader(data_dir=SAMPLES_DIR),
-        ])
+        r = DisasterRepository(
+            loaders=[
+                EosdisLoader(data_dir=SAMPLES_DIR),
+                NoaaLoader(data_dir=SAMPLES_DIR),
+            ]
+        )
         r.load()
         return r
 

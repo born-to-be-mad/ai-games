@@ -108,8 +108,11 @@ class CircuitBreaker:
             self._failure_count += 1
             logger.warning(
                 "[CB:%s] failure %d/%d — %s: %s",
-                self.name, self._failure_count, self._failure_threshold,
-                type(exc).__name__, exc,
+                self.name,
+                self._failure_count,
+                self._failure_threshold,
+                type(exc).__name__,
+                exc,
             )
             if self._failure_count >= self._failure_threshold:
                 logger.error("[CB:%s] → OPEN", self.name)

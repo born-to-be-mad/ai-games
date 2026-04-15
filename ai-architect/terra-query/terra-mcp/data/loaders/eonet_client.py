@@ -1,4 +1,5 @@
 """Async HTTP client for NASA EONET (Earth Observatory Natural Event Tracker)."""
+
 import asyncio
 import logging
 from typing import Any
@@ -21,11 +22,11 @@ _CATEGORY_MAP = {
     "floods": "flood",
     "drought": "drought",
     "dustHaze": "storm",
-    "manmade": None,        # skip man-made events
+    "manmade": None,  # skip man-made events
     "seaLakeIce": "extreme_temperature",
     "tempExtremes": "extreme_temperature",
     "snow": "storm",
-    "waterColor": None,     # skip
+    "waterColor": None,  # skip
 }
 
 
@@ -103,14 +104,17 @@ class EonetClient:
         Synchronous wrapper for use in non-async contexts (FastMCP tools).
         Delegates to the circuit breaker so CB state is shared with async callers.
         """
+
         async def _inner():
             return await self.get_active_events(disaster_type, days)
 
         try:
             return self._circuit_breaker.call(
-                lambda: asyncio.get_event_loop().run_until_complete(_inner())
-                if not asyncio.get_event_loop().is_running()
-                else _run_in_thread(_inner, timeout=self._timeout + 5)
+                lambda: (
+                    asyncio.get_event_loop().run_until_complete(_inner())
+                    if not asyncio.get_event_loop().is_running()
+                    else _run_in_thread(_inner, timeout=self._timeout + 5)
+                )
             )
         except CircuitBreakerOpenError as exc:
             logger.warning("EONET circuit breaker open (sync): %s", exc)
@@ -122,6 +126,7 @@ class EonetClient:
 
 def _run_in_thread(coro_fn, timeout: float) -> list:
     import concurrent.futures
+
     with concurrent.futures.ThreadPoolExecutor() as pool:
         future = pool.submit(asyncio.run, coro_fn())
         return future.result(timeout=timeout)

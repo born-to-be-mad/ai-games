@@ -1,4 +1,5 @@
 """Unit tests for IndexCache."""
+
 from unittest.mock import MagicMock
 
 import pytest

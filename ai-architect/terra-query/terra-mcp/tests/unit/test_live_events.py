@@ -1,4 +1,5 @@
 """Unit tests for get_live_events tool logic."""
+
 from tools.live_events import get_live_events_logic
 
 
@@ -27,7 +28,11 @@ class TestGetLiveEvents:
     def test_no_events_graceful(self, mock_eonet_client):
         mock_eonet_client.get_active_events_sync.return_value = []
         result = get_live_events_logic(mock_eonet_client)
-        assert "no active" in result.lower() or "not found" in result.lower() or "unavailable" in result.lower()
+        assert (
+            "no active" in result.lower()
+            or "not found" in result.lower()
+            or "unavailable" in result.lower()
+        )
 
     def test_includes_coordinates(self, mock_eonet_client):
         result = get_live_events_logic(mock_eonet_client)
@@ -39,4 +44,6 @@ class TestGetLiveEvents:
 
     def test_type_filter_passed_to_client(self, mock_eonet_client):
         get_live_events_logic(mock_eonet_client, disaster_type="wildfire")
-        mock_eonet_client.get_active_events_sync.assert_called_with(disaster_type="wildfire", days=30)
+        mock_eonet_client.get_active_events_sync.assert_called_with(
+            disaster_type="wildfire", days=30
+        )
