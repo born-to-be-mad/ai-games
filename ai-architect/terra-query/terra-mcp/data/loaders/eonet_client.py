@@ -95,7 +95,7 @@ class EonetClient:
             return []
 
         events = data.get("events", [])
-        return [self._normalize_event(e) for e in events if self._normalize_event(e)]
+        return [n for e in events if (n := self._normalize_event(e)) is not None]
 
     def get_active_events_sync(
         self, disaster_type: str | None = None, days: int = 30
@@ -122,14 +122,6 @@ class EonetClient:
         except Exception as exc:
             logger.warning("EONET sync wrapper error: %s", exc)
             return []
-
-
-def _run_in_thread(coro_fn, timeout: float) -> list:
-    import concurrent.futures
-
-    with concurrent.futures.ThreadPoolExecutor() as pool:
-        future = pool.submit(asyncio.run, coro_fn())
-        return future.result(timeout=timeout)
 
     def _normalize_event(self, raw: dict) -> dict | None:
         categories = raw.get("categories", [])
@@ -176,3 +168,11 @@ def _run_in_thread(coro_fn, timeout: float) -> list:
             "extreme_temperature": ["tempExtremes", "seaLakeIce"],
         }
         return mapping.get(dt, [])
+
+
+def _run_in_thread(coro_fn, timeout: float) -> list:
+    import concurrent.futures
+
+    with concurrent.futures.ThreadPoolExecutor() as pool:
+        future = pool.submit(asyncio.run, coro_fn())
+        return future.result(timeout=timeout)

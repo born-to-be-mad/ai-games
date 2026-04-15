@@ -105,8 +105,10 @@ class CrossSourceDeduplicator:
                     merged[col] = val_b
                 elif na_b:
                     merged[col] = val_a
-                else:
+                elif val_a is not None and val_b is not None:
                     merged[col] = max(float(val_a), float(val_b))
+                else:
+                    merged[col] = val_a if val_a is not None else val_b
             else:
                 # Prefer non-null value from a
                 merged[col] = (

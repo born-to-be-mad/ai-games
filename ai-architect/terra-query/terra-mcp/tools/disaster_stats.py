@@ -90,6 +90,7 @@ def get_deadliest_disasters_logic(
 
         params = DisasterQueryParams(
             disaster_type=disaster_type,
+            country=None,
             year_from=year_from,
             year_to=year_to,
             limit=n,

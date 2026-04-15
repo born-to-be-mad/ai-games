@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Literal, cast
 
 # Ensure project root is on path for relative imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -92,6 +93,9 @@ register_rag_tool(mcp, _repo, _engine)
 register_live_events_tool(mcp, _eonet)
 
 if __name__ == "__main__":
-    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+    transport = cast(
+        Literal["stdio", "sse", "streamable-http"],
+        os.getenv("MCP_TRANSPORT", "streamable-http"),
+    )
     logger.info("Starting server with transport=%s on port 8080", transport)
     mcp.run(transport=transport)

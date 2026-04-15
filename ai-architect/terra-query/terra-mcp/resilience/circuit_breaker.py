@@ -72,7 +72,10 @@ class CircuitBreaker:
         """
         with self._lock:
             if self._state == CircuitState.OPEN:
-                if time.monotonic() - self._opened_at >= self._reset_timeout_s:
+                if (
+                    self._opened_at is not None
+                    and time.monotonic() - self._opened_at >= self._reset_timeout_s
+                ):
                     logger.info("[CB:%s] → HALF_OPEN (probing)", self.name)
                     self._state = CircuitState.HALF_OPEN
                     self._success_count = 0
