@@ -1,4 +1,5 @@
 """Unit tests for AnswerGenerator and McpDirectRetriever."""
+
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -8,7 +9,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from eval.answer_generator import AnswerGenerator, EvalSample, McpDirectRetriever, _row_to_context
+from eval.answer_generator import (
+    AnswerGenerator,
+    EvalSample,
+    McpDirectRetriever,
+    _row_to_context,
+)
 
 
 class TestMcpDirectRetriever:
@@ -16,8 +22,16 @@ class TestMcpDirectRetriever:
     def engine_with_results(self):
         engine = MagicMock()
         engine.search.return_value = [
-            {"record_id": "eosdis_1", "score": 0.90, "text": "Earthquake in Indonesia 2004"},
-            {"record_id": "eosdis_3", "score": 0.75, "text": "Earthquake in Haiti 2010"},
+            {
+                "record_id": "eosdis_1",
+                "score": 0.90,
+                "text": "Earthquake in Indonesia 2004",
+            },
+            {
+                "record_id": "eosdis_3",
+                "score": 0.75,
+                "text": "Earthquake in Haiti 2010",
+            },
         ]
         return engine
 
@@ -48,9 +62,15 @@ class TestMcpDirectRetriever:
         contexts = retriever.retrieve("floods")
         assert len(contexts) <= 3
 
-    def test_retrieve_falls_back_to_text_when_no_row_match(self, small_repo, engine_with_results):
+    def test_retrieve_falls_back_to_text_when_no_row_match(
+        self, small_repo, engine_with_results
+    ):
         engine_with_results.search.return_value = [
-            {"record_id": "nonexistent_999", "score": 0.80, "text": "Some fallback text"},
+            {
+                "record_id": "nonexistent_999",
+                "score": 0.80,
+                "text": "Some fallback text",
+            },
         ]
         retriever = McpDirectRetriever(small_repo, engine_with_results, top_k=5)
         contexts = retriever.retrieve("storms")
@@ -108,11 +128,17 @@ class TestAnswerGenerator:
 
     @pytest.fixture()
     def mock_generator_fn(self):
-        return lambda prompt: "Bangladesh has experienced many flood disasters historically."
+        return lambda prompt: (
+            "Bangladesh has experienced many flood disasters historically."
+        )
 
-    def test_generate_sample_returns_eval_sample(self, mock_retriever, mock_generator_fn):
+    def test_generate_sample_returns_eval_sample(
+        self, mock_retriever, mock_generator_fn
+    ):
         gen = AnswerGenerator(mock_retriever, mock_generator_fn)
-        sample = gen.generate_sample("gd-001", "How many floods in Bangladesh?", "Over 100 floods.")
+        sample = gen.generate_sample(
+            "gd-001", "How many floods in Bangladesh?", "Over 100 floods."
+        )
         assert isinstance(sample, EvalSample)
         assert sample.question_id == "gd-001"
         assert sample.question == "How many floods in Bangladesh?"
@@ -120,7 +146,9 @@ class TestAnswerGenerator:
         assert len(sample.contexts) == 2
         assert "Bangladesh" in sample.answer
 
-    def test_generate_sample_empty_contexts_returns_fallback_answer(self, mock_generator_fn):
+    def test_generate_sample_empty_contexts_returns_fallback_answer(
+        self, mock_generator_fn
+    ):
         retriever = MagicMock()
         retriever.retrieve.return_value = []
         gen = AnswerGenerator(retriever, mock_generator_fn)
@@ -142,7 +170,9 @@ class TestAnswerGenerator:
         assert "How many floods?" in captured[0]
         assert "some context" in captured[0]
 
-    def test_generate_batch_processes_all_entries(self, mock_retriever, mock_generator_fn):
+    def test_generate_batch_processes_all_entries(
+        self, mock_retriever, mock_generator_fn
+    ):
         gen = AnswerGenerator(mock_retriever, mock_generator_fn)
         entries = [
             {"id": f"gd-{i:03d}", "question": f"Q{i}", "ground_truth": f"GT{i}"}

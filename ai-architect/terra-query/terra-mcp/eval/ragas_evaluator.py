@@ -4,6 +4,7 @@ Cross-provider design:
   Generator: OpenAI gpt-4o-mini  (produces answers)
   Evaluator: Anthropic claude-haiku  (scores answers — avoids self-eval bias)
 """
+
 from __future__ import annotations
 
 import logging
@@ -14,7 +15,12 @@ from eval.eval_config import EvalConfig, EvalThresholds
 
 logger = logging.getLogger(__name__)
 
-METRIC_NAMES = ("context_precision", "context_recall", "faithfulness", "answer_relevance")
+METRIC_NAMES = (
+    "context_precision",
+    "context_recall",
+    "faithfulness",
+    "answer_relevance",
+)
 
 
 @dataclass
@@ -65,13 +71,20 @@ class EvalResult:
                 f"  [{m.status}] {m.name:<22} {m.score:.3f}  "
                 f"(target≥{m.threshold:.2f}, min≥{m.min_threshold:.2f})"
             )
-        overall = "ALL PASS" if self.all_pass else ("WARN" if self.above_minimum else "HARD FAIL")
+        overall = (
+            "ALL PASS"
+            if self.all_pass
+            else ("WARN" if self.above_minimum else "HARD FAIL")
+        )
         lines.append(f"\nOverall: {overall}")
         return "\n".join(lines)
 
     def to_github_summary(self) -> str:
         """Markdown table for GitHub Actions job summary."""
-        rows = ["| Metric | Score | Target | Min | Status |", "|--------|-------|--------|-----|--------|"]
+        rows = [
+            "| Metric | Score | Target | Min | Status |",
+            "|--------|-------|--------|-----|--------|",
+        ]
         for m in self.metric_scores:
             icon = "✅" if m.passes else ("⚠️" if m.above_minimum else "❌")
             rows.append(

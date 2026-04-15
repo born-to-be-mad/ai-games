@@ -86,7 +86,9 @@ def register_query_tool(mcp, repo: "DisasterRepository") -> None:
         user asks about specific disaster events or wants to explore what disasters
         occurred in a particular region or time period.
         """
-        return query_disasters_logic(repo, disaster_type, country, year_from, year_to, limit)
+        return query_disasters_logic(
+            repo, disaster_type, country, year_from, year_to, limit
+        )
 
 
 def _describe_filters(params: DisasterQueryParams) -> str:

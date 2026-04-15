@@ -1,4 +1,5 @@
 """Unit tests for DataNormalizer."""
+
 import pandas as pd
 import pytest
 
@@ -30,7 +31,9 @@ class TestCountryToIso3:
         assert result == "DEU"
 
     def test_case_insensitive(self, normalizer):
-        assert normalizer.country_to_iso3("FRANCE") == normalizer.country_to_iso3("france")
+        assert normalizer.country_to_iso3("FRANCE") == normalizer.country_to_iso3(
+            "france"
+        )
 
 
 class TestNullHandling:

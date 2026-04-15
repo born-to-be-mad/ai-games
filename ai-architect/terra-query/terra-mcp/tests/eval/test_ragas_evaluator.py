@@ -1,4 +1,5 @@
 """Unit tests for RagasEvaluator, MetricScore, and EvalResult."""
+
 import sys
 from pathlib import Path
 from unittest.mock import patch
@@ -17,7 +18,10 @@ def _make_sample(qid: str = "gd-001") -> EvalSample:
         question_id=qid,
         question="How many flood events occurred in Bangladesh?",
         ground_truth="Over 100 floods between 1990 and 2021.",
-        contexts=["Bangladesh flood 1998: 1050 deaths.", "Flood frequency doubled in 2010s."],
+        contexts=[
+            "Bangladesh flood 1998: 1050 deaths.",
+            "Flood frequency doubled in 2010s.",
+        ],
         answer="Bangladesh experienced over 100 flood events between 1990 and 2021.",
     )
 
@@ -48,7 +52,9 @@ class TestMetricScore:
         assert m.status == "FAIL"
 
     def test_pass_status(self):
-        m = MetricScore("context_precision", score=0.85, threshold=0.80, min_threshold=0.70)
+        m = MetricScore(
+            "context_precision", score=0.85, threshold=0.80, min_threshold=0.70
+        )
         assert m.status == "PASS"
 
 
@@ -146,7 +152,9 @@ class TestRagasEvaluator:
 
     @patch("eval.ragas_evaluator.RagasEvaluator._run_ragas")
     @patch("eval.ragas_evaluator.RagasEvaluator._to_ragas_samples")
-    def test_evaluate_calls_run_ragas_and_builds_result(self, mock_to_samples, mock_run_ragas):
+    def test_evaluate_calls_run_ragas_and_builds_result(
+        self, mock_to_samples, mock_run_ragas
+    ):
         mock_to_samples.return_value = ["stub_sample_1", "stub_sample_2"]
         mock_run_ragas.return_value = {
             "context_precision": 0.83,
@@ -166,6 +174,7 @@ class TestRagasEvaluator:
     def test_to_ragas_samples_maps_fields_correctly(self):
         # Mock ragas.dataset_schema so test runs without ragas installed
         import types
+
         fake_ragas = types.ModuleType("ragas")
         fake_schema = types.ModuleType("ragas.dataset_schema")
 
@@ -177,7 +186,9 @@ class TestRagasEvaluator:
         fake_schema.SingleTurnSample = FakeSingleTurnSample
         fake_ragas.dataset_schema = fake_schema
 
-        with patch.dict("sys.modules", {"ragas": fake_ragas, "ragas.dataset_schema": fake_schema}):
+        with patch.dict(
+            "sys.modules", {"ragas": fake_ragas, "ragas.dataset_schema": fake_schema}
+        ):
             cfg = _make_config()
             evaluator = RagasEvaluator(cfg)
             samples = [_make_sample()]
@@ -191,6 +202,7 @@ class TestRagasEvaluator:
 
     def test_to_ragas_samples_empty_contexts_padded(self):
         import types
+
         fake_ragas = types.ModuleType("ragas")
         fake_schema = types.ModuleType("ragas.dataset_schema")
 
@@ -202,7 +214,9 @@ class TestRagasEvaluator:
         fake_schema.SingleTurnSample = FakeSingleTurnSample
         fake_ragas.dataset_schema = fake_schema
 
-        with patch.dict("sys.modules", {"ragas": fake_ragas, "ragas.dataset_schema": fake_schema}):
+        with patch.dict(
+            "sys.modules", {"ragas": fake_ragas, "ragas.dataset_schema": fake_schema}
+        ):
             cfg = _make_config()
             evaluator = RagasEvaluator(cfg)
             sample = EvalSample("gd-001", "Q?", "GT", contexts=[], answer="A")

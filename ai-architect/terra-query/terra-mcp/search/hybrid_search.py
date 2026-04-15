@@ -1,4 +1,5 @@
 """HybridSearchEngine: BM25 + FAISS + Reciprocal Rank Fusion."""
+
 from __future__ import annotations
 
 import logging
@@ -21,7 +22,7 @@ class HybridSearchEngine:
 
     def __init__(
         self,
-        indices: Any,          # SearchIndices from index_builder
+        indices: Any,  # SearchIndices from index_builder
         config: RRFConfig | None = None,
     ) -> None:
         self._indices = indices
@@ -70,10 +71,14 @@ class HybridSearchEngine:
         rrf_scores: dict[int, float] = {}
 
         for rank, (idx, _) in enumerate(bm25_results):
-            rrf_scores[idx] = rrf_scores.get(idx, 0.0) + cfg.bm25_weight / (cfg.k + rank + 1)
+            rrf_scores[idx] = rrf_scores.get(idx, 0.0) + cfg.bm25_weight / (
+                cfg.k + rank + 1
+            )
 
         for rank, (idx, _) in enumerate(faiss_results):
-            rrf_scores[idx] = rrf_scores.get(idx, 0.0) + cfg.vector_weight / (cfg.k + rank + 1)
+            rrf_scores[idx] = rrf_scores.get(idx, 0.0) + cfg.vector_weight / (
+                cfg.k + rank + 1
+            )
 
         sorted_ids = sorted(rrf_scores, key=rrf_scores.__getitem__, reverse=True)
         top_ids = sorted_ids[: cfg.final_top_k]
@@ -110,6 +115,7 @@ class HybridSearchEngine:
             return []
         try:
             import os
+
             model_name = os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
             model = _get_cached_model(model_name)
             embedding = model.encode([query], normalize_embeddings=True)
@@ -132,5 +138,6 @@ _model_cache: dict[str, Any] = {}
 def _get_cached_model(name: str) -> Any:
     if name not in _model_cache:
         from sentence_transformers import SentenceTransformer
+
         _model_cache[name] = SentenceTransformer(name)
     return _model_cache[name]

@@ -6,6 +6,7 @@ Results drive Docker deploy.resources.limits.
 Usage:
     python scripts/memory_profile.py [--data-dir /path/to/data]
 """
+
 import argparse
 import logging
 import os
@@ -24,6 +25,7 @@ def _get_rss_mb() -> float:
     """Current process RSS in MB."""
     try:
         import psutil
+
         return psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
     except ImportError:
         return 0.0
@@ -87,7 +89,11 @@ def profile_startup(data_dir: Path) -> dict:
     logger.info("RSS before:    %.1f MB", results["rss_before_mb"])
     logger.info("RSS after:     %.1f MB", results["rss_after_mb"])
     logger.info("RSS delta:     %.1f MB", results["rss_delta_mb"])
-    logger.info("Load time:     %.2f s (%d records)", results["load_time_s"], results["record_count"])
+    logger.info(
+        "Load time:     %.2f s (%d records)",
+        results["load_time_s"],
+        results["record_count"],
+    )
     logger.info("Index time:    %.2f s", results["index_time_s"])
     logger.info("Search time:   %.3f s", results["search_time_s"])
     logger.info("Total time:    %.2f s", results["total_time_s"])

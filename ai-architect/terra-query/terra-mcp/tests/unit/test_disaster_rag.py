@@ -1,4 +1,5 @@
 """Unit tests for search_disasters_semantic tool logic."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,15 +11,25 @@ from tools.disaster_rag import search_disasters_semantic_logic
 def mock_engine():
     engine = MagicMock()
     engine.search.return_value = [
-        {"record_id": "eosdis_1", "score": 0.85, "text": "An earthquake in Indonesia in 2004."},
-        {"record_id": "eosdis_3", "score": 0.72, "text": "An earthquake in Haiti in 2010."},
+        {
+            "record_id": "eosdis_1",
+            "score": 0.85,
+            "text": "An earthquake in Indonesia in 2004.",
+        },
+        {
+            "record_id": "eosdis_3",
+            "score": 0.72,
+            "text": "An earthquake in Haiti in 2010.",
+        },
     ]
     return engine
 
 
 class TestSearchDisastersSemantic:
     def test_returns_results(self, mock_repo, mock_engine):
-        result = search_disasters_semantic_logic(mock_repo, mock_engine, "devastating tsunami")
+        result = search_disasters_semantic_logic(
+            mock_repo, mock_engine, "devastating tsunami"
+        )
         assert "1." in result
         assert "score=" in result
 
@@ -36,7 +47,9 @@ class TestSearchDisastersSemantic:
 
     def test_no_results_graceful(self, mock_repo, mock_engine):
         mock_engine.search.return_value = []
-        result = search_disasters_semantic_logic(mock_repo, mock_engine, "ancient roman flood")
+        result = search_disasters_semantic_logic(
+            mock_repo, mock_engine, "ancient roman flood"
+        )
         assert "no matching" in result.lower()
 
     def test_result_count_header(self, mock_repo, mock_engine):

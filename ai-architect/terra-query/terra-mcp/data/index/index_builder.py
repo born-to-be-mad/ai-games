@@ -1,4 +1,5 @@
 """Builds FAISS + BM25 search indices from disaster records."""
+
 import logging
 import os
 from dataclasses import dataclass
@@ -15,8 +16,9 @@ EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
 @dataclass
 class SearchIndices:
     """Container for both BM25 and FAISS indices, plus the enriched texts."""
-    bm25: Any          # rank_bm25.BM25Okapi
-    faiss_index: Any   # faiss.IndexFlatIP (inner product for cosine on normalized vecs)
+
+    bm25: Any  # rank_bm25.BM25Okapi
+    faiss_index: Any  # faiss.IndexFlatIP (inner product for cosine on normalized vecs)
     enriched_texts: list[str]
     record_ids: list[str]
 
@@ -77,7 +79,9 @@ def _build_faiss(texts: list[str]) -> Any:
         import faiss
         from sentence_transformers import SentenceTransformer
     except ImportError:
-        logger.warning("faiss-cpu or sentence-transformers not installed — FAISS disabled")
+        logger.warning(
+            "faiss-cpu or sentence-transformers not installed — FAISS disabled"
+        )
         return None
 
     logger.info("Embedding %d texts with %s...", len(texts), EMBEDDING_MODEL)

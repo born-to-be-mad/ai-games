@@ -11,6 +11,7 @@ Data sources:
 The script downloads to DATA_DIR (default: ../data/).
 Existing files are skipped unless --force is passed.
 """
+
 import argparse
 import logging
 import sys
@@ -40,11 +41,15 @@ def download_noaa(data_dir: Path, force: bool = False) -> None:
         sys.exit(1)
 
     import datetime
+
     year = datetime.date.today().year - 1  # last full year
     out_path = data_dir / "noaa.csv"
 
     if out_path.exists() and not force:
-        logger.info("NOAA file already exists at %s — skipping (use --force to re-download)", out_path)
+        logger.info(
+            "NOAA file already exists at %s — skipping (use --force to re-download)",
+            out_path,
+        )
         return
 
     # Try to find the file listing for the year
@@ -55,12 +60,15 @@ def download_noaa(data_dir: Path, force: bool = False) -> None:
         resp.raise_for_status()
         # Find the details file for the target year
         import re
+
         pattern = re.compile(
             rf"StormEvents_details-ftp_v1\.0_d{year}_c\d{{8}}\.csv\.gz"
         )
         matches = pattern.findall(resp.text)
         if not matches:
-            logger.warning("No NOAA file found for year %d — trying previous year", year)
+            logger.warning(
+                "No NOAA file found for year %d — trying previous year", year
+            )
             year -= 1
             pattern = re.compile(
                 rf"StormEvents_details-ftp_v1\.0_d{year}_c\d{{8}}\.csv\.gz"
@@ -84,6 +92,7 @@ def download_noaa(data_dir: Path, force: bool = False) -> None:
 
     import gzip
     import shutil
+
     logger.info("Extracting %s → %s", gz_path, out_path)
     with gzip.open(gz_path, "rb") as gz_in, open(out_path, "wb") as csv_out:
         shutil.copyfileobj(gz_in, csv_out)
@@ -127,12 +136,21 @@ def download_eosdis_kaggle(data_dir: Path, force: bool = False) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR,
-                        help="Directory to download data files into")
-    parser.add_argument("--force", action="store_true",
-                        help="Re-download even if files already exist")
-    parser.add_argument("--source", choices=["eosdis", "noaa", "all"], default="all",
-                        help="Which source to download (default: all)")
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        default=DEFAULT_DATA_DIR,
+        help="Directory to download data files into",
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Re-download even if files already exist"
+    )
+    parser.add_argument(
+        "--source",
+        choices=["eosdis", "noaa", "all"],
+        default="all",
+        help="Which source to download (default: all)",
+    )
     args = parser.parse_args()
 
     args.data_dir.mkdir(parents=True, exist_ok=True)

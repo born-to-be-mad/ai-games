@@ -1,4 +1,5 @@
 """RRFConfig: Reciprocal Rank Fusion parameters, A/B testable via env vars."""
+
 import os
 from dataclasses import dataclass
 

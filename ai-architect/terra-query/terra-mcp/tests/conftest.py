@@ -1,4 +1,5 @@
 """Shared pytest fixtures for terra-mcp tests."""
+
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -109,6 +110,7 @@ def sample_df() -> pd.DataFrame:
 def mock_repo(sample_df):
     """Mock DisasterRepository backed by sample_df."""
     from unittest.mock import MagicMock
+
     repo = MagicMock()
     repo.df = sample_df
 
@@ -118,10 +120,9 @@ def mock_repo(sample_df):
             result = result[result["disaster_type"] == disaster_type.lower()]
         if country:
             c = country.lower()
-            mask = (
-                result["country"].str.lower().str.contains(c, na=False)
-                | result["country_iso3"].str.lower().str.contains(c, na=False)
-            )
+            mask = result["country"].str.lower().str.contains(c, na=False) | result[
+                "country_iso3"
+            ].str.lower().str.contains(c, na=False)
             result = result[mask]
         if year_from is not None:
             result = result[result["start_date"].dt.year >= year_from]

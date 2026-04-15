@@ -1,4 +1,5 @@
 """Unit tests for disaster_stats tool logic."""
+
 from tools.disaster_stats import (
     compare_disasters_across_countries_logic,
     get_deadliest_disasters_logic,
@@ -58,12 +59,16 @@ class TestGetDeadliestDisasters:
 
 class TestGetDisasterTrends:
     def test_returns_year_table(self, mock_repo):
-        result = get_disaster_trends_logic(mock_repo, disaster_type="flood", year_from=1990, year_to=2021)
+        result = get_disaster_trends_logic(
+            mock_repo, disaster_type="flood", year_from=1990, year_to=2021
+        )
         assert "Year" in result
         assert "Events" in result
 
     def test_includes_trend_summary(self, mock_repo):
-        result = get_disaster_trends_logic(mock_repo, disaster_type="earthquake", year_from=2000, year_to=2021)
+        result = get_disaster_trends_logic(
+            mock_repo, disaster_type="earthquake", year_from=2000, year_to=2021
+        )
         assert "Trend" in result
 
     def test_invalid_type_returns_error(self, mock_repo):
@@ -78,7 +83,8 @@ class TestGetDisasterTrends:
 class TestCompareDisastersAcrossCountries:
     def test_returns_comparison_table(self, mock_repo):
         result = compare_disasters_across_countries_logic(
-            mock_repo, disaster_type="earthquake",
+            mock_repo,
+            disaster_type="earthquake",
             countries=["Indonesia", "Japan", "Haiti"],
         )
         assert "Indonesia" in result

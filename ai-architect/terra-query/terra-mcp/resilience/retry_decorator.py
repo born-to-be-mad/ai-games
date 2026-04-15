@@ -56,7 +56,12 @@ def retry_on_network_error(
         def decorator(fn: Callable) -> Callable:
             retrying = retry(
                 stop=stop_after_attempt(max_attempts),
-                wait=wait_exponential(multiplier=wait_seconds, exp_base=exponential_base, min=wait_seconds, max=30),
+                wait=wait_exponential(
+                    multiplier=wait_seconds,
+                    exp_base=exponential_base,
+                    min=wait_seconds,
+                    max=30,
+                ),
                 retry=retry_if_exception_type(_retry_exceptions),
                 before_sleep=before_sleep_log(logger, logging.WARNING),
                 reraise=True,

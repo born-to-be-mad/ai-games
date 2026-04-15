@@ -1,4 +1,5 @@
 """Loader for the Kaggle EOSDIS (EM-DAT-based) natural disasters CSV."""
+
 import logging
 import os
 from pathlib import Path
@@ -62,15 +63,21 @@ class EosdisLoader(BaseLoader):
             logger.error("Failed to read EOSDIS CSV: %s", exc)
             return self._empty_frame()
 
-        df = raw.rename(columns={k: v for k, v in _COLUMN_MAP.items() if k in raw.columns})
+        df = raw.rename(
+            columns={k: v for k, v in _COLUMN_MAP.items() if k in raw.columns}
+        )
 
         # Build ISO dates from component columns
-        df["start_date"] = self._build_date(df, "_start_year", "_start_month", "_start_day")
+        df["start_date"] = self._build_date(
+            df, "_start_year", "_start_month", "_start_day"
+        )
         df["end_date"] = self._build_date(df, "_end_year", "_end_month", "_end_day")
 
         # Convert damage from thousands USD to USD
         if "economic_damage_usd" in df.columns:
-            df["economic_damage_usd"] = pd.to_numeric(df["economic_damage_usd"], errors="coerce") * 1_000
+            df["economic_damage_usd"] = (
+                pd.to_numeric(df["economic_damage_usd"], errors="coerce") * 1_000
+            )
 
         df["source"] = self.source_name()
         df["event_id"] = self.source_name() + "_" + df.index.astype(str)
@@ -88,12 +95,22 @@ class EosdisLoader(BaseLoader):
         if yr not in df.columns:
             return pd.Series([pd.NaT] * len(df))
         year = pd.to_numeric(df.get(yr), errors="coerce")
-        month = pd.to_numeric(df.get(mo, pd.Series([1] * len(df))), errors="coerce").fillna(1).astype(int)
-        day = pd.to_numeric(df.get(dy, pd.Series([1] * len(df))), errors="coerce").fillna(1).astype(int)
+        month = (
+            pd.to_numeric(df.get(mo, pd.Series([1] * len(df))), errors="coerce")
+            .fillna(1)
+            .astype(int)
+        )
+        day = (
+            pd.to_numeric(df.get(dy, pd.Series([1] * len(df))), errors="coerce")
+            .fillna(1)
+            .astype(int)
+        )
         dates = []
         for y, m, d in zip(year, month, day):
             try:
-                dates.append(pd.Timestamp(int(y), int(m), int(d)) if pd.notna(y) else pd.NaT)
+                dates.append(
+                    pd.Timestamp(int(y), int(m), int(d)) if pd.notna(y) else pd.NaT
+                )
             except Exception:
                 dates.append(pd.NaT)
         return pd.Series(dates)

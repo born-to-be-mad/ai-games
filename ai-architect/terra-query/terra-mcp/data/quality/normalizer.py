@@ -1,4 +1,5 @@
 """DataNormalizer: country names → ISO 3166-1 alpha-3, null handling, date normalization."""
+
 import logging
 from functools import lru_cache
 
@@ -64,7 +65,13 @@ class DataNormalizer:
         return df
 
     def _normalize_numeric_fields(self, df: pd.DataFrame) -> pd.DataFrame:
-        for col in ("deaths", "injured", "affected", "economic_damage_usd", "magnitude"):
+        for col in (
+            "deaths",
+            "injured",
+            "affected",
+            "economic_damage_usd",
+            "magnitude",
+        ):
             if col in df.columns:
                 # Preserve NaN vs 0 distinction — don't fillna(0)
                 df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -96,6 +103,7 @@ class DataNormalizer:
     def _pycountry_lookup(country: str) -> str | None:
         try:
             import pycountry
+
             result = pycountry.countries.get(name=country)
             if result:
                 return result.alpha_3
