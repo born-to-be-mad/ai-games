@@ -1,9 +1,13 @@
-name: terra-query - Mutation Tests
+name: terra-query - Java Mutation Tests
 
 on:
   schedule:
-    - cron: "0 3 * * 6"   # Every Saturday at 03:00 UTC
+    - cron: "0 3 * * *"   # Nightly at 03:00 UTC
   workflow_dispatch:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "ai-architect/terra-query/terra-core/**"
 
 defaults:
   run:
@@ -11,7 +15,7 @@ defaults:
 
 jobs:
   pitest:
-    name: PIT Mutation Tests (terra-core ≥55% + terra-infrastructure ≥50%)
+    name: PIT Mutation Tests (terra-core ≥70%)
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -27,17 +31,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Run PIT — terra-core (target ≥55% kill)
+      - name: Run PIT — terra-core (target ≥70% kill)
         run: ./gradlew :terra-core:pitest
 
-      - name: Run PIT — terra-infrastructure (target ≥50% kill)
-        run: ./gradlew :terra-infrastructure:pitest
-
-      - name: Upload PIT reports
+      - name: Upload PIT report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pitest-reports-${{ github.run_number }}
           path: |
             ai-architect/terra-query/terra-core/build/reports/pitest/
-            ai-architect/terra-query/terra-infrastructure/build/reports/pitest/

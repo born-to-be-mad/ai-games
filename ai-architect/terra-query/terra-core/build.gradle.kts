@@ -27,7 +27,7 @@ pitest {
     timestampedReports.set(false)
     outputFormats.set(listOf("HTML", "XML"))
     threads.set(4)
-    mutationThreshold.set(55)
+    mutationThreshold.set(70)
     // Auto-detection of JUnit 5/6 plugin fails when Jupiter version is 6.x;
     // explicitly set the pitest-junit5-plugin version (works for both JUnit 5 and 6).
     junit5PluginVersion.set(libs.versions.pitest.junit5.plugin.get())
