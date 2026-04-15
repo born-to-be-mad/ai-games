@@ -3,7 +3,7 @@
 #      spring-boot         → libs.versions.spring.boot.get()
 #      spring-boot         → libs.plugins.spring.boot (for plugins)
 [versions]
-java                        = "26"
+java                        = "25"
 spring-boot                 = "4.0.5"
 spring-dependency-management = "1.1.7"
 spring-ai                   = "2.0.0-M4"

@@ -79,6 +79,8 @@ public class ChatController {
         return new ChatResponse()
                 .conversationId(request.getConversationId())
                 .answer(agentResponse.answer())
-                .sources(sources);
+                .sources(sources)
+                .toolsUsed(agentResponse.toolsUsed())
+                .agentChain(agentResponse.agentChain());
     }
 }

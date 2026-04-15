@@ -27,7 +27,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion = JavaLanguageVersion.of(26)    // libs.versions.java
+            languageVersion = JavaLanguageVersion.of(25)    // libs.versions.java
         }
     }
 
