@@ -3,6 +3,7 @@ package com.aiarchitect.terraquery.integration;
 import com.aiarchitect.terraquery.adapter.in.rest.ChatController;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.port.in.ChatUseCase;
+import com.aiarchitect.terraquery.resilience.SimpleRequestRateLimiter;
 import com.aiarchitect.terraquery.streaming.ChatEvent;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ class StreamingIntegrationTest {
     @Autowired MockMvc mockMvc;
     @MockitoBean ChatUseCase chatUseCase;
     @MockitoBean ToolProgressIndicator progressIndicator;
+    @MockitoBean SimpleRequestRateLimiter rateLimiter;
 
     @Test
     void streamChat_emitsAnswerEvents() {
@@ -40,6 +42,7 @@ class StreamingIntegrationTest {
         );
         when(chatUseCase.chat(anyString(), isNull())).thenReturn(agentResponse);
         when(progressIndicator.events()).thenReturn(reactor.core.publisher.Flux.empty());
+        when(rateLimiter.tryAcquire()).thenReturn(true);
 
         WebTestClient webTestClient = MockMvcWebTestClient.bindTo(mockMvc).build();
 

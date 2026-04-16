@@ -3,7 +3,9 @@ package com.aiarchitect.terraquery.unit;
 import com.aiarchitect.terraquery.adapter.in.rest.ChatController;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.port.in.ChatUseCase;
+import com.aiarchitect.terraquery.resilience.SimpleRequestRateLimiter;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -24,6 +26,12 @@ class ChatControllerTest {
     @Autowired MockMvc mockMvc;
     @MockitoBean ChatUseCase chatUseCase;
     @MockitoBean ToolProgressIndicator progressIndicator;
+    @MockitoBean SimpleRequestRateLimiter rateLimiter;
+
+    @BeforeEach
+    void allowRateLimitByDefault() {
+        when(rateLimiter.tryAcquire()).thenReturn(true);
+    }
 
     @Test
     void postChat_validRequest_returns200WithAnswer() throws Exception {
@@ -86,5 +94,19 @@ class ChatControllerTest {
                 .andExpect(status().isOk());
 
         verify(chatUseCase).chat("Continue.", convId);
+    }
+
+    @Test
+    void postChat_rateLimited_returns429() throws Exception {
+        when(rateLimiter.tryAcquire()).thenReturn(false);
+
+        mockMvc.perform(post("/api/v1/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"message": "What was the deadliest earthquake?"}
+                                """))
+                .andExpect(status().isTooManyRequests());
+
+        verifyNoInteractions(chatUseCase);
     }
 }

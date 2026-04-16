@@ -2,11 +2,13 @@ package com.aiarchitect.terraquery.unit;
 
 import com.aiarchitect.terraquery.adapter.out.agent.AnalysisSynthesisAgent;
 import com.aiarchitect.terraquery.adapter.out.agent.DataRetrievalAgent;
+import com.aiarchitect.terraquery.adapter.out.agent.AgentExecutionResult;
 import com.aiarchitect.terraquery.adapter.out.agent.SupervisorAgentAdapter;
 import com.aiarchitect.terraquery.config.context.ContextWindowProcessor;
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
 import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.observability.TerraQueryMetrics;
+import com.aiarchitect.terraquery.resilience.DailyCostGuardrail;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +32,7 @@ class SupervisorAgentAdapterTest {
     @Mock ContextWindowProcessor contextWindowProcessor;
     @Mock ToolProgressIndicator progressIndicator;
     @Mock TerraQueryMetrics metrics;
+    @Mock DailyCostGuardrail dailyCostGuardrail;
 
     AgentGuardrailsConfig guardrails;
     SupervisorAgentAdapter supervisor;
@@ -41,18 +45,19 @@ class SupervisorAgentAdapterTest {
                 10, 20, new BigDecimal("5.00"), 60
         );
         // By default context processor passes history through unchanged
-        when(contextWindowProcessor.process(anyList(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(contextWindowProcessor.process(anyList(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(dailyCostGuardrail.canProcess()).thenReturn(true);
         supervisor = new SupervisorAgentAdapter(
                 dataRetrievalAgent, analysisSynthesisAgent, guardrails,
-                contextWindowProcessor, progressIndicator, metrics);
+                contextWindowProcessor, progressIndicator, metrics, dailyCostGuardrail);
     }
 
     @Test
     void execute_successfulPipeline_returnsAgentResponse() {
         when(dataRetrievalAgent.retrieve(anyString()))
-                .thenReturn("142 flood records found in Bangladesh 1990–2021");
+                .thenReturn(AgentExecutionResult.ofContentOnly("142 flood records found in Bangladesh 1990–2021"));
         when(analysisSynthesisAgent.synthesize(anyString(), anyString()))
-                .thenReturn("Floods in Bangladesh have increased significantly since 1990.");
+                .thenReturn(AgentExecutionResult.ofContentOnly("Floods in Bangladesh have increased significantly since 1990."));
 
         AgentResponse result = supervisor.execute("Are floods increasing in Bangladesh?", List.of());
 
@@ -74,7 +79,7 @@ class SupervisorAgentAdapterTest {
 
     @Test
     void execute_analysisFails_returnsRawDataFallback() {
-        when(dataRetrievalAgent.retrieve(anyString())).thenReturn("raw data summary");
+        when(dataRetrievalAgent.retrieve(anyString())).thenReturn(AgentExecutionResult.ofContentOnly("raw data summary"));
         when(analysisSynthesisAgent.synthesize(anyString(), anyString()))
                 .thenThrow(new RuntimeException("LLM timeout"));
 
@@ -85,8 +90,8 @@ class SupervisorAgentAdapterTest {
 
     @Test
     void execute_withHistory_includesContextInRetrievalPrompt() {
-        when(dataRetrievalAgent.retrieve(anyString())).thenReturn("data");
-        when(analysisSynthesisAgent.synthesize(anyString(), anyString())).thenReturn("answer");
+        when(dataRetrievalAgent.retrieve(anyString())).thenReturn(AgentExecutionResult.ofContentOnly("data"));
+        when(analysisSynthesisAgent.synthesize(anyString(), anyString())).thenReturn(AgentExecutionResult.ofContentOnly("answer"));
 
         var history = List.of(
                 com.aiarchitect.terraquery.model.ChatMessage.userMessage("c1", "Tell me about Bangladesh floods"),
@@ -98,5 +103,16 @@ class SupervisorAgentAdapterTest {
         var captor = org.mockito.ArgumentCaptor.forClass(String.class);
         verify(dataRetrievalAgent).retrieve(captor.capture());
         assertThat(captor.getValue()).contains("Bangladesh floods");
+    }
+
+    @Test
+    void execute_costCapReached_returnsGuardrailMessage() {
+        when(dailyCostGuardrail.canProcess()).thenReturn(false);
+
+        AgentResponse result = supervisor.execute("Any query", List.of());
+
+        assertThat(result.answer()).contains("Daily cost cap reached");
+        verifyNoInteractions(dataRetrievalAgent);
+        verifyNoInteractions(analysisSynthesisAgent);
     }
 }

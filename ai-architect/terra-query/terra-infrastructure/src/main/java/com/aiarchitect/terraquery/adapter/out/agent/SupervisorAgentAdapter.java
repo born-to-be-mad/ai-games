@@ -6,6 +6,7 @@ import com.aiarchitect.terraquery.model.AgentResponse;
 import com.aiarchitect.terraquery.model.ChatMessage;
 import com.aiarchitect.terraquery.observability.TerraQueryMetrics;
 import com.aiarchitect.terraquery.port.out.AgentPort;
+import com.aiarchitect.terraquery.resilience.DailyCostGuardrail;
 import com.aiarchitect.terraquery.streaming.ToolProgressIndicator;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -14,7 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,6 +46,7 @@ public class SupervisorAgentAdapter implements AgentPort {
     private final ContextWindowProcessor contextWindowProcessor;
     private final ToolProgressIndicator progressIndicator;
     private final TerraQueryMetrics metrics;
+    private final DailyCostGuardrail dailyCostGuardrail;
 
     @Override
     @CircuitBreaker(name = "mcp-supervisor", fallbackMethod = "fallbackResponse")
@@ -50,6 +54,11 @@ public class SupervisorAgentAdapter implements AgentPort {
     public AgentResponse execute(String userQuery, List<ChatMessage> history) {
         long startNs = System.nanoTime();
         log.info("[SupervisorAgent] Processing query: {}", userQuery);
+        if (!dailyCostGuardrail.canProcess()) {
+            return AgentResponse.of(
+                    "Daily cost cap reached for the disaster analysis service. Please try again tomorrow."
+            );
+        }
 
         List<String> agentChain = new ArrayList<>();
         agentChain.add("SupervisorAgent");
@@ -59,9 +68,9 @@ public class SupervisorAgentAdapter implements AgentPort {
         metrics.recordContextWindowStrategy(guardrails.contextWindowStrategy().name());
 
         // Phase 1: Data retrieval
-        String rawData;
+        AgentExecutionResult retrievalResult;
         try {
-            rawData = executeWithTimeout(
+            retrievalResult = executeWithTimeout(
                     () -> dataRetrievalAgent.retrieve(buildRetrievalPrompt(userQuery, windowedHistory)),
                     "DataRetrievalAgent"
             );
@@ -76,10 +85,10 @@ public class SupervisorAgentAdapter implements AgentPort {
         }
 
         // Phase 2: Analysis and synthesis
-        String answer;
+        AgentExecutionResult analysisResult;
         try {
-            answer = executeWithTimeout(
-                    () -> analysisSynthesisAgent.synthesize(userQuery, rawData),
+            analysisResult = executeWithTimeout(
+                    () -> analysisSynthesisAgent.synthesize(userQuery, retrievalResult.content()),
                     "AnalysisSynthesisAgent"
             );
             agentChain.add("AnalysisSynthesisAgent");
@@ -88,7 +97,10 @@ public class SupervisorAgentAdapter implements AgentPort {
             log.error("[SupervisorAgent] Analysis failed: {}", e.getMessage(), e);
             metrics.recordAnalysisFailure();
             // Graceful degradation: return raw data summary if synthesis fails
-            answer = "I retrieved the following data but encountered an error during synthesis:\n\n" + rawData;
+            analysisResult = AgentExecutionResult.ofContentOnly(
+                    "I retrieved the following data but encountered an error during synthesis:\n\n"
+                            + retrievalResult.content()
+            );
         }
 
         progressIndicator.agentThinking("SupervisorAgent", "Complete");
@@ -96,7 +108,28 @@ public class SupervisorAgentAdapter implements AgentPort {
         metrics.recordSupervisorSuccess();
         metrics.recordChatDuration(System.nanoTime() - startNs, TimeUnit.NANOSECONDS);
         log.info("[SupervisorAgent] Done. Agent chain: {}", agentChain);
-        return AgentResponse.of(answer, List.of(), List.of(), agentChain);
+        Set<String> toolsUsed = new LinkedHashSet<>();
+        toolsUsed.addAll(retrievalResult.toolsUsed());
+        toolsUsed.addAll(analysisResult.toolsUsed());
+
+        Set<String> sources = new LinkedHashSet<>();
+        sources.addAll(retrievalResult.sources());
+        sources.addAll(analysisResult.sources());
+
+        List<com.aiarchitect.terraquery.model.ToolCallRecord> toolCalls = new ArrayList<>();
+        toolCalls.addAll(retrievalResult.toolCallRecords());
+        toolCalls.addAll(analysisResult.toolCallRecords());
+
+        AgentResponse response = new AgentResponse(
+                analysisResult.content(),
+                List.copyOf(toolsUsed),
+                List.copyOf(sources),
+                agentChain,
+                toolCalls,
+                null
+        );
+        dailyCostGuardrail.recordUsage(response.answer(), toolCalls.size());
+        return response;
     }
 
     /**
@@ -114,7 +147,10 @@ public class SupervisorAgentAdapter implements AgentPort {
         );
     }
 
-    private String executeWithTimeout(java.util.concurrent.Callable<String> task, String agentName) {
+    private AgentExecutionResult executeWithTimeout(
+            java.util.concurrent.Callable<AgentExecutionResult> task,
+            String agentName
+    ) {
         try {
             var future = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
                 try {

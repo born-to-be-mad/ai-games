@@ -1,5 +1,6 @@
 package com.aiarchitect.terraquery.smoke;
 
+import com.aiarchitect.terraquery.config.TestMcpTransportConfig;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -10,6 +11,7 @@ import org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfigura
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -41,8 +43,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @ImportAutoConfiguration(exclude = {AnthropicChatAutoConfiguration.class, OllamaChatAutoConfiguration.class})
+@Import(TestMcpTransportConfig.class)
 @TestPropertySource(properties = {
-        "spring.ai.mcp.client.transport.streamable-http.connections.terra-mcp.url=http://localhost:8098/mcp",
+        "spring.ai.mcp.client.streamable-http.connections.terra-mcp.url=http://localhost:8098",
+        "spring.ai.mcp.client.streamable-http.connections.terra-mcp.endpoint=/mcp",
         "spring.ai.openai.api-key=smoke-test-key",
         "spring.ai.openai.base-url=http://localhost:8098",
         "terra-query.ai.provider=openai",

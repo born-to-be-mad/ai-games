@@ -39,8 +39,9 @@ public class AnalysisSynthesisAgent {
             """;
 
     private final ChatClient analysisClient;
-    private final ToolCallback[] ragTools;
+    private final ToolCallback[] sanitizedRagTools;
     private final ToolProgressIndicator progressIndicator;
+    private final int maxToolCalls;
 
     public AnalysisSynthesisAgent(@Qualifier("selectedChatModel") ChatModel chatModel,
                                    @Qualifier("ragToolCallbackProvider")
@@ -49,8 +50,9 @@ public class AnalysisSynthesisAgent {
                                    ToolArgumentSanitizer sanitizer,
                                    ToolProgressIndicator progressIndicator) {
         this.progressIndicator = progressIndicator;
+        this.maxToolCalls = guardrails.maxAnalysisToolCalls();
 
-        this.ragTools = Arrays.stream(ragToolProvider.getToolCallbacks())
+        this.sanitizedRagTools = Arrays.stream(ragToolProvider.getToolCallbacks())
                 .map(sanitizer::wrap)
                 .toArray(ToolCallback[]::new);
 
@@ -62,9 +64,17 @@ public class AnalysisSynthesisAgent {
     /**
      * Synthesize a final answer from the provided raw data.
      */
-    public String synthesize(String userQuery, String rawData) {
+    public AgentExecutionResult synthesize(String userQuery, String rawData) {
         log.info("[AnalysisSynthesisAgent] Synthesizing answer");
         progressIndicator.agentThinking("AnalysisSynthesisAgent", "Synthesizing answer...");
+        ToolExecutionTracker tracker = new ToolExecutionTracker(
+                "AnalysisSynthesisAgent",
+                maxToolCalls,
+                progressIndicator
+        );
+        ToolCallback[] trackedCallbacks = Arrays.stream(sanitizedRagTools)
+                .map(tracker::wrap)
+                .toArray(ToolCallback[]::new);
 
         String prompt = """
                 Original user question: %s
@@ -77,11 +87,11 @@ public class AnalysisSynthesisAgent {
 
         String answer = analysisClient.prompt()
                 .user(prompt)
-                .toolCallbacks(ragTools)
+                .toolCallbacks(trackedCallbacks)
                 .call()
                 .content();
 
         log.info("[AnalysisSynthesisAgent] Synthesis complete");
-        return answer;
+        return tracker.toExecutionResult(answer);
     }
 }

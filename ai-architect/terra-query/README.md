@@ -206,7 +206,8 @@ export OPENAI_API_KEY=sk-...
 The backend connects to the MCP server at `http://localhost:8200/mcp` (Docker Compose) or `http://localhost:8080/mcp` (local). When running locally, the MCP server listens on port 8080, so update `application.yml` or set:
 
 ```bash
-export SPRING_AI_MCP_CLIENT_TRANSPORT_STREAMABLE_HTTP_CONNECTIONS_TERRA_MCP_URL=http://localhost:8080/mcp
+export SPRING_AI_MCP_CLIENT_STREAMABLE_HTTP_CONNECTIONS_TERRA_MCP_URL=http://localhost:8080
+export SPRING_AI_MCP_CLIENT_STREAMABLE_HTTP_CONNECTIONS_TERRA_MCP_ENDPOINT=/mcp
 ```
 
 #### Step 3 — Start the frontend (optional)

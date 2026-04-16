@@ -41,8 +41,9 @@ public class DataRetrievalAgent {
             """;
 
     private final ChatClient retrievalClient;
-    private final ToolCallback[] tools;
+    private final ToolCallback[] sanitizedTools;
     private final ToolProgressIndicator progressIndicator;
+    private final ToolArgumentSanitizer sanitizer;
     private final int maxToolCalls;
 
     public DataRetrievalAgent(@Qualifier("selectedChatModel") ChatModel chatModel,
@@ -54,8 +55,9 @@ public class DataRetrievalAgent {
         this.progressIndicator = progressIndicator;
         this.maxToolCalls = guardrails.maxRetrievalToolCalls();
 
-        this.tools = Arrays.stream(dataToolProvider.getToolCallbacks())
-                .map(sanitizer::wrap)
+        this.sanitizer = sanitizer;
+        this.sanitizedTools = Arrays.stream(dataToolProvider.getToolCallbacks())
+                .map(this.sanitizer::wrap)
                 .toArray(ToolCallback[]::new);
 
         this.retrievalClient = ChatClient.builder(chatModel)
@@ -67,17 +69,29 @@ public class DataRetrievalAgent {
      * Fetch raw disaster data for the given query.
      * The LLM autonomously selects and chains tool calls (think→act→observe loop).
      */
-    public String retrieve(String query) {
+    public AgentExecutionResult retrieve(String query) {
         log.info("[DataRetrievalAgent] Starting retrieval for: {}", query);
         progressIndicator.agentThinking("DataRetrievalAgent", "Fetching disaster data...");
+        ToolExecutionTracker tracker = new ToolExecutionTracker(
+                "DataRetrievalAgent",
+                maxToolCalls,
+                progressIndicator
+        );
+        ToolCallback[] trackedCallbacks = Arrays.stream(sanitizedTools)
+                .map(tracker::wrap)
+                .toArray(ToolCallback[]::new);
+        log.info("[DataRetrievalAgent] Registered tool callbacks: {}",
+                Arrays.stream(trackedCallbacks)
+                        .map(cb -> cb.getToolDefinition().name())
+                        .toList());
 
         String result = retrievalClient.prompt()
                 .user(query)
-                .toolCallbacks(tools)
+                .toolCallbacks(trackedCallbacks)
                 .call()
                 .content();
 
         log.info("[DataRetrievalAgent] Retrieval complete");
-        return result;
+        return tracker.toExecutionResult(result);
     }
 }

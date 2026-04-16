@@ -41,14 +41,21 @@ public class ToolArgumentSanitizer {
     private static class SanitizingToolCallback implements ToolCallback {
 
         private final ToolCallback delegate;
+        private final ToolDefinition normalizedDefinition;
 
         SanitizingToolCallback(ToolCallback delegate) {
             this.delegate = delegate;
+            ToolDefinition original = delegate.getToolDefinition();
+            this.normalizedDefinition = ToolDefinition.builder()
+                    .name(normalizeToolName(original.name()))
+                    .description(original.description())
+                    .inputSchema(original.inputSchema())
+                    .build();
         }
 
         @Override
         public ToolDefinition getToolDefinition() {
-            return delegate.getToolDefinition();
+            return normalizedDefinition;
         }
 
         @Override
@@ -98,6 +105,17 @@ public class ToolArgumentSanitizer {
                 };
             }
             return value;
+        }
+
+        private static String normalizeToolName(String toolName) {
+            if (toolName == null || toolName.isBlank()) {
+                return "";
+            }
+            int idx = toolName.lastIndexOf("__");
+            if (idx >= 0 && idx < toolName.length() - 2) {
+                return toolName.substring(idx + 2);
+            }
+            return toolName;
         }
     }
 }

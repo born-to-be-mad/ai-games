@@ -1,5 +1,6 @@
 package com.aiarchitect.terraquery.integration;
 
+import com.aiarchitect.terraquery.config.TestMcpTransportConfig;
 import com.aiarchitect.terraquery.port.in.ChatUseCase;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.springframework.ai.model.ollama.autoconfigure.OllamaChatAutoConfigura
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
@@ -30,8 +32,10 @@ import static org.assertj.core.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @ImportAutoConfiguration(exclude = {AnthropicChatAutoConfiguration.class, OllamaChatAutoConfiguration.class})
+@Import(TestMcpTransportConfig.class)
 @TestPropertySource(properties = {
-        "spring.ai.mcp.client.transport.streamable-http.connections.terra-mcp.url=http://localhost:8099/mcp",
+        "spring.ai.mcp.client.streamable-http.connections.terra-mcp.url=http://localhost:8099",
+        "spring.ai.mcp.client.streamable-http.connections.terra-mcp.endpoint=/mcp",
         "spring.ai.openai.api-key=test-key",
         "spring.ai.openai.base-url=http://localhost:8099",
         "terra-query.ai.provider=openai",
@@ -52,9 +56,7 @@ class MultiAgentIntegrationTest {
 
     @BeforeEach
     void stubLlmScenario() {
-        // DataRetrievalAgent: returns data summary directly (no tool_calls) to avoid Spring AI
-        // tool name prefixing mismatch — the prefixed callback name registered by McpToolNamePrefixGenerator
-        // differs from the raw name the LLM would return, causing IllegalStateException at runtime.
+        // DataRetrievalAgent: first asks for MCP tool execution.
         wireMock.stubFor(post(urlPathEqualTo("/v1/chat/completions"))
                 .inScenario("agent-pipeline")
                 .whenScenarioStateIs("Started")
@@ -67,11 +69,41 @@ class MultiAgentIntegrationTest {
                             "index": 0,
                             "message": {
                               "role": "assistant",
+                              "content": "",
+                              "tool_calls": [{
+                                "id": "call_query_disasters_1",
+                                "type": "function",
+                                "function": {
+                                  "name": "query_disasters",
+                                  "arguments": "{\\"disaster_type\\":\\"flood\\",\\"country\\":\\"Bangladesh\\",\\"year_from\\":1990,\\"year_to\\":2021,\\"limit\\":200}"
+                                }
+                              }]
+                            },
+                            "finish_reason": "tool_calls"
+                          }],
+                          "usage": {"prompt_tokens": 130, "completion_tokens": 40, "total_tokens": 170}
+                        }
+                        """))
+                .willSetStateTo("retrieval-tool-called"));
+
+        // DataRetrievalAgent: after tool observation, returns structured retrieval summary.
+        wireMock.stubFor(post(urlPathEqualTo("/v1/chat/completions"))
+                .inScenario("agent-pipeline")
+                .whenScenarioStateIs("retrieval-tool-called")
+                .willReturn(okJson("""
+                        {
+                          "id": "chatcmpl-retrieval-2",
+                          "object": "chat.completion",
+                          "model": "gpt-4o",
+                          "choices": [{
+                            "index": 0,
+                            "message": {
+                              "role": "assistant",
                               "content": "Retrieved 142 flood events in Bangladesh (1990–2021). Deadliest: 1998 with 3,200 deaths. Trend: frequency doubled from 8/year in 1990s to 14/year in 2010s. Sources: EOSDIS, NOAA."
                             },
                             "finish_reason": "stop"
                           }],
-                          "usage": {"prompt_tokens": 120, "completion_tokens": 60, "total_tokens": 180}
+                          "usage": {"prompt_tokens": 240, "completion_tokens": 80, "total_tokens": 320}
                         }
                         """))
                 .willSetStateTo("retrieval-done"));
@@ -105,8 +137,18 @@ class MultiAgentIntegrationTest {
         assertThat(response).isNotNull();
         assertThat(response.answer()).isNotBlank();
         assertThat(response.answer()).containsIgnoringCase("Bangladesh");
+        assertThat(response.toolsUsed()).contains("query_disasters");
+        assertThat(response.sources()).contains("EOSDIS", "NOAA");
+        assertThat(response.toolCallRecords())
+                .isNotEmpty()
+                .allSatisfy(call -> assertThat(call.toolName()).isEqualTo("query_disasters"));
+        assertThat(response.toolCallRecords())
+                .anySatisfy(call -> assertThat(call.argumentsJson())
+                        .contains("\"country\":\"Bangladesh\""));
         assertThat(response.agentChain())
                 .containsExactly("SupervisorAgent", "DataRetrievalAgent", "AnalysisSynthesisAgent");
+        wireMock.verify(postRequestedFor(urlPathEqualTo("/mcp"))
+                .withRequestBody(matching("(?s).*\\\"method\\\"\\s*:\\s*\\\"tools/call\\\".*")));
     }
 
     @Test
@@ -118,11 +160,10 @@ class MultiAgentIntegrationTest {
 
     @Test
     void chat_bothAgentsInvoked_agentChainContainsBothAgents() {
-        // LLM stubs return direct text responses (no tool_calls) to avoid Spring AI tool name
-        // prefixing issues. Pipeline correctness: both agents are invoked and appear in chain.
         var response = chatUseCase.chat("How many floods happened in Bangladesh?", null);
 
         assertThat(response.agentChain())
                 .containsExactly("SupervisorAgent", "DataRetrievalAgent", "AnalysisSynthesisAgent");
+        assertThat(response.toolsUsed()).contains("query_disasters");
     }
 }

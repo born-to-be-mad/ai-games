@@ -2,22 +2,15 @@
   "name": "MCP initialize",
   "request": {
     "method": "POST",
-    "urlPath": "/mcp",
+    "urlPattern": ".*",
     "bodyPatterns": [
-      { "matchesJsonPath": "$[?(@.method == 'initialize')]" }
+      { "matches": "(?s).*\\\"method\\\"\\s*:\\s*\\\"initialize\\\".*" }
     ]
   },
   "response": {
     "status": 200,
     "headers": { "Content-Type": "application/json" },
-    "jsonBody": {
-      "jsonrpc": "2.0",
-      "id": 1,
-      "result": {
-        "protocolVersion": "2024-11-05",
-        "serverInfo": { "name": "terra-mcp", "version": "1.0.0" },
-        "capabilities": { "tools": {} }
-      }
-    }
+    "transformers": ["response-template"],
+    "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{jsonPath request.body '$.id'}}\",\n  \"result\": {\n    \"protocolVersion\": \"2024-11-05\",\n    \"serverInfo\": { \"name\": \"terra-mcp\", \"version\": \"1.0.0\" },\n    \"capabilities\": { \"tools\": {} }\n  }\n}"
   }
 }

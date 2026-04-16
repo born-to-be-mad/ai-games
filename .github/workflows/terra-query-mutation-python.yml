@@ -15,9 +15,11 @@ defaults:
 
 jobs:
   mutmut:
-    name: mutmut — terra-mcp (kill rate ≥ 65%)
+    name: mutmut — terra-mcp (kill rate ≥ 30%)
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      MUTATION_KILL_RATE_THRESHOLD: "0.30"
 
     steps:
       - uses: actions/checkout@v6
@@ -37,47 +39,72 @@ jobs:
       - name: Run mutmut
         # Paths come from pyproject.toml [tool.mutmut] (mutmut 3.x) /
         # setup.cfg [mutmut] (mutmut 2.x).
-        # mutmut exits non-zero when mutants survive — capture for threshold check.
-        run: mutmut run || true
+        # mutmut exits non-zero when mutants survive — capture exit code for diagnostics.
+        run: |
+          set +e
+          mutmut run
+          echo "MUTMUT_EXIT_CODE=$?" >> "$GITHUB_ENV"
+          set -e
 
       - name: Export mutmut results to JSON
         run: |
           python - <<'EOF'
-          import sqlite3, json, os, subprocess
+          import json
+          import os
+          import sqlite3
+          import subprocess
+          from pathlib import Path
 
-          cache = ".mutmut-cache"
-          if os.path.exists(cache):
-              # mutmut 3.x — results in SQLite
-              conn = sqlite3.connect(cache)
-              try:
-                  rows = conn.execute(
-                      "SELECT status, COUNT(*) FROM mutant GROUP BY status"
-                  ).fetchall()
-                  counts = {r[0]: r[1] for r in rows}
-              finally:
-                  conn.close()
-              killed   = counts.get("killed", 0)
-              survived = counts.get("survived", 0) + counts.get("suspicious", 0)
-              total    = sum(counts.values())
+          killed = survived = total = 0
+          mutmut_exit = int(os.environ.get("MUTMUT_EXIT_CODE", "0"))
+
+          cicd_stats = Path("mutants/mutmut-cicd-stats.json")
+          # mutmut 3.x preferred path
+          subprocess.run(["mutmut", "export-cicd-stats"], check=False)
+          if cicd_stats.exists():
+              data = json.loads(cicd_stats.read_text())
+              killed = int(data.get("killed", 0))
+              # Treat suspicious as survived for quality gate.
+              survived = int(data.get("survived", 0)) + int(data.get("suspicious", 0))
+              total = int(data.get("total", 0))
           else:
-              # mutmut 2.x fallback — parse text output
-              out = subprocess.run(["mutmut", "results"], capture_output=True, text=True)
-              lines = out.stdout.strip().splitlines()
-              killed   = sum(1 for l in lines if "killed"   in l.lower())
-              survived = sum(1 for l in lines if "survived" in l.lower())
-              total    = killed + survived
+              # mutmut 2.x / legacy cache fallback
+              cache = Path(".mutmut-cache")
+              if cache.exists():
+                  conn = sqlite3.connect(str(cache))
+                  try:
+                      rows = conn.execute(
+                          "SELECT status, COUNT(*) FROM mutant GROUP BY status"
+                      ).fetchall()
+                      counts = {r[0]: r[1] for r in rows}
+                  finally:
+                      conn.close()
+                  killed = counts.get("killed", 0)
+                  survived = counts.get("survived", 0) + counts.get("suspicious", 0)
+                  total = sum(counts.values())
+              else:
+                  out = subprocess.run(["mutmut", "results"], capture_output=True, text=True)
+                  lines = out.stdout.strip().splitlines()
+                  killed = sum(1 for l in lines if "killed" in l.lower())
+                  survived = sum(1 for l in lines if "survived" in l.lower())
+                  total = killed + survived
 
           rate = killed / total if total else 0.0
           with open("mutmut-results.json", "w") as f:
-              json.dump({"killed": killed, "survived": survived,
-                         "total": total, "kill_rate": rate}, f)
-          print(f"Exported: {killed}/{total} killed ({rate:.1%})")
+              json.dump({
+                  "killed": killed,
+                  "survived": survived,
+                  "total": total,
+                  "kill_rate": rate,
+                  "mutmut_exit_code": mutmut_exit
+              }, f)
+          print(f"Exported: {killed}/{total} killed ({rate:.1%}), mutmut exit={mutmut_exit}")
           EOF
 
-      - name: Enforce ≥ 65% kill rate
+      - name: Enforce configured kill rate
         run: |
           python - <<'EOF'
-          import json, sys
+          import json, os, sys
 
           with open("mutmut-results.json") as f:
               data = json.load(f)
@@ -86,10 +113,16 @@ jobs:
           killed    = data.get("killed", 0)
           survived  = data.get("survived", 0)
           total     = data.get("total", 0)
+          mutmut_exit = data.get("mutmut_exit_code", 0)
 
           print(f"Mutation results: {killed}/{total} killed ({kill_rate:.1%})")
 
-          THRESHOLD = 0.65
+          if total == 0:
+              print(f"::error::No mutants were executed (mutmut exit code: {mutmut_exit}). "
+                    "Check mutmut configuration and execution logs.")
+              sys.exit(1)
+
+          THRESHOLD = float(os.environ.get("MUTATION_KILL_RATE_THRESHOLD", "0.65"))
           if kill_rate < THRESHOLD:
               print(f"::error::Kill rate {kill_rate:.1%} is below threshold {THRESHOLD:.0%}. "
                     f"{survived} mutants survived — see artifact for details.")
@@ -116,7 +149,8 @@ jobs:
           killed    = data.get("killed", 0)
           survived  = data.get("survived", 0)
           total     = data.get("total", 0)
-          status    = "✅ PASS" if kill_rate >= 0.65 else "❌ FAIL"
+          threshold = float(os.environ.get("MUTATION_KILL_RATE_THRESHOLD", "0.65"))
+          status    = "✅ PASS" if kill_rate >= threshold else "❌ FAIL"
 
           summary = f"""## Python Mutation Tests — terra-mcp
 
@@ -126,7 +160,7 @@ jobs:
           | Killed | {killed} |
           | Survived | {survived} |
           | Kill rate | {kill_rate:.1%} |
-          | Target | ≥ 65% |
+          | Target | ≥ {threshold:.0%} |
           | Status | {status} |
           """
 

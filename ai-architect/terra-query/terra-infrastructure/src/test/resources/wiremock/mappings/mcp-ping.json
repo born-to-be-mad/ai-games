@@ -1,0 +1,16 @@
+{
+  "name": "MCP ping",
+  "request": {
+    "method": "POST",
+    "urlPattern": ".*",
+    "bodyPatterns": [
+      { "matches": "(?s).*\\\"method\\\"\\s*:\\s*\\\"ping\\\".*" }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": { "Content-Type": "application/json" },
+    "transformers": ["response-template"],
+    "body": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": \"{{jsonPath request.body '$.id'}}\",\n  \"result\": {}\n}"
+  }
+}
