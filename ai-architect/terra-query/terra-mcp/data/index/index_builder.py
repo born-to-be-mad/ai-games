@@ -86,7 +86,7 @@ def _build_faiss(texts: list[str]) -> Any:
         return None
 
     total = len(texts)
-    batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "64"))
+    batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "16"))
     logger.info(
         "Embedding %d texts with %s (batch_size=%d)...",
         total,
@@ -96,7 +96,7 @@ def _build_faiss(texts: list[str]) -> Any:
     model = SentenceTransformer(EMBEDDING_MODEL)
 
     started = time.perf_counter()
-    chunks: list[np.ndarray] = []
+    index: Any = None
     log_every = max(batch_size * 50, 5000)
     for start in range(0, total, batch_size):
         end = min(start + batch_size, total)
@@ -107,7 +107,11 @@ def _build_faiss(texts: list[str]) -> Any:
             show_progress_bar=False,
             normalize_embeddings=True,  # needed for cosine via inner product
         )
-        chunks.append(np.array(chunk_embeddings, dtype=np.float32))
+        chunk_array = np.array(chunk_embeddings, dtype=np.float32)
+        if index is None:
+            dim = chunk_array.shape[1]
+            index = faiss.IndexFlatIP(dim)  # inner product on normalized vectors = cosine
+        index.add(chunk_array)
 
         processed = end
         if processed == total or processed % log_every == 0:
@@ -124,12 +128,7 @@ def _build_faiss(texts: list[str]) -> Any:
                 eta,
             )
 
-    embeddings = np.vstack(chunks) if chunks else np.empty((0, 0), dtype=np.float32)
     logger.info("Embedding completed in %.2fs", time.perf_counter() - started)
-
-    dim = embeddings.shape[1]
-    index = faiss.IndexFlatIP(dim)  # inner product on normalized vectors = cosine
-    index.add(embeddings)
     return index
 
 

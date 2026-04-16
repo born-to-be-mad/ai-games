@@ -77,6 +77,7 @@ services:
     environment:
       MCP_TRANSPORT: streamable-http
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-base-en-v1.5}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-16}
       INDEX_CACHE_DIR: /data/indices
       DATA_DIR: /app/data
       HF_HOME: /root/.cache/huggingface
@@ -91,7 +92,7 @@ services:
           memory: 4g
           cpus: "2.0"
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import socket; s=socket.socket(); s.settimeout(5); s.connect(('127.0.0.1',8080)); s.close()\""]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       # First startup can take a long time on CPU (model + 80k+ embeddings + index build).
