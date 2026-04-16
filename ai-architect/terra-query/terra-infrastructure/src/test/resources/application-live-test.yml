@@ -2,11 +2,11 @@ spring:
   ai:
     mcp:
       client:
-        transport:
-          streamable-http:
-            connections:
-              terra-mcp:
-                url: http://localhost:8200/mcp
+        streamable-http:
+          connections:
+            terra-mcp:
+              url: http://localhost:8200
+              endpoint: /mcp
     openai:
       api-key: ${OPENAI_API_KEY}
       chat:

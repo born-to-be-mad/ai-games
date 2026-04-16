@@ -1,0 +1,15 @@
+{
+  "name": "MCP streamable SSE stream",
+  "priority": 100,
+  "request": {
+    "method": "GET",
+    "urlPattern": ".*"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "text/event-stream"
+    },
+    "body": ": keep-alive\\n\\n"
+  }
+}

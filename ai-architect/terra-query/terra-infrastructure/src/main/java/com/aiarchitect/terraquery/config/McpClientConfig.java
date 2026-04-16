@@ -7,6 +7,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Set;
@@ -17,6 +18,7 @@ import java.util.Set;
  * to give each agent access only to its relevant tools.
  */
 @Configuration
+@Slf4j
 public class McpClientConfig {
 
     /** Tool names for DataRetrievalAgent — structured search and statistics. */
@@ -39,6 +41,8 @@ public class McpClientConfig {
     @Bean("dataRetrievalToolCallbackProvider")
     public SyncMcpToolCallbackProvider dataRetrievalToolCallbackProvider(
             List<McpSyncClient> mcpSyncClients) {
+        log.debug("[McpClientConfig] MCP sync clients discovered: {}",
+                mcpSyncClients.stream().map(c -> c.getServerInfo().name()).toList());
         List<McpSyncClient> terraMcpClients = mcpSyncClients.stream()
                 .filter(c -> c.getServerInfo().name().equals("terra-mcp"))
                 .toList();
@@ -47,9 +51,13 @@ public class McpClientConfig {
         }
 
         List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
+        log.debug("[McpClientConfig] All MCP callbacks: {}",
+                allCallbacks.stream().map(cb -> cb.getToolDefinition().name()).toList());
         ToolCallback[] dataCallbacks = allCallbacks.stream()
                 .filter(cb -> matchesConfiguredTool(cb.getToolDefinition().name(), DATA_RETRIEVAL_TOOL_NAMES))
                 .toArray(ToolCallback[]::new);
+        log.debug("[McpClientConfig] Data retrieval callbacks: {}",
+                java.util.Arrays.stream(dataCallbacks).map(cb -> cb.getToolDefinition().name()).toList());
 
         // Wrap in a provider adapter
         return new FilteredToolCallbackProvider(dataCallbacks);
@@ -73,6 +81,8 @@ public class McpClientConfig {
         ToolCallback[] ragCallbacks = allCallbacks.stream()
                 .filter(cb -> matchesConfiguredTool(cb.getToolDefinition().name(), RAG_TOOL_NAMES))
                 .toArray(ToolCallback[]::new);
+        log.debug("[McpClientConfig] RAG callbacks: {}",
+                java.util.Arrays.stream(ragCallbacks).map(cb -> cb.getToolDefinition().name()).toList());
 
         return new FilteredToolCallbackProvider(ragCallbacks);
     }

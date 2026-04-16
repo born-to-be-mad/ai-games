@@ -1,0 +1,15 @@
+{
+  "name": "MCP notifications/initialized",
+  "request": {
+    "method": "POST",
+    "urlPattern": ".*",
+    "bodyPatterns": [
+      { "matches": "(?s).*\\\"method\\\"\\s*:\\s*\\\"notifications/initialized\\\".*" }
+    ]
+  },
+  "response": {
+    "status": 202,
+    "headers": { "Content-Type": "application/json" },
+    "body": "{}"
+  }
+}
