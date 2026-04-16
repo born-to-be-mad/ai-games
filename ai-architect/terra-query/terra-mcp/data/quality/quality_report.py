@@ -53,6 +53,12 @@ def _log_coverage_gaps(df: pd.DataFrame) -> None:
         return
 
     df_dated = df_dated.copy()
+    # Ensure start_date is datetime — NOAA stores it as raw strings
+    if not pd.api.types.is_datetime64_any_dtype(df_dated["start_date"]):
+        df_dated["start_date"] = pd.to_datetime(df_dated["start_date"], errors="coerce")
+    df_dated = df_dated.dropna(subset=["start_date"])
+    if df_dated.empty:
+        return
     df_dated["year"] = df_dated["start_date"].dt.year
 
     for country, grp in df_dated.groupby("country_iso3"):

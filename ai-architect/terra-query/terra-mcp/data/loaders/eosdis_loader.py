@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 _DEFAULT_PATH = Path(__file__).parent.parent / "samples" / "eosdis_sample.csv"
 
 # Column mapping from raw EOSDIS CSV to normalized schema
+# Supports both legacy format (with "Dis No") and newer EM-DAT export format
 _COLUMN_MAP = {
-    "Dis No": "source_event_id",
+    "Dis No": "source_event_id",          # legacy format
     "Disaster Type": "disaster_type",
     "Disaster Subtype": "subtype",
     "Country": "country",
+    "ISO": "country_iso3_raw",
     "Region": "region",
     "Start Year": "_start_year",
     "Start Month": "_start_month",
@@ -30,8 +32,11 @@ _COLUMN_MAP = {
     "Total Deaths": "deaths",
     "No Injured": "injured",
     "Total Affected": "affected",
-    "Total Damage ('000 US$)": "economic_damage_usd",
+    "Total Damage ('000 US$)": "economic_damage_usd",   # legacy
+    "Total Damages ('000 US$)": "economic_damage_usd",  # newer EM-DAT export
     "Dis Mag Value": "magnitude",
+    "Year": "_year",
+    "Seq": "_seq",
 }
 
 
@@ -108,8 +113,22 @@ class EosdisLoader(BaseLoader):
             )
 
         df["source"] = self.source_name()
-        df["event_id"] = self.source_name() + "_" + df.index.astype(str)
-        df["country_iso3"] = df["country"].apply(self._normalizer.country_to_iso3)
+        # Build source_event_id from legacy "Dis No" or newer Year+Seq composite
+        if "source_event_id" not in df.columns or df["source_event_id"].isna().all():
+            if "_year" in df.columns and "_seq" in df.columns:
+                df["source_event_id"] = (
+                    df["_year"].astype(str) + "-" + df["_seq"].astype(str)
+                )
+            else:
+                df["source_event_id"] = df.index.astype(str)
+        df["event_id"] = self.source_name() + "_" + df["source_event_id"].astype(str)
+        # Use pre-mapped ISO3 if available, otherwise derive from country name
+        if "country_iso3_raw" in df.columns:
+            df["country_iso3"] = df["country_iso3_raw"].where(
+                df["country_iso3_raw"].notna(), other=df["country"].apply(self._normalizer.country_to_iso3)
+            )
+        else:
+            df["country_iso3"] = df["country"].apply(self._normalizer.country_to_iso3)
         df["disaster_type"] = df["disaster_type"].str.lower().str.strip()
 
         df = self._ensure_schema(df)
@@ -133,8 +152,13 @@ class EosdisLoader(BaseLoader):
 
     @staticmethod
     def _missing_required_columns(columns: pd.Index) -> set[str]:
-        required = {"Dis No", "Disaster Type", "Country", "Start Year"}
-        return required - set(columns)
+        # Accept either legacy "Dis No" id or newer "Year"+"Seq" composite id
+        has_id = "Dis No" in columns or ("Year" in columns and "Seq" in columns)
+        required_fields = {"Disaster Type", "Country", "Start Year"}
+        missing = required_fields - set(columns)
+        if not has_id:
+            missing.add("Dis No")
+        return missing
 
     @staticmethod
     def _build_date(df: pd.DataFrame, yr: str, mo: str, dy: str) -> pd.Series:
