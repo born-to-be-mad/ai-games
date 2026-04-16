@@ -42,10 +42,13 @@ public class McpClientConfig {
         List<McpSyncClient> terraMcpClients = mcpSyncClients.stream()
                 .filter(c -> c.getServerInfo().name().equals("terra-mcp"))
                 .toList();
+        if (terraMcpClients.isEmpty()) {
+            terraMcpClients = mcpSyncClients;
+        }
 
         List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
         ToolCallback[] dataCallbacks = allCallbacks.stream()
-                .filter(cb -> DATA_RETRIEVAL_TOOL_NAMES.contains(normalizeToolName(cb.getToolDefinition().name())))
+                .filter(cb -> matchesConfiguredTool(cb.getToolDefinition().name(), DATA_RETRIEVAL_TOOL_NAMES))
                 .toArray(ToolCallback[]::new);
 
         // Wrap in a provider adapter
@@ -62,10 +65,13 @@ public class McpClientConfig {
         List<McpSyncClient> terraMcpClients = mcpSyncClients.stream()
                 .filter(c -> c.getServerInfo().name().equals("terra-mcp"))
                 .toList();
+        if (terraMcpClients.isEmpty()) {
+            terraMcpClients = mcpSyncClients;
+        }
 
         List<ToolCallback> allCallbacks = McpToolUtils.getToolCallbacksFromSyncClients(terraMcpClients);
         ToolCallback[] ragCallbacks = allCallbacks.stream()
-                .filter(cb -> RAG_TOOL_NAMES.contains(normalizeToolName(cb.getToolDefinition().name())))
+                .filter(cb -> matchesConfiguredTool(cb.getToolDefinition().name(), RAG_TOOL_NAMES))
                 .toArray(ToolCallback[]::new);
 
         return new FilteredToolCallbackProvider(ragCallbacks);
@@ -98,5 +104,16 @@ public class McpClientConfig {
             return toolName.substring(idx + 2);
         }
         return toolName;
+    }
+
+    private static boolean matchesConfiguredTool(String rawName, Set<String> configured) {
+        if (rawName == null || rawName.isBlank()) {
+            return false;
+        }
+        String normalized = normalizeToolName(rawName);
+        if (configured.contains(normalized)) {
+            return true;
+        }
+        return configured.stream().anyMatch(rawName::endsWith);
     }
 }

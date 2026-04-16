@@ -80,6 +80,10 @@ public class DataRetrievalAgent {
         ToolCallback[] trackedCallbacks = Arrays.stream(sanitizedTools)
                 .map(tracker::wrap)
                 .toArray(ToolCallback[]::new);
+        log.info("[DataRetrievalAgent] Registered tool callbacks: {}",
+                Arrays.stream(trackedCallbacks)
+                        .map(cb -> cb.getToolDefinition().name())
+                        .toList());
 
         String result = retrievalClient.prompt()
                 .user(query)

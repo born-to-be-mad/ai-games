@@ -89,7 +89,7 @@ public class ToolExecutionTracker {
         );
     }
 
-    static String normalizeToolName(String toolName) {
+    public static String normalizeToolName(String toolName) {
         if (toolName == null || toolName.isBlank()) {
             return "";
         }

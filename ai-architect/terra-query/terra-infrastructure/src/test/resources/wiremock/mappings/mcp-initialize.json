@@ -4,7 +4,7 @@
     "method": "POST",
     "urlPath": "/mcp",
     "bodyPatterns": [
-      { "matchesJsonPath": "$[?(@.method == 'initialize')]" }
+      { "matches": ".*\\\"method\\\"\\s*:\\s*\\\"initialize\\\".*" }
     ]
   },
   "response": {

@@ -4,7 +4,7 @@
     "method": "POST",
     "urlPath": "/mcp",
     "bodyPatterns": [
-      { "matchesJsonPath": "$[?(@.method == 'tools/call')]" }
+      { "matches": ".*\\\"method\\\"\\s*:\\s*\\\"tools/call\\\".*" }
     ]
   },
   "response": {
