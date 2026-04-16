@@ -40,12 +40,10 @@ class EosdisLoader(BaseLoader):
 
     def __init__(self, data_dir: Path | None = None) -> None:
         data_dir = data_dir or Path(os.getenv("DATA_DIR", str(_DEFAULT_PATH.parent)))
-        self._path = data_dir / "eosdis_sample.csv"
-        if not self._path.exists():
-            # fall back to full file name used after download
-            full = data_dir / "eosdis.csv"
-            if full.exists():
-                self._path = full
+        self._data_dir = data_dir
+        self._real_path = data_dir / "eosdis.csv"
+        self._sample_path = data_dir / "eosdis_sample.csv"
+        self._path = self._real_path
         self._normalizer = DataNormalizer()
 
     def source_name(self) -> str:
@@ -53,17 +51,20 @@ class EosdisLoader(BaseLoader):
 
     def load(self) -> pd.DataFrame:
         enforce_real = _require_real_dataset()
-        if not self._path.exists():
+        candidate = self._select_input_path(enforce_real)
+        if candidate is None:
+            expected_real = self._real_path
             if enforce_real:
                 raise FileNotFoundError(
                     "EOSDIS real dataset is required but missing. "
-                    f"Expected file: {self._path.parent / 'eosdis.csv'}"
+                    f"Expected file: {expected_real}"
                 )
             logger.warning(
                 "EOSDIS file not found at %s — using empty frame (dev/test mode)",
-                self._path,
+                self._real_path,
             )
             return self._empty_frame()
+        self._path = candidate
 
         logger.info(
             "Loading EOSDIS data from %s (mode=%s)",
@@ -73,7 +74,21 @@ class EosdisLoader(BaseLoader):
         try:
             raw = pd.read_csv(self._path, low_memory=False)
         except Exception as exc:
+            if enforce_real:
+                raise RuntimeError(
+                    f"Failed to read required EOSDIS dataset: {self._path}"
+                ) from exc
             logger.error("Failed to read EOSDIS CSV: %s", exc)
+            return self._empty_frame()
+        missing_required = self._missing_required_columns(raw.columns)
+        if missing_required:
+            message = (
+                f"EOSDIS CSV at {self._path} is missing required columns: "
+                f"{', '.join(sorted(missing_required))}"
+            )
+            if enforce_real:
+                raise ValueError(message)
+            logger.warning("%s", message)
             return self._empty_frame()
 
         df = raw.rename(
@@ -99,9 +114,27 @@ class EosdisLoader(BaseLoader):
 
         df = self._ensure_schema(df)
         df = self._normalizer.normalize(df)
+        if enforce_real and df.empty:
+            raise ValueError(
+                f"EOSDIS dataset produced zero normalized records in required mode: {self._path}"
+            )
 
         logger.info("EOSDIS: loaded %d records", len(df))
         return df
+
+    def _select_input_path(self, enforce_real: bool) -> Path | None:
+        if enforce_real:
+            return self._real_path if self._real_path.exists() else None
+        if self._real_path.exists():
+            return self._real_path
+        if self._sample_path.exists():
+            return self._sample_path
+        return None
+
+    @staticmethod
+    def _missing_required_columns(columns: pd.Index) -> set[str]:
+        required = {"Dis No", "Disaster Type", "Country", "Start Year"}
+        return required - set(columns)
 
     @staticmethod
     def _build_date(df: pd.DataFrame, yr: str, mo: str, dy: str) -> pd.Series:
@@ -131,11 +164,21 @@ class EosdisLoader(BaseLoader):
 
 def _require_real_dataset() -> bool:
     """
-    Enforce real EOSDIS dataset outside local/dev/test unless explicitly disabled.
+    Enforce real EOSDIS dataset based on explicit mode/env policy.
     Controls:
-      - REQUIRE_REAL_EOSDIS=true|false (highest priority)
+      - DATA_SOURCE=real|dev|auto (highest priority)
+      - REQUIRE_REAL_EOSDIS=true|false
       - APP_ENV/TERRA_QUERY_ENV in {dev,test,local} allows sample fallback
     """
+    mode = os.getenv("DATA_SOURCE", "auto").strip().lower()
+    if mode == "real":
+        return True
+    if mode == "dev":
+        return False
+    if mode not in {"", "auto"}:
+        logger.warning(
+            "Unknown DATA_SOURCE=%r, falling back to auto policy", mode
+        )
     explicit = os.getenv("REQUIRE_REAL_EOSDIS")
     if explicit is not None:
         return explicit.strip().lower() in {"1", "true", "yes", "on"}
