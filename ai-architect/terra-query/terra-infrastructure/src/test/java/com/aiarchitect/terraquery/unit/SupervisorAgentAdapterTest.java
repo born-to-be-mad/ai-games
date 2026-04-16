@@ -21,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,8 +45,8 @@ class SupervisorAgentAdapterTest {
                 10, 20, new BigDecimal("5.00"), 60
         );
         // By default context processor passes history through unchanged
-        when(contextWindowProcessor.process(anyList(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
-        when(dailyCostGuardrail.canProcess()).thenReturn(true);
+        lenient().when(contextWindowProcessor.process(anyList(), anyInt())).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(dailyCostGuardrail.canProcess()).thenReturn(true);
         supervisor = new SupervisorAgentAdapter(
                 dataRetrievalAgent, analysisSynthesisAgent, guardrails,
                 contextWindowProcessor, progressIndicator, metrics, dailyCostGuardrail);
