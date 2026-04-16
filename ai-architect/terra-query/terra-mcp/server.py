@@ -57,9 +57,14 @@ def startup() -> tuple[DisasterRepository, HybridSearchEngine | None, EonetClien
 
     engine: HybridSearchEngine | None = None
     if not repo.df.empty:
+        logger.info(
+            "Preparing search indices for %d records (first run may take several minutes)",
+            len(repo.df),
+        )
         data_hash = (
             IndexCache.compute_data_hash(*data_files) if data_files else "default"
         )
+        logger.info("Using index cache key: %s", data_hash)
         indices = cache.get_or_build(
             data_hash,
             lambda: build_indices(repo.df, chunker),

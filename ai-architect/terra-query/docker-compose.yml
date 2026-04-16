@@ -92,8 +92,9 @@ services:
       test: ["CMD-SHELL", "python -c \"import socket; s=socket.socket(); s.settimeout(5); s.connect(('127.0.0.1',8080)); s.close()\""]
       interval: 30s
       timeout: 10s
-      start_period: 60s
-      retries: 3
+      # First startup can take several minutes (model download + index build).
+      start_period: 300s
+      retries: 10
     networks:
       - terra-network
 
