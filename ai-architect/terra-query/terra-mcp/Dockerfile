@@ -14,7 +14,7 @@ RUN mkdir -p /data/indices
 
 EXPOSE 8080
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=300s --retries=10 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=3600s --retries=20 \
   CMD python -c "import socket; s=socket.socket(); s.settimeout(5); s.connect(('127.0.0.1',8080)); s.close()" || exit 1
 
 ENV MCP_TRANSPORT=streamable-http

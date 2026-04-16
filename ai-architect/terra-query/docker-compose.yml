@@ -73,11 +73,13 @@ services:
     volumes:
       - terra-indices:/data/indices
       - terra-data:/app/data
+      - terra-hf-cache:/root/.cache/huggingface
     environment:
       MCP_TRANSPORT: streamable-http
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-base-en-v1.5}
       INDEX_CACHE_DIR: /data/indices
       DATA_DIR: /app/data
+      HF_HOME: /root/.cache/huggingface
       RRF_K: ${RRF_K:-60}
       RRF_BM25_WEIGHT: ${RRF_BM25_WEIGHT:-1.0}
       RRF_VECTOR_WEIGHT: ${RRF_VECTOR_WEIGHT:-1.0}
@@ -92,9 +94,9 @@ services:
       test: ["CMD-SHELL", "python -c \"import socket; s=socket.socket(); s.settimeout(5); s.connect(('127.0.0.1',8080)); s.close()\""]
       interval: 30s
       timeout: 10s
-      # First startup can take several minutes (model download + index build).
-      start_period: 300s
-      retries: 10
+      # First startup can take a long time on CPU (model + 80k+ embeddings + index build).
+      start_period: 3600s
+      retries: 20
     networks:
       - terra-network
 
@@ -160,6 +162,8 @@ volumes:
   terra-indices:
     driver: local
   terra-data:
+    driver: local
+  terra-hf-cache:
     driver: local
   terra-tempo:
     driver: local
