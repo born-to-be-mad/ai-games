@@ -10,6 +10,8 @@ from typing import Literal, cast
 sys.path.insert(0, str(Path(__file__).parent))
 
 from mcp.server.fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import JSONResponse, Response
 
 from data.index.index_builder import build_indices
 from data.index.index_cache import IndexCache
@@ -57,9 +59,14 @@ def startup() -> tuple[DisasterRepository, HybridSearchEngine | None, EonetClien
 
     engine: HybridSearchEngine | None = None
     if not repo.df.empty:
+        logger.info(
+            "Preparing search indices for %d records (first run may take several minutes)",
+            len(repo.df),
+        )
         data_hash = (
             IndexCache.compute_data_hash(*data_files) if data_files else "default"
         )
+        logger.info("Using index cache key: %s", data_hash)
         indices = cache.get_or_build(
             data_hash,
             lambda: build_indices(repo.df, chunker),
@@ -91,6 +98,21 @@ register_query_tool(mcp, _repo)
 register_stats_tools(mcp, _repo)
 register_rag_tool(mcp, _repo, _engine)
 register_live_events_tool(mcp, _eonet)
+
+
+@mcp.custom_route("/health", methods=["GET"], include_in_schema=False)
+async def health_check(_request: Request) -> Response:
+    """Simple readiness endpoint for container health checks."""
+    return JSONResponse(
+        {
+            "status": "ok",
+            "service": "terra-mcp",
+            "transport": os.getenv("MCP_TRANSPORT", "streamable-http"),
+            "records": int(len(_repo.df)),
+            "search_ready": _engine is not None,
+        }
+    )
+
 
 if __name__ == "__main__":
     transport = cast(

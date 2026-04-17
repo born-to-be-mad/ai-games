@@ -2,22 +2,40 @@ package com.aiarchitect.terraquery.streaming;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
- * Publishes tool-call progress events to the SSE stream.
- * Agents call this during their execution to emit real-time progress
- * (e.g. "Searching historical database...") to the frontend.
+ * Publishes tool-call progress events to the active SSE stream.
+ * <p>
+ * Each {@code /chat/stream} call creates its own {@link Sinks.Many}; {@link #activate} binds
+ * emissions from agents (any thread) to that sink until {@link #deactivate}. A lock serializes
+ * concurrent streaming chats so progress is never routed to the wrong client.
  */
 @Slf4j
 @Component
 public class ToolProgressIndicator {
 
-    private final Sinks.Many<ChatEvent> sink;
+    private final ReentrantLock streamBindingLock = new ReentrantLock();
+    private Sinks.Many<ChatEvent> activeSink;
 
-    public ToolProgressIndicator() {
-        this.sink = Sinks.many().multicast().onBackpressureBuffer();
+    /**
+     * Binds subsequent {@code tool*} / {@code agent*} emissions to {@code sink}.
+     * Blocks if another stream currently holds the binding.
+     */
+    public void activate(Sinks.Many<ChatEvent> sink) {
+        streamBindingLock.lock();
+        this.activeSink = sink;
+    }
+
+    /** Releases the binding created by {@link #activate}; must be paired on the same thread. */
+    public void deactivate() {
+        try {
+            this.activeSink = null;
+        } finally {
+            streamBindingLock.unlock();
+        }
     }
 
     public void toolCallStarted(String agentName, String toolName) {
@@ -35,11 +53,12 @@ public class ToolProgressIndicator {
         emit(new ChatEvent.AgentThinking(agentName, status));
     }
 
-    public Flux<ChatEvent> events() {
-        return sink.asFlux();
-    }
-
     private void emit(ChatEvent event) {
+        Sinks.Many<ChatEvent> sink = this.activeSink;
+        if (sink == null) {
+            log.debug("No active stream sink — dropping progress {}", event.type());
+            return;
+        }
         var result = sink.tryEmitNext(event);
         if (result.isFailure()) {
             log.warn("Failed to emit SSE event {}: {}", event.type(), result);

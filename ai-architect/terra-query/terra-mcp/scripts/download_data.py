@@ -111,24 +111,44 @@ def download_eosdis_kaggle(data_dir: Path, force: bool = False) -> None:
         logger.info("EOSDIS file already exists at %s — skipping", out_path)
         return
 
-    try:
-        from kaggle.api.kaggle_api_extended import KaggleApiExtended
-    except ImportError:
-        logger.error("kaggle package not installed. Run: pip install kaggle")
-        logger.info("Then set KAGGLE_USERNAME and KAGGLE_KEY env vars.")
+    import shutil
+    import subprocess
+    import zipfile
+
+    kaggle_bin = shutil.which("kaggle")
+    if not kaggle_bin:
+        logger.error("kaggle CLI not found. Run: pip install kaggle")
         sys.exit(1)
 
-    api = KaggleApiExtended()
-    api.authenticate()
-    logger.info("Downloading EOSDIS dataset from Kaggle...")
-    api.dataset_download_files(
-        "brsdincer/all-natural-disasters-19002021-eosdis",
-        path=str(data_dir),
-        unzip=True,
+    logger.info("Downloading EOSDIS dataset from Kaggle via CLI...")
+    result = subprocess.run(
+        [
+            kaggle_bin,
+            "datasets",
+            "download",
+            "-d",
+            "brsdincer/all-natural-disasters-19002021-eosdis",
+            "-p",
+            str(data_dir),
+        ],
+        capture_output=True,
+        text=True,
     )
+    if result.returncode != 0:
+        logger.error("Kaggle download failed:\n%s", result.stderr)
+        sys.exit(1)
+
+    # Unzip
+    downloaded_zip = next(data_dir.glob("*.zip"), None)
+    if downloaded_zip:
+        logger.info("Extracting %s", downloaded_zip)
+        with zipfile.ZipFile(downloaded_zip, "r") as zf:
+            zf.extractall(data_dir)
+        downloaded_zip.unlink(missing_ok=True)
+
     # Rename to expected filename
     for csv in data_dir.glob("*.csv"):
-        if "disaster" in csv.name.lower() or "natural" in csv.name.lower():
+        if csv.name != "noaa.csv" and csv != out_path:
             csv.rename(out_path)
             break
     logger.info("EOSDIS downloaded: %s", out_path)

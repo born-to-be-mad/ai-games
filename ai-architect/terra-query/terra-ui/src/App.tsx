@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatWindow } from './components/ChatWindow'
 import { MessageInput } from './components/MessageInput'
 import { VisualizationPanel } from './components/VisualizationPanel'
@@ -6,6 +6,9 @@ import { useSSE } from './hooks/useSSE'
 import type { Message } from './types/events'
 
 const STREAM_URL = '/api/v1/chat/stream'
+const INSIGHTS_MIN_WIDTH = 420
+const INSIGHTS_MAX_WIDTH = 900
+const INSIGHTS_DEFAULT_WIDTH = 560
 
 function generateId() {
   return crypto.randomUUID()
@@ -18,8 +21,22 @@ export default function App() {
     toolsUsed: [],
     agentChain: [],
   })
+  const [mapSignalText, setMapSignalText] = useState('')
   const [showViz, setShowViz] = useState(false)
+  const [insightsWidth, setInsightsWidth] = useState(INSIGHTS_DEFAULT_WIDTH)
+  const [runtimeConfig, setRuntimeConfig] = useState<{
+    provider: string
+    model: string
+    embeddingModel: string
+    contextWindowStrategy: string
+    maxQueriesPerMinute: number
+    dailyCostCapUsd: number
+    dailyCostSpentUsd: number
+    dailyCostRemainingUsd: number
+  } | null>(null)
   const streamingIdRef = useRef<string | null>(null)
+  const mapSignalRef = useRef('')
+  const isResizingRef = useRef(false)
 
   const { status, send, abort } = useSSE(STREAM_URL)
   const isStreaming = status === 'streaming'
@@ -47,6 +64,7 @@ export default function App() {
       }
 
       setMessages(prev => [...prev, userMsg, assistantMsg])
+      mapSignalRef.current = text
 
       send(
         { message: text, conversationId },
@@ -62,6 +80,7 @@ export default function App() {
           },
 
           onToolCallEnd(e) {
+            mapSignalRef.current = `${mapSignalRef.current} ${e.resultPreview ?? ''}`.trim()
             updateStreamingMessage(msg => ({
               ...msg,
               toolProgress: (msg.toolProgress ?? []).map(t =>
@@ -80,6 +99,7 @@ export default function App() {
           },
 
           onAnswerChunk(e) {
+            mapSignalRef.current = `${mapSignalRef.current} ${e.text}`.trim()
             updateStreamingMessage(msg => ({
               ...msg,
               content: msg.content + e.text,
@@ -91,14 +111,34 @@ export default function App() {
               setConversationId(generateId())
             }
             setVizData({ toolsUsed: e.toolsUsed, agentChain: e.agentChain })
+            setMapSignalText(`${mapSignalRef.current} ${e.sources.join(' ')}`.trim())
             setShowViz(true)
-            updateStreamingMessage(msg => ({
-              ...msg,
-              isStreaming: false,
-              sources: e.sources,
-              toolsUsed: e.toolsUsed,
-              agentChain: e.agentChain,
-            }))
+            updateStreamingMessage(msg => {
+              const hasLiveTools = (msg.toolProgress?.length ?? 0) > 0
+              const hasLiveThinking = (msg.thinkingSteps?.length ?? 0) > 0
+              return {
+                ...msg,
+                isStreaming: false,
+                sources: e.sources,
+                toolsUsed: e.toolsUsed,
+                agentChain: e.agentChain,
+                // If SSE live events were missed (encoding/proxy), still show pipeline summary.
+                toolProgress: hasLiveTools
+                  ? msg.toolProgress
+                  : (e.toolsUsed ?? []).map(tool => ({
+                      tool,
+                      agent: 'Pipeline',
+                      status: 'done' as const,
+                    })),
+                thinkingSteps: hasLiveThinking
+                  ? msg.thinkingSteps
+                  : (e.agentChain ?? []).map(agent => ({
+                      type: 'AGENT_THINKING' as const,
+                      agent,
+                      status: 'Finished',
+                    })),
+              }
+            })
             streamingIdRef.current = null
           },
 
@@ -129,8 +169,69 @@ export default function App() {
     setMessages([])
     setConversationId(undefined)
     setVizData({ toolsUsed: [], agentChain: [] })
+    setMapSignalText('')
     setShowViz(false)
     streamingIdRef.current = null
+    mapSignalRef.current = ''
+  }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadRuntimeConfig = async () => {
+      try {
+        const response = await fetch('/api/v1/config/runtime')
+        if (!response.ok) {
+          return
+        }
+        const config = await response.json()
+        if (!cancelled) {
+          setRuntimeConfig(config)
+        }
+      } catch {
+        // Non-blocking: chat UI should still work if config endpoint is unavailable.
+      }
+    }
+
+    loadRuntimeConfig()
+    const intervalId = window.setInterval(loadRuntimeConfig, 30000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isResizingRef.current || !showViz) {
+        return
+      }
+      const desired = window.innerWidth - event.clientX
+      const clamped = Math.max(INSIGHTS_MIN_WIDTH, Math.min(INSIGHTS_MAX_WIDTH, desired))
+      setInsightsWidth(clamped)
+    }
+
+    const onMouseUp = () => {
+      isResizingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [showViz])
+
+  const startResizing = () => {
+    if (!showViz) {
+      return
+    }
+    isResizingRef.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
   }
 
   return (
@@ -148,6 +249,19 @@ export default function App() {
             <span className="text-xs text-slate-600 font-mono hidden sm:inline">
               {conversationId.slice(0, 8)}
             </span>
+          )}
+          {runtimeConfig && (
+            <>
+              <span className="hidden lg:inline text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                {runtimeConfig.provider}:{runtimeConfig.model}
+              </span>
+              <span className="hidden xl:inline text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                RAG:{runtimeConfig.embeddingModel}
+              </span>
+              <span className="hidden xl:inline text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                Cost ${runtimeConfig.dailyCostSpentUsd.toFixed(3)} / ${runtimeConfig.dailyCostCapUsd.toFixed(2)}
+              </span>
+            </>
           )}
         </div>
 
@@ -185,9 +299,19 @@ export default function App() {
           <ChatWindow messages={messages} />
           <MessageInput onSend={handleSend} disabled={isStreaming} />
         </div>
+        {showViz && (
+          <button
+            type="button"
+            onMouseDown={startResizing}
+            aria-label="Resize insights panel"
+            className="w-2 cursor-col-resize bg-slate-900/70 border-l border-slate-700/50 hover:bg-terra-500/30 transition-colors"
+          />
+        )}
         <VisualizationPanel
           toolsUsed={vizData.toolsUsed}
           agentChain={vizData.agentChain}
+          signalText={mapSignalText}
+          widthPx={insightsWidth}
           visible={showViz}
         />
       </div>

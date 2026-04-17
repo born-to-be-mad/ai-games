@@ -183,6 +183,10 @@ pip install -r requirements.txt
 # (Optional) Download disaster data if not present
 python scripts/download_data.py
 
+# Use real EOSDIS data (recommended outside local experiments)
+# Fails fast on startup if data/eosdis.csv is missing or invalid
+export DATA_SOURCE=real
+
 # Start the server
 python server.py
 # Runs on http://localhost:8080 with streamable-http transport

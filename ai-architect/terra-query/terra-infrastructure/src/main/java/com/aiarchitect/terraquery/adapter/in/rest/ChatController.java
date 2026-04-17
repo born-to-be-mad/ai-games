@@ -19,9 +19,12 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 
 @Slf4j
@@ -34,6 +37,8 @@ public class ChatController {
     private final ChatUseCase chatUseCase;
     private final ToolProgressIndicator progressIndicator;
     private final SimpleRequestRateLimiter rateLimiter;
+    private static final Duration STREAM_KEEPALIVE_INTERVAL = Duration.ofSeconds(10);
+    private static final Duration STREAM_RESPONSE_TIMEOUT = Duration.ofMinutes(5);
 
     @PostMapping
     public ResponseEntity<ChatResponse> chat(@Valid @RequestBody ChatRequest request) {
@@ -52,30 +57,66 @@ public class ChatController {
         String conversationId = request.getConversationId() != null
                 ? request.getConversationId().toString() : null;
 
-        Flux<ServerSentEvent<ChatEvent>> progressEvents = progressIndicator.events()
-                .map(event -> ServerSentEvent.<ChatEvent>builder()
-                        .event(event.type().name())
-                        .data(event)
-                        .build());
+        return Flux.defer(() -> {
+            // Per-request sink: agents emit here via ToolProgressIndicator.activate(this).
+            // autoCancel=false avoids the sink shutting down when the SSE subscriber cancels.
+            Sinks.Many<ChatEvent> streamSink = Sinks.many().multicast().onBackpressureBuffer(512, false);
 
-        Flux<ServerSentEvent<ChatEvent>> agentExecution = Mono
-                .fromCallable(() -> chatUseCase.chat(request.getMessage(), conversationId))
-                .flatMapMany(response -> Flux.just(
-                        ServerSentEvent.<ChatEvent>builder()
-                                .event(ChatEvent.EventType.ANSWER_CHUNK.name())
-                                .data(new ChatEvent.AnswerChunk(response.answer()))
-                                .build(),
-                        ServerSentEvent.<ChatEvent>builder()
-                                .event(ChatEvent.EventType.ANSWER_COMPLETE.name())
-                                .data(new ChatEvent.AnswerComplete(
-                                        response.toolsUsed(),
-                                        response.sources(),
-                                        response.agentChain()))
-                                .build()
-                ));
+            Flux<ServerSentEvent<ChatEvent>> progressEvents = streamSink.asFlux()
+                    .map(event -> ServerSentEvent.<ChatEvent>builder()
+                            .event(event.type().name())
+                            .data(event)
+                            .build());
 
-        return Flux.merge(progressEvents, agentExecution)
-                .timeout(Duration.ofSeconds(120));
+            Flux<ServerSentEvent<ChatEvent>> keepAlive = Flux.interval(STREAM_KEEPALIVE_INTERVAL)
+                    .map(ignored -> ServerSentEvent.<ChatEvent>builder()
+                            .comment("keepalive")
+                            .build());
+
+            Flux<ServerSentEvent<ChatEvent>> agentExecution = Mono
+                    .fromCallable(() -> {
+                        progressIndicator.activate(streamSink);
+                        try {
+                            return chatUseCase.chat(request.getMessage(), conversationId);
+                        } finally {
+                            progressIndicator.deactivate();
+                        }
+                    })
+                    .subscribeOn(Schedulers.boundedElastic())
+                    .flatMapMany(response -> Flux.just(
+                            ServerSentEvent.<ChatEvent>builder()
+                                    .event(ChatEvent.EventType.ANSWER_CHUNK.name())
+                                    .data(new ChatEvent.AnswerChunk(response.answer()))
+                                    .build(),
+                            ServerSentEvent.<ChatEvent>builder()
+                                    .event(ChatEvent.EventType.ANSWER_COMPLETE.name())
+                                    .data(new ChatEvent.AnswerComplete(
+                                            response.toolsUsed(),
+                                            response.sources(),
+                                            response.agentChain()))
+                                    .build()
+                    ));
+
+            return Flux.merge(progressEvents, keepAlive, agentExecution)
+                    .publishOn(Schedulers.boundedElastic(), 1)
+                    .takeUntil(event -> ChatEvent.EventType.ANSWER_COMPLETE.name().equals(event.event()))
+                    .timeout(STREAM_RESPONSE_TIMEOUT)
+                    .onErrorResume(TimeoutException.class, ex -> {
+                        log.warn("SSE stream timed out before answer completion", ex);
+                        return Flux.just(
+                                ServerSentEvent.<ChatEvent>builder()
+                                        .event(ChatEvent.EventType.ANSWER_CHUNK.name())
+                                        .data(new ChatEvent.AnswerChunk(
+                                                "I hit a timeout while processing this request. Please try again."
+                                        ))
+                                        .build(),
+                                ServerSentEvent.<ChatEvent>builder()
+                                        .event(ChatEvent.EventType.ANSWER_COMPLETE.name())
+                                        .data(new ChatEvent.AnswerComplete(List.of(), List.of(), List.of()))
+                                        .build()
+                        );
+                    });
+        });
     }
 
     private ChatResponse toResponse(AgentResponse agentResponse, ChatRequest request) {

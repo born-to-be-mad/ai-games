@@ -1,0 +1,52 @@
+2026-04-17T08:00:50.715819838Z 2026-04-17 08:00:50,715 [INFO] __main__: === TerraQuery MCP Server starting ===
+2026-04-17T08:00:50.716248338Z 2026-04-17 08:00:50,716 [INFO] data.loaders.eosdis_loader: Loading EOSDIS data from /var/lib/terra-data/eosdis.csv (mode=dev-fallback-allowed)
+2026-04-17T08:00:51.513612964Z 2026-04-17 08:00:51,513 [INFO] data.loaders.eosdis_loader: EOSDIS: loaded 16126 records
+2026-04-17T08:00:51.516303547Z 2026-04-17 08:00:51,515 [INFO] data.repository: Loaded 16126 records from eosdis in 0.80s
+2026-04-17T08:00:51.516521755Z 2026-04-17 08:00:51,516 [INFO] data.loaders.noaa_loader: Loading NOAA data from /var/lib/terra-data/noaa.csv
+2026-04-17T08:00:56.786105508Z 2026-04-17 08:00:56,785 [INFO] data.loaders.noaa_loader: NOAA: loaded 72241 records
+2026-04-17T08:00:56.796763549Z 2026-04-17 08:00:56,796 [INFO] data.repository: Loaded 72241 records from noaa in 5.28s
+2026-04-17T08:00:56.796814966Z 2026-04-17 08:00:56,796 [INFO] data.repository: Combining 2 source DataFrames
+2026-04-17T08:00:56.804970549Z 2026-04-17 08:00:56,804 [INFO] data.repository: Combined into 88367 records in 0.01s
+2026-04-17T08:00:56.805012091Z 2026-04-17 08:00:56,804 [INFO] data.repository: Computing source quality stats
+2026-04-17T08:00:56.812733424Z 2026-04-17 08:00:56,812 [INFO] data.repository: Computed source quality stats for 2 sources in 0.01s
+2026-04-17T08:00:56.812788341Z 2026-04-17 08:00:56,812 [INFO] data.repository: Starting cross-source deduplication
+...
+2026-04-17T08:06:18.834406754Z 2026-04-17 08:06:18,834 [INFO] data.quality.deduplicator: Deduplication: 88367 → 88367 records (0 cross-source duplicates merged)
+2026-04-17T08:06:18.883603796Z 2026-04-17 08:06:18,883 [INFO] data.repository: Deduplication completed in 322.07s (records=88367)
+2026-04-17T08:06:18.883670004Z 2026-04-17 08:06:18,883 [INFO] data.repository: Emitting quality report
+2026-04-17T08:06:18.883673587Z 2026-04-17 08:06:18,883 [INFO] data.quality.quality_report: === TerraQuery Data Quality Report ===
+2026-04-17T08:06:18.883677962Z 2026-04-17 08:06:18,883 [INFO] data.quality.quality_report: EOSDIS: 16126 records loaded, 4713 with missing death toll (29.2%), 1745 duplicate event_ids
+2026-04-17T08:06:18.883679504Z 2026-04-17 08:06:18,883 [INFO] data.quality.quality_report: NOAA: 72241 records loaded, 71765 with missing death toll (99.3%), 0 duplicate event_ids
+2026-04-17T08:06:18.883787421Z 2026-04-17 08:06:18,883 [INFO] data.quality.quality_report: Merged: 88367 total → 88367 after dedup (0 cross-source duplicates)
+...
+2026-04-17T08:06:18.978245046Z 2026-04-17 08:06:18,978 [INFO] data.repository: Repository load completed in 328.26s (final records=88367)
+2026-04-17T08:06:19.001862462Z 2026-04-17 08:06:19,001 [INFO] __main__: Preparing search indices for 88367 records (first run may take several minutes)
+2026-04-17T08:06:19.262222963Z 2026-04-17 08:06:19,261 [INFO] __main__: Using index cache key: a007440a00914f15bfa7c7cb12a35c0e
+2026-04-17T08:06:19.262478421Z 2026-04-17 08:06:19,262 [INFO] data.index.index_cache: Building indices from scratch (first run or data changed)...
+2026-04-17T08:06:19.262594629Z 2026-04-17 08:06:19,262 [INFO] data.index.index_builder: Building search indices for 88367 records...
+2026-04-17T08:06:22.706106589Z 2026-04-17 08:06:22,705 [INFO] faiss.loader: Loading faiss.
+2026-04-17T08:06:22.725192381Z 2026-04-17 08:06:22,724 [INFO] faiss.loader: Successfully loaded faiss.
+2026-04-17T08:06:28.090851675Z 2026-04-17 08:06:28,090 [INFO] data.index.index_builder: Embedding 88367 texts with BAAI/bge-base-en-v1.5 (batch_size=16)...
+2026-04-17T08:06:28.091270550Z 2026-04-17 08:06:28,091 [INFO] sentence_transformers.base.model: No device provided, using cpu
+...
+2026-04-17T08:16:55.509957090Z 2026-04-17 08:16:55,509 [INFO] data.index.index_builder: Embedding progress: 10000/88367 (11.3%), 16.0 texts/s, eta 4886.7s
+2026-04-17T08:27:54.525611882Z 2026-04-17 08:27:54,524 [INFO] data.index.index_builder: Embedding progress: 20000/88367 (22.6%), 15.6 texts/s, eta 4384.3s
+2026-04-17T08:37:54.022701840Z 2026-04-17 08:37:54,021 [INFO] data.index.index_builder: Embedding progress: 30000/88367 (33.9%), 15.9 texts/s, eta 3661.7s
+2026-04-17T08:50:03.240095011Z 2026-04-17 08:50:03,239 [INFO] data.index.index_builder: Embedding progress: 40000/88367 (45.3%), 15.3 texts/s, eta 3157.5s
+2026-04-17T09:00:32.738476552Z 2026-04-17 09:00:32,737 [INFO] data.index.index_builder: Embedding progress: 50000/88367 (56.6%), 15.4 texts/s, eta 2486.8s
+2026-04-17T09:11:35.336897511Z 2026-04-17 09:11:35,335 [INFO] data.index.index_builder: Embedding progress: 60000/88367 (67.9%), 15.4 texts/s, eta 1845.4s
+2026-04-17T09:22:39.358379472Z 2026-04-17 09:22:39,356 [INFO] data.index.index_builder: Embedding progress: 70000/88367 (79.2%), 15.3 texts/s, eta 1198.4s
+2026-04-17T09:33:36.848229804Z 2026-04-17 09:33:36,843 [INFO] data.index.index_builder: Embedding progress: 80000/88367 (90.5%), 15.3 texts/s, eta 546.5s
+2026-04-17T09:41:46.965241044Z 2026-04-17 09:41:46,964 [INFO] data.index.index_builder: Embedding progress: 88367/88367 (100.0%), 15.5 texts/s, eta 0.0s
+2026-04-17T09:41:46.973516628Z 2026-04-17 09:41:46,965 [INFO] data.index.index_builder: Embedding completed in 5714.99s
+2026-04-17T09:41:46.975486961Z 2026-04-17 09:41:46,974 [INFO] data.index.index_builder: Indices built: 88367 documents
+2026-04-17T09:41:50.210235004Z 2026-04-17 09:41:50,209 [INFO] data.index.index_cache: Indices cached to /data/indices/index_a007440a00914f15bfa7c7cb12a35c0e.pkl
+2026-04-17T09:41:50.211392504Z 2026-04-17 09:41:50,211 [INFO] __main__: Search engine ready (BM25=True, FAISS=True)
+2026-04-17T09:41:50.211413421Z 2026-04-17 09:41:50,211 [INFO] __main__: === TerraQuery MCP Server ready ===
+2026-04-17T09:41:50.253816879Z 2026-04-17 09:41:50,253 [INFO] __main__: Starting server with transport=streamable-http on port 8080
+2026-04-17T09:41:50.325925879Z INFO:     Started server process [1]
+2026-04-17T09:41:50.325968962Z INFO:     Waiting for application startup.
+2026-04-17T09:41:50.327180421Z 2026-04-17 09:41:50,327 [INFO] mcp.server.streamable_http_manager: StreamableHTTP session manager started
+2026-04-17T09:41:50.327220129Z INFO:     Application startup complete.
+2026-04-17T09:41:50.327926462Z INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+2026-04-17T09:42:13.419551126Z INFO:     127.0.0.1:54188 - "GET /health HTTP/1.1" 200 OK

@@ -2,6 +2,7 @@
 
 import logging
 import os
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -84,19 +85,52 @@ def _build_faiss(texts: list[str]) -> Any:
         )
         return None
 
-    logger.info("Embedding %d texts with %s...", len(texts), EMBEDDING_MODEL)
-    model = SentenceTransformer(EMBEDDING_MODEL)
-    embeddings = model.encode(
-        texts,
-        batch_size=64,
-        show_progress_bar=len(texts) > 1000,
-        normalize_embeddings=True,  # needed for cosine via inner product
+    total = len(texts)
+    batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "16"))
+    logger.info(
+        "Embedding %d texts with %s (batch_size=%d)...",
+        total,
+        EMBEDDING_MODEL,
+        batch_size,
     )
-    embeddings = np.array(embeddings, dtype=np.float32)
+    model = SentenceTransformer(EMBEDDING_MODEL)
 
-    dim = embeddings.shape[1]
-    index = faiss.IndexFlatIP(dim)  # inner product on normalized vectors = cosine
-    index.add(embeddings)
+    started = time.perf_counter()
+    index: Any = None
+    log_every = max(batch_size * 50, 5000)
+    for start in range(0, total, batch_size):
+        end = min(start + batch_size, total)
+        chunk = texts[start:end]
+        chunk_embeddings = model.encode(
+            chunk,
+            batch_size=batch_size,
+            show_progress_bar=False,
+            normalize_embeddings=True,  # needed for cosine via inner product
+        )
+        chunk_array = np.array(chunk_embeddings, dtype=np.float32)
+        if index is None:
+            dim = chunk_array.shape[1]
+            index = faiss.IndexFlatIP(
+                dim
+            )  # inner product on normalized vectors = cosine
+        index.add(chunk_array)
+
+        processed = end
+        if processed == total or processed % log_every == 0:
+            elapsed = max(time.perf_counter() - started, 1e-6)
+            rate = processed / elapsed
+            remaining = total - processed
+            eta = remaining / rate if rate > 0 else 0.0
+            logger.info(
+                "Embedding progress: %d/%d (%.1f%%), %.1f texts/s, eta %.1fs",
+                processed,
+                total,
+                (processed / total) * 100.0,
+                rate,
+                eta,
+            )
+
+    logger.info("Embedding completed in %.2fs", time.perf_counter() - started)
     return index
 
 

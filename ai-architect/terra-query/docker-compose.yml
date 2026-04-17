@@ -19,7 +19,8 @@ services:
           memory: 128m
           cpus: "0.5"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      # 127.0.0.1 avoids occasional ::1 / IPv6-only listener mismatches with "localhost"
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 5s
       start_period: 10s
@@ -72,12 +73,15 @@ services:
       - "8200:8080"
     volumes:
       - terra-indices:/data/indices
-      - terra-data:/app/data
+      - terra-data:/var/lib/terra-data
+      - terra-hf-cache:/root/.cache/huggingface
     environment:
       MCP_TRANSPORT: streamable-http
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-BAAI/bge-base-en-v1.5}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-16}
       INDEX_CACHE_DIR: /data/indices
-      DATA_DIR: /app/data
+      DATA_DIR: /var/lib/terra-data
+      HF_HOME: /root/.cache/huggingface
       RRF_K: ${RRF_K:-60}
       RRF_BM25_WEIGHT: ${RRF_BM25_WEIGHT:-1.0}
       RRF_VECTOR_WEIGHT: ${RRF_VECTOR_WEIGHT:-1.0}
@@ -89,12 +93,12 @@ services:
           memory: 4g
           cpus: "2.0"
     healthcheck:
-      test: ["CMD", "python", "-c",
-             "import socket; s=socket.socket(); s.settimeout(5); s.connect(('127.0.0.1',8080)); s.close()"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
       interval: 30s
       timeout: 10s
-      start_period: 60s
-      retries: 3
+      # First startup can take a long time on CPU (model + 80k+ embeddings + index build).
+      start_period: 3600s
+      retries: 20
     networks:
       - terra-network
 
@@ -134,6 +138,27 @@ services:
           memory: 512m
           cpus: "0.5"
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - terra-prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      terra-infrastructure:
+        condition: service_healthy
+    networks:
+      - terra-network
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "0.5"
+
   grafana:
     image: grafana/grafana:11.6.1
     ports:
@@ -148,6 +173,7 @@ services:
     depends_on:
       - tempo
       - loki
+      - prometheus
     networks:
       - terra-network
     deploy:
@@ -161,9 +187,13 @@ volumes:
     driver: local
   terra-data:
     driver: local
+  terra-hf-cache:
+    driver: local
   terra-tempo:
     driver: local
   terra-loki:
+    driver: local
+  terra-prometheus:
     driver: local
 
 networks:

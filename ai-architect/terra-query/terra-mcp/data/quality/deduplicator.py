@@ -1,6 +1,7 @@
 """CrossSourceDeduplicator: fuzzy dedup of events across data sources."""
 
 import logging
+import time
 from typing import Any
 
 import pandas as pd
@@ -27,8 +28,32 @@ class CrossSourceDeduplicator:
         if df["source"].nunique() < 2:
             return df
 
-        groups = df.groupby("disaster_type", group_keys=False)
-        deduped_parts = [self._deduplicate_group(group) for _, group in groups]
+        groups = list(df.groupby("disaster_type", group_keys=False))
+        largest_groups = sorted(
+            ((str(disaster_type), len(group)) for disaster_type, group in groups),
+            key=lambda item: item[1],
+            reverse=True,
+        )[:5]
+        logger.info(
+            "Deduplication groups=%d, largest groups=%s",
+            len(groups),
+            largest_groups,
+        )
+
+        deduped_parts = []
+        for disaster_type, group in groups:
+            group_start = time.perf_counter()
+            logger.info(
+                "Deduplicating group disaster_type=%s size=%d",
+                disaster_type,
+                len(group),
+            )
+            deduped_parts.append(self._deduplicate_group(group))
+            logger.info(
+                "Finished group disaster_type=%s in %.2fs",
+                disaster_type,
+                time.perf_counter() - group_start,
+            )
         result = pd.concat(deduped_parts, ignore_index=True)
 
         removed = before - len(result)
