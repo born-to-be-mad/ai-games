@@ -113,6 +113,7 @@ async def health_check(_request: Request) -> Response:
         }
     )
 
+
 if __name__ == "__main__":
     transport = cast(
         Literal["stdio", "sse", "streamable-http"],

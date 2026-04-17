@@ -84,7 +84,10 @@ public class ChatController {
                                 .build()
                 ));
 
+        // Serialize merged emissions so TOOL_CALL_* / AGENT_THINKING events are not lost to
+        // cancellation races when ANSWER_COMPLETE arrives from the agent branch.
         return Flux.merge(progressEvents, keepAlive, agentExecution)
+                .publishOn(Schedulers.boundedElastic(), 1)
                 .takeUntil(event -> ChatEvent.EventType.ANSWER_COMPLETE.name().equals(event.event()))
                 .timeout(STREAM_RESPONSE_TIMEOUT)
                 .onErrorResume(TimeoutException.class, ex -> {

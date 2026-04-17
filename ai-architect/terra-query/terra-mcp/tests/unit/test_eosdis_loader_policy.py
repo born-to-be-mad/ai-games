@@ -30,7 +30,14 @@ def test_missing_file_raises_when_required(monkeypatch, tmp_path: Path):
 def test_data_source_real_ignores_sample_file(monkeypatch, tmp_path: Path):
     monkeypatch.setenv("DATA_SOURCE", "real")
     sample = pd.DataFrame(
-        [{"Dis No": "S-1", "Disaster Type": "Flood", "Country": "Bangladesh", "Start Year": 2001}]
+        [
+            {
+                "Dis No": "S-1",
+                "Disaster Type": "Flood",
+                "Country": "Bangladesh",
+                "Start Year": 2001,
+            }
+        ]
     )
     sample.to_csv(tmp_path / "eosdis_sample.csv", index=False)
     loader = EosdisLoader(data_dir=tmp_path)

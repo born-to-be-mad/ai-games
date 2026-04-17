@@ -85,22 +85,21 @@ export function useSSE(url: string) {
             for (const message of messages) {
               if (!message.trim()) continue
 
-              let eventType = ''
-              let dataLine = ''
-
-              for (const line of message.split('\n')) {
-                if (line.startsWith('event:')) {
-                  eventType = line.slice(6).trim()
-                } else if (line.startsWith('data:')) {
-                  dataLine = line.slice(5).trim()
-                }
-              }
-
-              if (!dataLine) continue
+              const { eventType, dataPayload } = parseSseMessage(message)
+              if (!dataPayload) continue
 
               try {
-                const parsed = JSON.parse(dataLine)
-                dispatch(eventType, parsed, handlers)
+                const parsed: unknown = JSON.parse(dataPayload)
+                const resolvedType =
+                  eventType ||
+                  (parsed &&
+                  typeof parsed === 'object' &&
+                  parsed !== null &&
+                  'type' in parsed &&
+                  typeof (parsed as { type: unknown }).type === 'string'
+                    ? (parsed as { type: string }).type
+                    : '')
+                dispatch(resolvedType, parsed, handlers)
               } catch {
                 // Malformed JSON — skip
               }
@@ -152,4 +151,29 @@ function dispatch(eventType: string, data: unknown, handlers: SSEHandlers) {
       handlers.onAnswerComplete?.(data as AnswerCompleteEvent)
       break
   }
+}
+
+/**
+ * Parse one SSE message block (lines separated by \n, block separated by \n\n).
+ * Spring may omit the `event:` line and rely on JSON `type` (handled by caller).
+ * Handles \r\n line endings from proxies.
+ */
+function parseSseMessage(block: string): { eventType: string; dataPayload: string } {
+  let eventType = ''
+  let dataPayload = ''
+
+  for (const rawLine of block.split('\n')) {
+    const line = rawLine.replace(/\r$/, '')
+    if (!line.trim() || line.trimStart().startsWith(':')) {
+      continue
+    }
+    if (line.startsWith('event:')) {
+      eventType = line.slice(6).trim()
+    } else if (line.startsWith('data:')) {
+      const piece = line.slice(5).trimStart()
+      dataPayload = dataPayload ? `${dataPayload}\n${piece}` : piece
+    }
+  }
+
+  return { eventType, dataPayload }
 }

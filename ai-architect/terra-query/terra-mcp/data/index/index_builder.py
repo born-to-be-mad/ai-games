@@ -110,7 +110,9 @@ def _build_faiss(texts: list[str]) -> Any:
         chunk_array = np.array(chunk_embeddings, dtype=np.float32)
         if index is None:
             dim = chunk_array.shape[1]
-            index = faiss.IndexFlatIP(dim)  # inner product on normalized vectors = cosine
+            index = faiss.IndexFlatIP(
+                dim
+            )  # inner product on normalized vectors = cosine
         index.add(chunk_array)
 
         processed = end

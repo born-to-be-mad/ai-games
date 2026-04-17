@@ -17,7 +17,7 @@ _DEFAULT_PATH = Path(__file__).parent.parent / "samples" / "eosdis_sample.csv"
 # Column mapping from raw EOSDIS CSV to normalized schema
 # Supports both legacy format (with "Dis No") and newer EM-DAT export format
 _COLUMN_MAP = {
-    "Dis No": "source_event_id",          # legacy format
+    "Dis No": "source_event_id",  # legacy format
     "Disaster Type": "disaster_type",
     "Disaster Subtype": "subtype",
     "Country": "country",
@@ -32,7 +32,7 @@ _COLUMN_MAP = {
     "Total Deaths": "deaths",
     "No Injured": "injured",
     "Total Affected": "affected",
-    "Total Damage ('000 US$)": "economic_damage_usd",   # legacy
+    "Total Damage ('000 US$)": "economic_damage_usd",  # legacy
     "Total Damages ('000 US$)": "economic_damage_usd",  # newer EM-DAT export
     "Dis Mag Value": "magnitude",
     "Year": "_year",
@@ -125,7 +125,8 @@ class EosdisLoader(BaseLoader):
         # Use pre-mapped ISO3 if available, otherwise derive from country name
         if "country_iso3_raw" in df.columns:
             df["country_iso3"] = df["country_iso3_raw"].where(
-                df["country_iso3_raw"].notna(), other=df["country"].apply(self._normalizer.country_to_iso3)
+                df["country_iso3_raw"].notna(),
+                other=df["country"].apply(self._normalizer.country_to_iso3),
             )
         else:
             df["country_iso3"] = df["country"].apply(self._normalizer.country_to_iso3)
@@ -200,9 +201,7 @@ def _require_real_dataset() -> bool:
     if mode == "dev":
         return False
     if mode not in {"", "auto"}:
-        logger.warning(
-            "Unknown DATA_SOURCE=%r, falling back to auto policy", mode
-        )
+        logger.warning("Unknown DATA_SOURCE=%r, falling back to auto policy", mode)
     explicit = os.getenv("REQUIRE_REAL_EOSDIS")
     if explicit is not None:
         return explicit.strip().lower() in {"1", "true", "yes", "on"}

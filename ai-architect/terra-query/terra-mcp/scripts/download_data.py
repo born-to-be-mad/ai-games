@@ -121,12 +121,18 @@ def download_eosdis_kaggle(data_dir: Path, force: bool = False) -> None:
         sys.exit(1)
 
     logger.info("Downloading EOSDIS dataset from Kaggle via CLI...")
-    zip_path = data_dir / "eosdis.zip"
     result = subprocess.run(
-        [kaggle_bin, "datasets", "download",
-         "-d", "brsdincer/all-natural-disasters-19002021-eosdis",
-         "-p", str(data_dir)],
-        capture_output=True, text=True,
+        [
+            kaggle_bin,
+            "datasets",
+            "download",
+            "-d",
+            "brsdincer/all-natural-disasters-19002021-eosdis",
+            "-p",
+            str(data_dir),
+        ],
+        capture_output=True,
+        text=True,
     )
     if result.returncode != 0:
         logger.error("Kaggle download failed:\n%s", result.stderr)

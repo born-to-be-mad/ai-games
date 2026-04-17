@@ -113,13 +113,32 @@ export default function App() {
             setVizData({ toolsUsed: e.toolsUsed, agentChain: e.agentChain })
             setMapSignalText(`${mapSignalRef.current} ${e.sources.join(' ')}`.trim())
             setShowViz(true)
-            updateStreamingMessage(msg => ({
-              ...msg,
-              isStreaming: false,
-              sources: e.sources,
-              toolsUsed: e.toolsUsed,
-              agentChain: e.agentChain,
-            }))
+            updateStreamingMessage(msg => {
+              const hasLiveTools = (msg.toolProgress?.length ?? 0) > 0
+              const hasLiveThinking = (msg.thinkingSteps?.length ?? 0) > 0
+              return {
+                ...msg,
+                isStreaming: false,
+                sources: e.sources,
+                toolsUsed: e.toolsUsed,
+                agentChain: e.agentChain,
+                // If SSE live events were missed (encoding/proxy), still show pipeline summary.
+                toolProgress: hasLiveTools
+                  ? msg.toolProgress
+                  : (e.toolsUsed ?? []).map(tool => ({
+                      tool,
+                      agent: 'Pipeline',
+                      status: 'done' as const,
+                    })),
+                thinkingSteps: hasLiveThinking
+                  ? msg.thinkingSteps
+                  : (e.agentChain ?? []).map(agent => ({
+                      type: 'AGENT_THINKING' as const,
+                      agent,
+                      status: 'Finished',
+                    })),
+              }
+            })
             streamingIdRef.current = null
           },
 
