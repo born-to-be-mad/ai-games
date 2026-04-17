@@ -19,7 +19,8 @@ services:
           memory: 128m
           cpus: "0.5"
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      # 127.0.0.1 avoids occasional ::1 / IPv6-only listener mismatches with "localhost"
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 5s
       start_period: 10s
