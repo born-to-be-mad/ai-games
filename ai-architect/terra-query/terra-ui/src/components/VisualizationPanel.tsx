@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -16,6 +16,7 @@ const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
 interface Props {
   toolsUsed: string[]
   agentChain: string[]
+  signalText?: string
   visible: boolean
 }
 
@@ -23,8 +24,9 @@ type Tab = 'map' | 'tools' | 'agents'
 
 const COLORS = ['#e05c2d', '#c44a1c', '#f97316', '#fb923c', '#fed7aa']
 
-export function VisualizationPanel({ toolsUsed, agentChain, visible }: Props) {
+export function VisualizationPanel({ toolsUsed, agentChain, signalText = '', visible }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('map')
+  const normalizedSignalText = useMemo(() => normalize(signalText), [signalText])
 
   if (!visible) return null
 
@@ -77,27 +79,31 @@ export function VisualizationPanel({ toolsUsed, agentChain, visible }: Props) {
                 <ZoomableGroup>
                   <Geographies geography={GEO_URL}>
                     {({ geographies }) =>
-                      geographies.map(geo => (
-                        <Geography
-                          key={geo.rsmKey}
-                          geography={geo}
-                          fill="#1e293b"
-                          stroke="#334155"
-                          strokeWidth={0.4}
-                          style={{
-                            default: { outline: 'none' },
-                            hover: { fill: '#334155', outline: 'none' },
-                            pressed: { outline: 'none' },
-                          }}
-                        />
-                      ))
+                      geographies.map(geo => {
+                        const countryName = String((geo.properties as { name?: string } | undefined)?.name ?? '')
+                        const highlighted = isCountryMentioned(countryName, normalizedSignalText)
+                        return (
+                          <Geography
+                            key={geo.rsmKey}
+                            geography={geo}
+                            fill={highlighted ? '#f97316' : '#1e293b'}
+                            stroke="#334155"
+                            strokeWidth={0.4}
+                            style={{
+                              default: { outline: 'none' },
+                              hover: { fill: highlighted ? '#fb923c' : '#334155', outline: 'none' },
+                              pressed: { outline: 'none' },
+                            }}
+                          />
+                        )
+                      })
                     }
                   </Geographies>
                 </ZoomableGroup>
               </ComposableMap>
             </div>
             <p className="text-xs text-slate-600 mt-2 text-center">
-              Zoom/pan to explore. Highlighted regions after query.
+              Highlighted when country names are detected in tool outputs and answers.
             </p>
           </div>
         )}
@@ -173,4 +179,47 @@ export function VisualizationPanel({ toolsUsed, agentChain, visible }: Props) {
       </div>
     </aside>
   )
+}
+
+function normalize(value: string): string {
+  return value
+    .normalize('NFKD')
+    .replace(/[^\w\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+}
+
+function isCountryMentioned(countryName: string, normalizedSignalText: string): boolean {
+  if (!countryName || !normalizedSignalText) {
+    return false
+  }
+  const candidates = [normalize(countryName), ...(COUNTRY_ALIASES[countryName] ?? []).map(normalize)]
+  return candidates.some(candidate => {
+    if (!candidate) {
+      return false
+    }
+    const escaped = candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const regex = new RegExp(`(^|\\s)${escaped}(\\s|$)`)
+    return regex.test(normalizedSignalText)
+  })
+}
+
+const COUNTRY_ALIASES: Record<string, string[]> = {
+  'United States of America': ['United States', 'USA', 'US'],
+  'Russian Federation': ['Russia'],
+  'United Republic of Tanzania': ['Tanzania'],
+  'Viet Nam': ['Vietnam'],
+  'Bolivia (Plurinational State of)': ['Bolivia'],
+  'Venezuela (Bolivarian Republic of)': ['Venezuela'],
+  'Syrian Arab Republic': ['Syria'],
+  "Lao People's Democratic Republic": ['Laos'],
+  'Democratic Republic of the Congo': ['DRC', 'Congo'],
+  'Republic of the Congo': ['Congo Republic'],
+  'Côte d’Ivoire': ["Cote d'Ivoire", 'Ivory Coast'],
+  Czechia: ['Czech Republic'],
+  'Republic of Moldova': ['Moldova'],
+  'Iran (Islamic Republic of)': ['Iran'],
+  'Korea, Republic of': ['South Korea'],
+  "Korea, Democratic People's Republic of": ['North Korea'],
 }

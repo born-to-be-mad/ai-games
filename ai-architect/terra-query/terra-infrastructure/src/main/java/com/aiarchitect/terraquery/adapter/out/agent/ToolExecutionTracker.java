@@ -89,6 +89,14 @@ public class ToolExecutionTracker {
         );
     }
 
+    public int attemptedToolCalls() {
+        return callCount.get();
+    }
+
+    public List<ToolCallRecord> records() {
+        return List.copyOf(toolCallRecords);
+    }
+
     public static String normalizeToolName(String toolName) {
         if (toolName == null || toolName.isBlank()) {
             return "";

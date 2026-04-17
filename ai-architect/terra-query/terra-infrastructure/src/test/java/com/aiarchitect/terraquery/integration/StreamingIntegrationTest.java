@@ -65,4 +65,38 @@ class StreamingIntegrationTest {
                             .contains("ANSWER_COMPLETE");
                 });
     }
+
+    @Test
+    void streamChat_completesWhenAnswerCompleteEvenIfProgressStreamNeverEnds() {
+        var agentResponse = AgentResponse.of(
+                "Observed 132 floods in Bangladesh between 1990 and 2021.",
+                java.util.List.of("get_disaster_statistics"),
+                java.util.List.of("EOSDIS", "NOAA"),
+                java.util.List.of("SupervisorAgent", "DataRetrievalAgent", "AnalysisSynthesisAgent")
+        );
+        when(chatUseCase.chat(anyString(), isNull())).thenReturn(agentResponse);
+        when(progressIndicator.events()).thenReturn(reactor.core.publisher.Flux.never());
+        when(rateLimiter.tryAcquire()).thenReturn(true);
+
+        WebTestClient webTestClient = MockMvcWebTestClient.bindTo(mockMvc).build();
+
+        webTestClient.post().uri("/api/v1/chat/stream")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("""
+                        {"message": "How many floods occurred in Bangladesh between 1990 and 2021?"}
+                        """)
+                .accept(MediaType.TEXT_EVENT_STREAM)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM)
+                .expectBodyList(String.class)
+                .consumeWith(result -> {
+                    var body = String.join("\n", result.getResponseBody() != null
+                            ? result.getResponseBody() : java.util.List.of());
+                    org.assertj.core.api.Assertions.assertThat(body)
+                            .contains("ANSWER_CHUNK")
+                            .contains("ANSWER_COMPLETE")
+                            .doesNotContain("I hit a timeout while processing this request");
+                });
+    }
 }

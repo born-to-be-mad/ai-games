@@ -8,13 +8,13 @@
   "panels": [
     {
       "id": 1,
-      "title": "Request Rate (req/s)",
+      "title": "Request Rate (req/s) — /chat + /chat/stream",
       "type": "timeseries",
       "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
       "datasource": { "uid": "prometheus", "type": "prometheus" },
       "targets": [
         {
-          "expr": "rate(http_server_requests_seconds_count{uri=\"/api/v1/chat\"}[1m])",
+          "expr": "rate(http_server_requests_seconds_count{uri=~\"/api/v1/chat(|/stream)\"}[1m])",
           "legendFormat": "{{method}} {{status}}"
         }
       ],
@@ -24,17 +24,17 @@
     },
     {
       "id": 2,
-      "title": "P50 / P95 Latency — /api/v1/chat",
+      "title": "P50 / P95 Latency — /chat + /chat/stream",
       "type": "timeseries",
       "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
       "datasource": { "uid": "prometheus", "type": "prometheus" },
       "targets": [
         {
-          "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/chat\"}[2m]))",
+          "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{uri=~\"/api/v1/chat(|/stream)\"}[2m]))",
           "legendFormat": "p50"
         },
         {
-          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=\"/api/v1/chat\"}[2m]))",
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{uri=~\"/api/v1/chat(|/stream)\"}[2m]))",
           "legendFormat": "p95"
         }
       ],
@@ -54,7 +54,7 @@
       "datasource": { "uid": "prometheus", "type": "prometheus" },
       "targets": [
         {
-          "expr": "100 * rate(http_server_requests_seconds_count{uri=\"/api/v1/chat\",status=~\"5..\"}[1m]) / rate(http_server_requests_seconds_count{uri=\"/api/v1/chat\"}[1m])",
+          "expr": "100 * rate(http_server_requests_seconds_count{uri=~\"/api/v1/chat(|/stream)\",status=~\"5..\"}[1m]) / clamp_min(rate(http_server_requests_seconds_count{uri=~\"/api/v1/chat(|/stream)\"}[1m]), 1e-12)",
           "legendFormat": "5xx error rate %"
         }
       ],
@@ -149,7 +149,7 @@
       "datasource": { "uid": "prometheus", "type": "prometheus" },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_bucket{uri=\"/api/v1/chat\"}[2m])) by (le)",
+          "expr": "sum(rate(http_server_requests_seconds_bucket{uri=~\"/api/v1/chat(|/stream)\"}[2m])) by (le)",
           "legendFormat": "{{le}}",
           "format": "heatmap"
         }
@@ -158,6 +158,56 @@
         "calculate": false,
         "color": { "mode": "scheme", "scheme": "Spectral", "steps": 64 },
         "yAxis": { "unit": "s" }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Estimated Daily Cost (USD)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "targets": [
+        {
+          "expr": "terra_query_cost_spent_usd",
+          "legendFormat": "spent"
+        },
+        {
+          "expr": "terra_query_cost_daily_cap_usd",
+          "legendFormat": "daily cap"
+        },
+        {
+          "expr": "terra_query_cost_remaining_usd",
+          "legendFormat": "remaining"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "currencyUSD", "color": { "mode": "palette-classic" } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "daily cap" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "remaining" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "title": "Estimated Cost Burn Rate (USD/min)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "targets": [
+        {
+          "expr": "60 * rate(terra_query_cost_estimate_usd_total[5m])",
+          "legendFormat": "usd/min"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4,
+          "color": { "mode": "palette-classic" }
+        }
       }
     }
   ]

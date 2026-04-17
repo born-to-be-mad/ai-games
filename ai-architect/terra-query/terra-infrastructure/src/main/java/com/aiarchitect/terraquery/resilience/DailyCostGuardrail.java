@@ -1,6 +1,9 @@
 package com.aiarchitect.terraquery.resilience;
 
 import com.aiarchitect.terraquery.config.AgentGuardrailsConfig;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -16,9 +19,25 @@ public class DailyCostGuardrail {
     private final BigDecimal dailyCapUsd;
     private final AtomicReference<LocalDate> currentDay = new AtomicReference<>(LocalDate.now());
     private final AtomicReference<BigDecimal> spentUsd = new AtomicReference<>(BigDecimal.ZERO);
+    private final Counter estimatedCostCounter;
 
-    public DailyCostGuardrail(AgentGuardrailsConfig guardrails) {
+    public DailyCostGuardrail(AgentGuardrailsConfig guardrails, MeterRegistry meterRegistry) {
         this.dailyCapUsd = guardrails.dailyCostCapUsd();
+        this.estimatedCostCounter = Counter.builder("terra_query_cost_estimate_usd_total")
+                .description("Cumulative estimated LLM/tooling cost in USD")
+                .register(meterRegistry);
+
+        Gauge.builder("terra_query_cost_spent_usd", spentUsd, ref -> ref.get().doubleValue())
+                .description("Estimated USD spent today")
+                .register(meterRegistry);
+
+        Gauge.builder("terra_query_cost_daily_cap_usd", dailyCapUsd, BigDecimal::doubleValue)
+                .description("Configured daily cost cap in USD")
+                .register(meterRegistry);
+
+        Gauge.builder("terra_query_cost_remaining_usd", this, DailyCostGuardrail::remainingUsdAsDouble)
+                .description("Estimated remaining daily budget in USD")
+                .register(meterRegistry);
     }
 
     public synchronized boolean canProcess() {
@@ -30,6 +49,22 @@ public class DailyCostGuardrail {
         rolloverIfNeeded();
         BigDecimal estimated = estimateCost(answer, toolCalls);
         spentUsd.set(spentUsd.get().add(estimated));
+        estimatedCostCounter.increment(estimated.doubleValue());
+    }
+
+    public synchronized BigDecimal spentUsd() {
+        rolloverIfNeeded();
+        return spentUsd.get();
+    }
+
+    public BigDecimal dailyCapUsd() {
+        return dailyCapUsd;
+    }
+
+    public synchronized BigDecimal remainingUsd() {
+        rolloverIfNeeded();
+        BigDecimal remaining = dailyCapUsd.subtract(spentUsd.get());
+        return remaining.max(BigDecimal.ZERO);
     }
 
     private BigDecimal estimateCost(String answer, int toolCalls) {
@@ -46,5 +81,9 @@ public class DailyCostGuardrail {
             currentDay.set(today);
             spentUsd.set(BigDecimal.ZERO);
         }
+    }
+
+    private double remainingUsdAsDouble() {
+        return remainingUsd().doubleValue();
     }
 }

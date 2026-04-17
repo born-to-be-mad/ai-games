@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ChatWindow } from './components/ChatWindow'
 import { MessageInput } from './components/MessageInput'
 import { VisualizationPanel } from './components/VisualizationPanel'
@@ -18,8 +18,20 @@ export default function App() {
     toolsUsed: [],
     agentChain: [],
   })
+  const [mapSignalText, setMapSignalText] = useState('')
   const [showViz, setShowViz] = useState(false)
+  const [runtimeConfig, setRuntimeConfig] = useState<{
+    provider: string
+    model: string
+    embeddingModel: string
+    contextWindowStrategy: string
+    maxQueriesPerMinute: number
+    dailyCostCapUsd: number
+    dailyCostSpentUsd: number
+    dailyCostRemainingUsd: number
+  } | null>(null)
   const streamingIdRef = useRef<string | null>(null)
+  const mapSignalRef = useRef('')
 
   const { status, send, abort } = useSSE(STREAM_URL)
   const isStreaming = status === 'streaming'
@@ -47,6 +59,7 @@ export default function App() {
       }
 
       setMessages(prev => [...prev, userMsg, assistantMsg])
+      mapSignalRef.current = text
 
       send(
         { message: text, conversationId },
@@ -62,6 +75,7 @@ export default function App() {
           },
 
           onToolCallEnd(e) {
+            mapSignalRef.current = `${mapSignalRef.current} ${e.resultPreview ?? ''}`.trim()
             updateStreamingMessage(msg => ({
               ...msg,
               toolProgress: (msg.toolProgress ?? []).map(t =>
@@ -80,6 +94,7 @@ export default function App() {
           },
 
           onAnswerChunk(e) {
+            mapSignalRef.current = `${mapSignalRef.current} ${e.text}`.trim()
             updateStreamingMessage(msg => ({
               ...msg,
               content: msg.content + e.text,
@@ -91,6 +106,7 @@ export default function App() {
               setConversationId(generateId())
             }
             setVizData({ toolsUsed: e.toolsUsed, agentChain: e.agentChain })
+            setMapSignalText(`${mapSignalRef.current} ${e.sources.join(' ')}`.trim())
             setShowViz(true)
             updateStreamingMessage(msg => ({
               ...msg,
@@ -129,9 +145,37 @@ export default function App() {
     setMessages([])
     setConversationId(undefined)
     setVizData({ toolsUsed: [], agentChain: [] })
+    setMapSignalText('')
     setShowViz(false)
     streamingIdRef.current = null
+    mapSignalRef.current = ''
   }
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadRuntimeConfig = async () => {
+      try {
+        const response = await fetch('/api/v1/config/runtime')
+        if (!response.ok) {
+          return
+        }
+        const config = await response.json()
+        if (!cancelled) {
+          setRuntimeConfig(config)
+        }
+      } catch {
+        // Non-blocking: chat UI should still work if config endpoint is unavailable.
+      }
+    }
+
+    loadRuntimeConfig()
+    const intervalId = window.setInterval(loadRuntimeConfig, 30000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [])
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -148,6 +192,19 @@ export default function App() {
             <span className="text-xs text-slate-600 font-mono hidden sm:inline">
               {conversationId.slice(0, 8)}
             </span>
+          )}
+          {runtimeConfig && (
+            <>
+              <span className="hidden lg:inline text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                {runtimeConfig.provider}:{runtimeConfig.model}
+              </span>
+              <span className="hidden xl:inline text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                RAG:{runtimeConfig.embeddingModel}
+              </span>
+              <span className="hidden xl:inline text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                Cost ${runtimeConfig.dailyCostSpentUsd.toFixed(3)} / ${runtimeConfig.dailyCostCapUsd.toFixed(2)}
+              </span>
+            </>
           )}
         </div>
 
@@ -188,6 +245,7 @@ export default function App() {
         <VisualizationPanel
           toolsUsed={vizData.toolsUsed}
           agentChain={vizData.agentChain}
+          signalText={mapSignalText}
           visible={showViz}
         />
       </div>

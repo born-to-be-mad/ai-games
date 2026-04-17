@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Specialized agent responsible for fetching raw disaster data via MCP tools.
@@ -85,13 +86,61 @@ public class DataRetrievalAgent {
                         .map(cb -> cb.getToolDefinition().name())
                         .toList());
 
-        String result = retrievalClient.prompt()
-                .user(query)
-                .toolCallbacks(trackedCallbacks)
-                .call()
-                .content();
+        String result;
+        try {
+            result = retrievalClient.prompt()
+                    .user(query)
+                    .toolCallbacks(trackedCallbacks)
+                    .call()
+                    .content();
+        } catch (RuntimeException ex) {
+            if (isToolBudgetExceeded(ex)) {
+                log.warn("[DataRetrievalAgent] Tool budget hit (attempted={} max={}). Returning partial retrieval context.",
+                        tracker.attemptedToolCalls(), maxToolCalls);
+                String partialContext = buildPartialResultForBudgetExceeded(query, tracker);
+                return tracker.toExecutionResult(partialContext);
+            }
+            throw ex;
+        }
 
         log.info("[DataRetrievalAgent] Retrieval complete");
         return tracker.toExecutionResult(result);
+    }
+
+    private static boolean isToolBudgetExceeded(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && message.contains("tool call budget exceeded")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private static String buildPartialResultForBudgetExceeded(String query, ToolExecutionTracker tracker) {
+        String collectedResults = tracker.records().stream()
+                .map(record -> {
+                    String output = record.resultJson() != null ? record.resultJson().trim() : "";
+                    if (output.length() > 1200) {
+                        output = output.substring(0, 1200) + "\n...[truncated]";
+                    }
+                    return "Tool: " + record.toolName() + "\nInput: " + record.argumentsJson() + "\nOutput:\n" + output;
+                })
+                .collect(Collectors.joining("\n\n---\n\n"));
+        if (collectedResults.isBlank()) {
+            collectedResults = "No successful tool outputs were collected before the limit was reached.";
+        }
+        return """
+                Partial retrieval completed before tool budget was reached.
+                Use the following factual outputs to answer the user question directly.
+
+                User query:
+                %s
+
+                Retrieved tool outputs:
+                %s
+                """.formatted(query, collectedResults);
     }
 }
