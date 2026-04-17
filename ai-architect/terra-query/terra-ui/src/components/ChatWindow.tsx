@@ -64,7 +64,7 @@ export function ChatWindow({ messages }: Props) {
       aria-live="polite"
       aria-label="Conversation"
     >
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {messages.map(msg => (
           <StreamingMessageRenderer key={msg.id} message={msg} />
         ))}

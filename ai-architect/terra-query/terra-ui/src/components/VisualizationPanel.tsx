@@ -10,13 +10,16 @@ import {
   YAxis,
 } from 'recharts'
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps'
+import worldAtlasCountries110mUrl from 'world-atlas/countries-110m.json?url'
 
-const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+// Prefer bundled topology so map rendering does not depend on public CDN reachability.
+const GEO_URL = worldAtlasCountries110mUrl
 
 interface Props {
   toolsUsed: string[]
   agentChain: string[]
   signalText?: string
+  widthPx: number
   visible: boolean
 }
 
@@ -24,7 +27,7 @@ type Tab = 'map' | 'tools' | 'agents'
 
 const COLORS = ['#e05c2d', '#c44a1c', '#f97316', '#fb923c', '#fed7aa']
 
-export function VisualizationPanel({ toolsUsed, agentChain, signalText = '', visible }: Props) {
+export function VisualizationPanel({ toolsUsed, agentChain, signalText = '', widthPx, visible }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('map')
   const normalizedSignalText = useMemo(() => normalize(signalText), [signalText])
 
@@ -42,7 +45,8 @@ export function VisualizationPanel({ toolsUsed, agentChain, signalText = '', vis
 
   return (
     <aside
-      className="w-80 xl:w-96 flex-shrink-0 border-l border-slate-700/50 flex flex-col bg-slate-900/50"
+      className="flex-shrink-0 border-l border-slate-700/50 flex flex-col bg-slate-900/50"
+      style={{ width: `${widthPx}px` }}
       aria-label="Visualization panel"
     >
       <div className="px-4 py-3 border-b border-slate-700/50">

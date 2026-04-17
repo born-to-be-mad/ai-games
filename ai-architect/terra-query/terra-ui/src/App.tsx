@@ -6,6 +6,9 @@ import { useSSE } from './hooks/useSSE'
 import type { Message } from './types/events'
 
 const STREAM_URL = '/api/v1/chat/stream'
+const INSIGHTS_MIN_WIDTH = 420
+const INSIGHTS_MAX_WIDTH = 900
+const INSIGHTS_DEFAULT_WIDTH = 560
 
 function generateId() {
   return crypto.randomUUID()
@@ -20,6 +23,7 @@ export default function App() {
   })
   const [mapSignalText, setMapSignalText] = useState('')
   const [showViz, setShowViz] = useState(false)
+  const [insightsWidth, setInsightsWidth] = useState(INSIGHTS_DEFAULT_WIDTH)
   const [runtimeConfig, setRuntimeConfig] = useState<{
     provider: string
     model: string
@@ -32,6 +36,7 @@ export default function App() {
   } | null>(null)
   const streamingIdRef = useRef<string | null>(null)
   const mapSignalRef = useRef('')
+  const isResizingRef = useRef(false)
 
   const { status, send, abort } = useSSE(STREAM_URL)
   const isStreaming = status === 'streaming'
@@ -177,6 +182,39 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent) => {
+      if (!isResizingRef.current || !showViz) {
+        return
+      }
+      const desired = window.innerWidth - event.clientX
+      const clamped = Math.max(INSIGHTS_MIN_WIDTH, Math.min(INSIGHTS_MAX_WIDTH, desired))
+      setInsightsWidth(clamped)
+    }
+
+    const onMouseUp = () => {
+      isResizingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [showViz])
+
+  const startResizing = () => {
+    if (!showViz) {
+      return
+    }
+    isResizingRef.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
@@ -242,10 +280,19 @@ export default function App() {
           <ChatWindow messages={messages} />
           <MessageInput onSend={handleSend} disabled={isStreaming} />
         </div>
+        {showViz && (
+          <button
+            type="button"
+            onMouseDown={startResizing}
+            aria-label="Resize insights panel"
+            className="w-2 cursor-col-resize bg-slate-900/70 border-l border-slate-700/50 hover:bg-terra-500/30 transition-colors"
+          />
+        )}
         <VisualizationPanel
           toolsUsed={vizData.toolsUsed}
           agentChain={vizData.agentChain}
           signalText={mapSignalText}
+          widthPx={insightsWidth}
           visible={showViz}
         />
       </div>
